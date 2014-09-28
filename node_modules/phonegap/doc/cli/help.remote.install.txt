@@ -1,0 +1,11 @@
+Usage: $0 remote install <platform>
+
+Description:
+
+  Installs the application for a specific platform.
+
+  Since no SDK is available, a QRCode is generated in the terminal.
+
+Examples:
+
+  $ $0 remote install android

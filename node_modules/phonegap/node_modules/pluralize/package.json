@@ -1,0 +1,52 @@
+{
+  "name": "pluralize",
+  "version": "0.0.4",
+  "description": "Pluralize and singularize words with ease",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blakeembrey/node-pluralize.git"
+  },
+  "keywords": [
+    "plural",
+    "plurals",
+    "pluralize",
+    "singular",
+    "singularize"
+  ],
+  "author": {
+    "name": "Blake Embrey"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "~1.8.2"
+  },
+  "bugs": {
+    "url": "https://github.com/blakeembrey/node-pluralize/issues"
+  },
+  "_id": "pluralize@0.0.4",
+  "dist": {
+    "shasum": "1dc3f5dd4ec729a7e92e5387ec8de120c7b5146d",
+    "tarball": "http://registry.npmjs.org/pluralize/-/pluralize-0.0.4.tgz"
+  },
+  "_from": "pluralize@0.0.4",
+  "_npmVersion": "1.2.30",
+  "_npmUser": {
+    "name": "blakeembrey",
+    "email": "me@blakeembrey.com"
+  },
+  "maintainers": [
+    {
+      "name": "blakeembrey",
+      "email": "me@blakeembrey.com"
+    }
+  ],
+  "directories": {},
+  "_shasum": "1dc3f5dd4ec729a7e92e5387ec8de120c7b5146d",
+  "_resolved": "https://registry.npmjs.org/pluralize/-/pluralize-0.0.4.tgz",
+  "readme": "ERROR: No README data found!",
+  "homepage": "https://github.com/blakeembrey/node-pluralize"
+}

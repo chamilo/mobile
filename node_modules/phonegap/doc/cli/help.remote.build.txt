@@ -1,0 +1,9 @@
+Usage: $0 remote build <platform>
+
+Description:
+
+  Builds your application for a specific platform.
+
+Examples:
+
+  $ $0 remote build android

@@ -1,0 +1,78 @@
+{
+  "name": "phonegap-build",
+  "description": "PhoneGap Build node library.",
+  "version": "0.8.4",
+  "homepage": "http://github.com/mwbrooks/node-phonegap-build",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mwbrooks/node-phonegap-build.git"
+  },
+  "keywords": [
+    "phonegap",
+    "phonegap build",
+    "phonegap-build",
+    "phonegapbuild",
+    "cordova"
+  ],
+  "main": "./lib/main.js",
+  "scripts": {
+    "test": "jasmine-node --color --verbose spec"
+  },
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "dependencies": {
+    "colors": "0.6.x",
+    "prompt": "0.2.x",
+    "shelljs": "0.0.x",
+    "optimist": "0.3.x",
+    "qrcode-terminal": "0.8.x",
+    "phonegap-build-api": "0.3.3"
+  },
+  "devDependencies": {
+    "jasmine-node": "1.10.1"
+  },
+  "optionalDependencies": {},
+  "contributors": [
+    {
+      "name": "Michael Brooks",
+      "email": "michael@michaelbrooks.ca",
+      "url": "http://michaelbrooks.ca"
+    },
+    {
+      "name": "Mathijs de Bruin",
+      "email": "mathijs@mathijsfietst.nl",
+      "url": "http://djangopeople.net/dokterbob"
+    },
+    {
+      "name": "Benn Mapes",
+      "email": "benn.mapes@gmail.com",
+      "url": "http://github.com/bennmapes"
+    }
+  ],
+  "readme": "# PhoneGap Build Node Library [![Build Status][travis-ci-img]][travis-ci-url]\n\n> Node module to create and build PhoneGap projects with PhoneGap Build.\n\n## Getting Started\n\n### Install\n\n`package.json`:\n\n    {\n        \"dependencies\": {\n            \"phonegap-build\": \"*\"\n        }\n    }\n\n### Require\n\n    var phonegapbuild = require('phonegap-build');\n\n## API\n\n### Login\n\n> Authenticates with PhoneGap Build, saves the token, and return an API object.\n> When the save token exists, the authentication step is skipped.\n\nOptions:\n\n  - `options` {Object} contains the login credentials.\n  - [`options.username`] {String} is the username.\n  - [`options.password`] {String} is the password.\n  - [`callback`] {Function} is called after the login.\n    - `e` {Error} is null on a successful login attempt.\n    - `api` {Object} the API object defined by phonegap-build-rest\n\nEvents:\n\n  - `login` is triggered when login credentials are required.\n  - `error` is triggered on an error.\n    - `e` {Error} details the error.\n  - `log` is triggered with log messages.\n  - `warn` is triggered with warning messages.\n\nExamples:\n\n    //\n    // given the login credentials\n    //\n\n    var options = { username: 'mwbrooks@adobe.com', password: 'abc123' };\n\n    phonegapbuild.login(data, function(e, api) {\n        // now logged in\n    });\n\n    //\n    // get login credentials on demand\n    //\n\n    phonegapbuild.on('login', function(options, callback) {\n        options.username = options.username || 'mwbrooks@adobe.com';\n        options.password = options.password || 'abc123';\n        callback(null, options);\n    });\n\n    phonegapbuild.login(function(e, api) {\n        // now logged in\n    });\n\n### Login Event\n\n> This event is called whenever a task must authenticate with PhoneGap/Build\n> and the credentials are unknown. If only the username or only the password\n> is known, the it is passed into the event as the `options` object.\n\n> The developer should listen on this event and correctly retrieve the login\n> credentials: looking them up from storage or prompting the user. Once\n> the credentials are found, the `callback` can be fired with the correct\n> credentials.\n\nOptions:\n\n  - `options` {Object} contains the known login credentials.\n  - [`options.username`] {String} is null or the username.\n  - [`options.password`] {String} is null or the password.\n  - `callback` {Function} is called with the correct credentials.\n    - `e` {Error} is null or the error that occured.\n    - `options` {Object} is the correct username and password.\n\nExamples:\n\n    phonegapbuild.on('login', function(options, callback) {\n        options.username = options.username || 'mwbrooks@adobe.com';\n        options.password = options.password || 'abc123';\n        callback(null, options);\n    });\n\n### Logout\n\n> Logout the user by deleting the token key from the config file.\n\nOptions:\n\n  - `args` {Object} is unused and should be `{}`.\n  - [`callback`] {Function} is a callback function.\n    - `e` {Error} is null unless there is an error.\n\nEvents:\n\n  - `error` is trigger on an error.\n    - `e` {Error} details the error.\n\nExamples:\n\n    phonegapbuild.logout({}, function(e) {\n        // now logged out unless e is defined\n    });\n\n### Create an App\n\n> Creates an application on the local filesystem.\n> The remote application is created on-demand during the first build.\n\nOptions:\n\n  - `options` {Object} is data required to create an app\n    - `path` {String} is a directory path for the app.\n  - [`callback`] {Function} is triggered after creating the app.\n    - `e` {Error} is null unless there is an error.\n\nEvents:\n\n  - `error` is triggered on an error.\n    - `e` {Error} details the error.\n\nExamples:\n\n    var options = { path: '~/development/my-app' };\n\n    phonegapbuild.create(options, function(e) {\n        if (e) {\n            console.error('failed to create the project:', e.message);\n        }\n        else {\n            console.log('created the project:', path);\n        }\n    });\n\n### Build an App\n\n> Builds the application using PhoneGap/Build. If the application does not\n> exist, then it is first created. Currently, the build task only supports\n> file transfers (zip) but will be extended to git repositories in the future.\n\nOptions:\n\n  - `options` {Object} is data required for building a platform.\n  - `options.platforms` {Array} is a collection of platform names {String} that\n                        specify the platforms to build.\n  - [`callback`] {Function} is triggered after the build is complete.\n    - `e` {Error} is null unless there is an error.\n    - `data` {Object} describes the built app.\n\nEvents:\n\n  - `error` is trigger on an error.\n    - `e` {Error} details the error.\n\nExamples:\n\n    var options = { platforms: ['android'] };\n\n    phonegapbuild.build(options, function(e, data) {\n        if (e) {\n            console.error('failed to build the app:', e);\n        }\n        else {\n            console.log('successfully built the app:', data);\n        }\n    });\n\n## Related Projects\n\n- [phonegap-cli](https://github.com/mwbrooks/phonegap-cli)\n\n[travis-ci-img]: https://travis-ci.org/mwbrooks/node-phonegap-build.png?branch=master\n[travis-ci-url]: https://travis-ci.org/mwbrooks/node-phonegap-build\n\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/mwbrooks/node-phonegap-build/issues"
+  },
+  "_id": "phonegap-build@0.8.4",
+  "dist": {
+    "shasum": "d4f735dcf310d4049c91f8043fa659971bc14784",
+    "tarball": "http://registry.npmjs.org/phonegap-build/-/phonegap-build-0.8.4.tgz"
+  },
+  "_from": "phonegap-build@0.8.4",
+  "_npmVersion": "1.3.2",
+  "_npmUser": {
+    "name": "mwbrooks",
+    "email": "michael@michaelbrooks.ca"
+  },
+  "maintainers": [
+    {
+      "name": "mwbrooks",
+      "email": "michael@michaelbrooks.ca"
+    }
+  ],
+  "directories": {},
+  "_shasum": "d4f735dcf310d4049c91f8043fa659971bc14784",
+  "_resolved": "https://registry.npmjs.org/phonegap-build/-/phonegap-build-0.8.4.tgz"
+}

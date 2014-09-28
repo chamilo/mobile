@@ -1,0 +1,12 @@
+Usage: $0 local build <platform>
+
+Description:
+
+  Builds your application for a specific platform.
+
+  Build executes on the local system. This requires that
+  the <platform> SDK environment is correctly installed.
+
+Examples:
+
+  $ $0 local build android

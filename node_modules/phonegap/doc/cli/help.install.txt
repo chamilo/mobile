@@ -1,0 +1,19 @@
+Usage: $0 install [options] <platform>
+
+Description:
+
+  Installs the application on a specific platform.
+
+  Automatically detects platform SDK support and uses the correct environment.
+
+  See each environment for available [options].
+
+Examples:
+
+  $ $0 install android
+  $ $0 install --device android
+
+Also see:
+
+  $0 local install <platform>
+  $0 remote install <platform>
