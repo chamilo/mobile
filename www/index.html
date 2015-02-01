@@ -1,45 +1,163 @@
 <!DOCTYPE html>
-<!--
-    Copyright (c) 2012-2014 Adobe Systems Incorporated. All rights reserved.
-
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="msapplication-tap-highlight" content="no" />
-        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
-        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Chamilo Messaging</title>
+        <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css" />
+        <link rel="stylesheet" href="css/app.css" />
     </head>
     <body>
-        <div class="app">
-            <h1>Chamilo Messaging application</h1>
-            <div id="deviceready" class="blink">
-                <p class="event listening">Acquiring connection</p>
-                <p class="event received">Device is Ready</p>
+        <script type="text/template" id="frm-login">
+            <img class="center-block" src="img/logo.png" alt="Chamilo Messaging">
+            <form action="#" method="post">
+                <fieldset>
+                    <legend>Host</legend>
+                    <div class="form-group">
+                        <label class="sr-only">Host name</label>
+                        <input type="url" name="hostname" class="form-control" required placeholder="https://">
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Account</legend>
+                    <div class="form-group">
+                        <label class="sr-only">Username</label>
+                        <input type="text" name="username" class="form-control" required placeholder="Username">
+                        <label class="sr-only">Password</label>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="input-group">
+                                    <input type="password" name="password" class="form-control" required placeholder="Password">
+                                    <span class="input-group-addon">
+                                        <input type="checkbox">
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="form-group">
+                    <button class="btn btn-primary btn-lg btn-block" type="submit">Log in</button>
+                </div>
+            </form>
+        </script>
+
+        <script type="text/template" id="frm-loader">
+            <div class="container">
+                <p class="lead text-center"><%= message %></p>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                        <span class="sr-only">45% Complete</span>
+                    </div>
+                </div>
             </div>
-        </div>
-        <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/index.js"></script>
-        <script type="text/javascript">
+        </script>
+
+        <script type="text/template" id="frm-header">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Chamilo Messaging</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="#logout">
+                                <i class="glyphicon glyphicon-log-out"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </script>
+
+        <script type="text/template" id="frm-inbox-content-message">
+            <div class="panel-body">
+                <h4>
+                    <a href="#message/<%= cid %>"><%= title  %></a>
+                </h4>
+                <p>
+                    <i class="glyphicon glyphicon-user"></i> <%= sender %>
+                </p>
+                <p>
+                    <i class="glyphicon glyphicon-calendar"></i> <%= sendDate %>
+                </p>
+            </div>
+            <div class="panel-footer text-right">
+                <% if (hasAttachment) { %>
+                    <span class="btn btn-link disabled">
+                        <b><i class="glyphicon glyphicon-paperclip"></i> Has attachments</b>
+                    </span>
+                <% } %>
+                <a href="<%= url %>" target="_blank" class="btn btn-link">
+                    <i class="glyphicon glyphicon-link"></i> View in platform
+                </a>
+            </div>
+        </script>
+
+        <script type="text/template" id="frm-full-message-content">
+            <article class="panel panel-default">
+                <header class="panel-heading">
+                    <h1 class="panel-title"><%= title  %></h1>
+                </header>
+                <div class="panel-body">
+                    <p>
+                        <i class="glyphicon glyphicon-user"></i> By <i><%= sender %></i>
+                        <br>
+                        <i class="glyphicon glyphicon-calendar"></i> On <i><%= sendDate %></i>
+                    </p>
+                    <hr>
+                    <%= content %>
+                </div>
+            </article>
+        </script>
+
+        <script type="text/template" id="frm-gull-message-footer">
+            <div class="container">
+            </div>
+        </script>
+
+        <script type="text/template" id="frm-full-message-footer-left">
+            <li>
+                <a href="#message/<%= cid %>">
+                    <i class="glyphicon glyphicon-chevron-left"></i> Previous
+                </a>
+            </li>
+        </script>
+
+        <script type="text/template" id="frm-full-message-footer-right">
+            <li>
+                <a href="#message/<%= cid %>">
+                    Next <i class="glyphicon glyphicon-chevron-right"></i>
+                </a>
+            </li>
+        </script>
+
+        <div id="app"></div>
+
+        <script src="cordova.js"></script>
+
+        <script src="js/vendor/jquery.min.js"></script>
+        <script src="js/vendor/underscore-min.js"></script>
+        <script src="js/vendor/backbone-min.js"></script>
+        <script src="js/vendor/IndexedDBShim.min.js"></script>
+
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+
+        <script src="js/init.js"></script>
+        <script src="js/views.js"></script>
+        <script src="js/models.js"></script>
+        <script src="js/collections.js"></script>
+        <script src="js/router.js"></script>
+        <script src="js/app.js"></script>
+
+        <script>
             app.initialize();
         </script>
     </body>
