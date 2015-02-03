@@ -13,9 +13,15 @@ Chamilo.Router = Backbone.Router.extend({
 
         $.when(getData).done(function (cursor) {
             if (cursor) {
-                Backbone.history.navigate('update', {
-                    trigger: true
-                });
+                if (navigator.connection.type === Connection.NONE) {
+                    Backbone.history.navigate('inbox', {
+                        trigger: true
+                    });
+                } else {
+                    Backbone.history.navigate('update', {
+                        trigger: true
+                    });
+                }
             } else {
                 Backbone.history.navigate('login', {
                     trigger: true
