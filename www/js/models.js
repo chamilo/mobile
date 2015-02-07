@@ -16,15 +16,12 @@ Chamilo.Model.Campus = Backbone.Model.extend({
         });
     },
     save: function () {
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.account
-        ], 'readwrite');
-
-        var store = transaction.objectStore(Chamilo.db.table.account);
-
-        var request = store.add(this.toJSON());
+        var deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.account
+            ], 'readwrite'),
+            store = transaction.objectStore(Chamilo.db.table.account),
+            request = store.add(this.toJSON());
 
         request.onsuccess = function (e) {
             deferred.resolve({
@@ -39,14 +36,13 @@ Chamilo.Model.Campus = Backbone.Model.extend({
         return deferred.promise();
     },
     getData: function () {
-        var self = this;
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.account
-        ], 'readwrite');
-        var store = transaction.objectStore(Chamilo.db.table.account);
-        var request = store.openCursor();
+        var self = this,
+            deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.account
+            ], 'readwrite'),
+            store = transaction.objectStore(Chamilo.db.table.account),
+            request = store.openCursor();
 
         request.onsuccess = function (e) {
             var cursor = e.target.result;
@@ -69,13 +65,12 @@ Chamilo.Model.Campus = Backbone.Model.extend({
         return deferred.promise();
     },
     updateData: function (key) {
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.account
-        ],'readwrite');
-        var store = transaction.objectStore(Chamilo.db.table.account);
-        var putRequest = store.put(this.toJSON(), key);
+        var deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.account
+            ],'readwrite'),
+            store = transaction.objectStore(Chamilo.db.table.account),
+            putRequest = store.put(this.toJSON(), key);
 
         putRequest.onsuccess = function (e) {
             deferred.resolve(e.target.result);
@@ -88,13 +83,12 @@ Chamilo.Model.Campus = Backbone.Model.extend({
         return deferred.promise();
     },
     deleteData: function (key) {
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.account
-        ],'readwrite');
-        var store = transaction.objectStore(Chamilo.db.table.account);
-        var deleteRequest = store.delete(key);
+        var deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.account
+            ],'readwrite'),
+            store = transaction.objectStore(Chamilo.db.table.account),
+            deleteRequest = store.delete(key);
 
         deleteRequest.onsuccess = function (e) {
             deferred.resolve(e.target.result);
@@ -119,15 +113,12 @@ Chamilo.Model.Message = Backbone.Model.extend({
         url: ''
     },
     save: function () {
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.message
-        ], 'readwrite');
-
-        var store = transaction.objectStore(Chamilo.db.table.message);
-
-        var request = store.add(this.toJSON());
+        var deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.message
+            ], 'readwrite'),
+            store = transaction.objectStore(Chamilo.db.table.message),
+            request = store.add(this.toJSON());
 
         request.onsuccess = function (e) {
             deferred.resolve({
@@ -142,13 +133,12 @@ Chamilo.Model.Message = Backbone.Model.extend({
         return deferred.promise();
     },
     deleteData: function () {
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.message
-        ],'readwrite');
-        var store = transaction.objectStore(Chamilo.db.table.message);
-        var deleteRequest = store.delete(this.cid);
+        var deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.message
+            ],'readwrite'),
+            store = transaction.objectStore(Chamilo.db.table.message),
+            deleteRequest = store.delete(this.cid);
 
         deleteRequest.onsuccess = function (e) {
             deferred.resolve(e.target.result);
@@ -161,14 +151,13 @@ Chamilo.Model.Message = Backbone.Model.extend({
         return deferred.promise();
     },
     getData: function (cid) {
-        var self = this;
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.message
-        ]);
-        var store = transaction.objectStore(Chamilo.db.table.message);
-        var request = store.get(cid);
+        var self = this,
+            deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.message
+            ]),
+            store = transaction.objectStore(Chamilo.db.table.message),
+            request = store.get(cid);
 
         request.onsuccess = function (e) {
             var data = request.result;
@@ -191,20 +180,18 @@ Chamilo.Model.Message = Backbone.Model.extend({
         return deferred.promise();
     },
     getNext: function (currentKey) {
-        var deferred = $.Deferred();
-
-        var range = IDBKeyRange.lowerBound(this.get('messageId'), true);
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.message
-        ], 'readonly');
-        var store = transaction.objectStore(Chamilo.db.table.message);
-        var index = store.index('messageId');
-        var request = index.openCursor(range);
+        var deferred = $.Deferred(),
+            range = IDBKeyRange.lowerBound(this.get('messageId'), true),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.message
+            ], 'readonly'),
+            store = transaction.objectStore(Chamilo.db.table.message),
+            index = store.index('messageId'),
+            request = index.openCursor(range);
 
         request.onsuccess = function (e) {
-            var nextMessage = null;
-            var cursor = e.target.result;
+            var nextMessage = null,
+                cursor = e.target.result;
 
             if (cursor) {
                 nextMessage = new Chamilo.Model.Message(cursor.value);
@@ -221,20 +208,18 @@ Chamilo.Model.Message = Backbone.Model.extend({
         return deferred.promise();
     },
     getPrevious: function () {
-        var deferred = $.Deferred();
-
-        var range = IDBKeyRange.upperBound(this.get('messageId'), true);
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.message
-        ], 'readonly');
-        var store = transaction.objectStore(Chamilo.db.table.message);
-        var index = store.index('messageId');
-        var request = index.openCursor(range, 'prev');
+        var deferred = $.Deferred(),
+            range = IDBKeyRange.upperBound(this.get('messageId'), true),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.message
+            ], 'readonly'),
+            store = transaction.objectStore(Chamilo.db.table.message),
+            index = store.index('messageId'),
+            request = index.openCursor(range, 'prev');
 
         request.onsuccess = function (e) {
-            var previousMessage = null;
-            var cursor = e.target.result;
+            var previousMessage = null,
+                cursor = e.target.result;
 
             if (cursor) {
                 previousMessage = new Chamilo.Model.Message(cursor.value);

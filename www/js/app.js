@@ -16,15 +16,17 @@ var app = {
         });
     },
     setUpDatabase: function () {
-        var deferred = $.Deferred();
-        var dbRequest = window.indexedDB.open(Chamilo.db.name, Chamilo.db.version);
+        var deferred = $.Deferred(),
+            dbRequest = window.indexedDB.open(Chamilo.db.name, Chamilo.db.version);
 
         dbRequest.onupgradeneeded = function (e) {
-            var thisDB = e.target.result;
-            
-            var accountStore = thisDB.createObjectStore(Chamilo.db.table.account, {
-                autoIncrement: true
-            });
+            var thisDB = e.target.result,
+                accountStore = thisDB.createObjectStore(Chamilo.db.table.account, {
+                    autoIncrement: true
+                }),
+                messageStore = thisDB.createObjectStore(Chamilo.db.table.message, {
+                    autoIncrement: true
+                });
             accountStore.createIndex('url', 'url');
             accountStore.createIndex('username', 'username');
             accountStore.createIndex('apiKey', 'apiKey', {
@@ -33,9 +35,6 @@ var app = {
             accountStore.createIndex('lastMessage', 'lastMessage');
             accountStore.createIndex('lastCheckDate', 'lastCheckDate');
 
-            var messageStore = thisDB.createObjectStore(Chamilo.db.table.message, {
-                autoIncrement: true
-            });
             messageStore.createIndex('messageId', 'messageId', {
                 unique: true
             });

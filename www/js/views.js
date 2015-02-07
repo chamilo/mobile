@@ -15,12 +15,11 @@ Chamilo.View.FrmLogin = Backbone.View.extend({
     onSubmit: function (e) {
         e.preventDefault();
 
-        var $form = this.$el.find('form');
-        var $btnSubmit = $form.find(':submit');
-
-        var hostName = $form.find('[name="hostname"]').val();
-        var username = $form.find('[name="username"]').val();
-        var password = $form.find('[name="password"]').val();
+        var $form = this.$el.find('form'),
+            $btnSubmit = $form.find(':submit'),
+            hostName = $form.find('[name="hostname"]').val(),
+            username = $form.find('[name="username"]').val(),
+            password = $form.find('[name="password"]').val();
 
         hostName = $.trim(hostName);
         username = $.trim(username);
@@ -37,9 +36,8 @@ Chamilo.View.FrmLogin = Backbone.View.extend({
         var campus = new Chamilo.Model.Campus({
             url: hostName,
             username: username
-        });
-
-        var checkIsValid = campus.checkIsValid(password);
+        }),
+        checkIsValid = campus.checkIsValid(password);
 
         checkIsValid.done(function (response) {
             campus.set('apiKey', response.apiKey);
@@ -64,8 +62,8 @@ Chamilo.View.FrmLogin = Backbone.View.extend({
         });
     },
     onCheck: function (e) {
-        var $form = this.$el.find('form');
-        var $txtPassword = $form.find('[name="password"]');
+        var $form = this.$el.find('form'),
+            $txtPassword = $form.find('[name="password"]');
 
         $txtPassword.attr('type', e.target.checked ? 'text' : 'password');
     }
@@ -155,9 +153,8 @@ Chamilo.View.FrmInboxContentMessage = Backbone.View.extend({
     className: 'panel panel-default',
     template: _.template($('#frm-inbox-content-message').html()),
     render: function () {
-        var messageData = _.extend({}, this.model.toJSON(), {cid: this.model.cid});
-
-        var template = this.template(messageData);
+        var messageData = _.extend({}, this.model.toJSON(), {cid: this.model.cid}),
+            template = this.template(messageData);
 
         this.$el.html(template);
 

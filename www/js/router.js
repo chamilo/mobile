@@ -8,8 +8,8 @@ Chamilo.Router = Backbone.Router.extend({
         'message/:id': 'showMessage'
     },
     showIndex: function () {
-        var campus = new Chamilo.Model.Campus();
-        var getData = campus.getData();
+        var campus = new Chamilo.Model.Campus(),
+            getData = campus.getData();
 
         $.when(getData).done(function (cursor) {
             if (cursor) {
@@ -39,31 +39,29 @@ Chamilo.Router = Backbone.Router.extend({
         $('#app').html(frmLogin.render().$el);
     },
     showFrmUpdate: function () {
-        var frmLoader = new Chamilo.View.FrmLoader();
+        var frmLoader = new Chamilo.View.FrmLoader(),
+            campus = new Chamilo.Model.Campus(),
+            getData = campus.getData();
 
         $('#app').html(frmLoader.render('Getting new messages').$el);
 
-        var campus = new Chamilo.Model.Campus();
-        var getData = campus.getData();
-
         $.when(getData).done(function (campusCursor) {
             if (campusCursor) {
-                var messageCollection = new Chamilo.Collection.Messages();
-                var getNewMessages = messageCollection.fetchFromWS(
+                var messageCollection = new Chamilo.Collection.Messages(),
+                    getNewMessages = messageCollection.fetchFromWS(
                         campus.get('url'),
                         campus.get('username'),
                         campus.get('apiKey'),
                         campus.get('lastMessage')
-                );
+                    );
 
                 $.when(getNewMessages).done(function () {
                     if (messageCollection.length > 0) {
-                        var lastMessage = messageCollection.first();
+                        var lastMessage = messageCollection.first(),
+                            updateCampus = campus.updateData(campusCursor.key);
 
                         campus.set('lastMessage', lastMessage.get('messageId'));
                         campus.set('lastCheckDate', new Date());
-
-                        var updateCampus = campus.updateData(campusCursor.key);
 
                         $.when(updateCampus).done(function () {
                             var saveMessages = new Array();
@@ -106,8 +104,8 @@ Chamilo.Router = Backbone.Router.extend({
         });
     },
     showFrmInbox: function () {
-        var messages = new Chamilo.Collection.Messages();
-        var request = messages.fetchFromDB();
+        var messages = new Chamilo.Collection.Messages(),
+            request = messages.fetchFromDB();
 
         $.when(request).done(function () {
             var frmInbox = new Chamilo.View.FrmInbox();
@@ -125,22 +123,20 @@ Chamilo.Router = Backbone.Router.extend({
         });
     },
     shorFrmLogout: function () {
-        var frmLoader = new Chamilo.View.FrmLoader();
+        var frmLoader = new Chamilo.View.FrmLoader(),
+            campus = new Chamilo.Model.Campus(),
+            getData = campus.getData();
 
         $('#app').html(frmLoader.render('Closing session').$el);
 
-        var campus = new Chamilo.Model.Campus();
-        var getData = campus.getData();
-
         $.when(getData).done(function (campusCursor) {
             if (campusCursor) {
-                var messages = new Chamilo.Collection.Messages();
-                var fetchMessages = messages.fetchFromDB();
+                var messages = new Chamilo.Collection.Messages(),
+                    fetchMessages = messages.fetchFromDB();
 
                 $.when(fetchMessages).done(function () {
-                    var logoutPromises = new Array();
-
-                    var deleteCampus = campus.deleteData(campusCursor.key);
+                    var logoutPromises = new Array(),
+                        deleteCampus = campus.deleteData(campusCursor.key);
 
                     logoutPromises.push(deleteCampus);
 
@@ -172,19 +168,18 @@ Chamilo.Router = Backbone.Router.extend({
     showMessage: function (id) {
         id = parseInt(id);
 
-        var message = new Chamilo.Model.Message();
-        var getData = message.getData(id);
+        var message = new Chamilo.Model.Message(),
+            getData = message.getData(id);
 
         $.when(getData).done(function () {
-            var frm = new Chamilo.View.FrmFullMessage();
+            var frm = new Chamilo.View.FrmFullMessage(),
+                getNext = message.getNext(id),
+                getPrevious = message.getPrevious(id);
 
             frm.headerView = new Chamilo.View.FrmHeader();
             frm.contentView = new Chamilo.View.FrmFullMessageContent({
                 model: message
             });
-
-            var getNext = message.getNext(id);
-            var getPrevious = message.getPrevious(id);
 
             $.when(getNext, getPrevious).always(function (nextMessage, previousMessage) {
                 if (nextMessage !== null || previousMessage !== null) {

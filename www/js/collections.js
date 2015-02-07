@@ -1,14 +1,13 @@
 Chamilo.Collection.Messages = Backbone.Collection.extend({
     model: Chamilo.Model.Message,
     fetchFromWS: function (hostName, username, apiKey, lastId) {
-        var self = this;
-
-        var getMessages = $.post(hostName + '/main/webservices/rest.php', {
-            action: 'getNewMessages',
-            username: username,
-            api_key: apiKey,
-            last: lastId
-        });
+        var self = this,
+            getMessages = $.post(hostName + '/main/webservices/rest.php', {
+                action: 'getNewMessages',
+                username: username,
+                api_key: apiKey,
+                last: lastId
+            });
 
         $.when(getMessages).done(function (response) {
             _.each(response.messages, function (messageData) {
@@ -29,15 +28,14 @@ Chamilo.Collection.Messages = Backbone.Collection.extend({
         return getMessages;
     },
     fetchFromDB: function () {
-        var self = this;
-        var deferred = $.Deferred();
-
-        var transaction = Chamilo.db.conx.transaction([
-            Chamilo.db.table.message
-        ], 'readonly');
-        var store = transaction.objectStore(Chamilo.db.table.message);
-        var index = store.index('sendDate');
-        var request = index.openCursor(null, 'prev');
+        var self = this,
+            deferred = $.Deferred(),
+            transaction = Chamilo.db.conx.transaction([
+                Chamilo.db.table.message
+            ], 'readonly'),
+            store = transaction.objectStore(Chamilo.db.table.message),
+            index = store.index('sendDate'),
+            request = index.openCursor(null, 'prev');
 
         request.onsuccess = function (e) {
             var cursor = e.target.result;
