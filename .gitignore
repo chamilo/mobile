@@ -1,3 +1,5 @@
 platforms/
 plugins/
 
+# NetBeans project
+/nbproject/
