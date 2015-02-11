@@ -16,7 +16,7 @@ Chamilo.Router = Backbone.Router.extend({
                 if (navigator.connection.type === Connection.NONE) {
                     Backbone.history.navigate('inbox', {
                         trigger: true
-                    });
+                        });
                 } else {
                     Backbone.history.navigate('update', {
                         trigger: true
@@ -58,10 +58,12 @@ Chamilo.Router = Backbone.Router.extend({
                 $.when(getNewMessages).done(function () {
                     if (messageCollection.length > 0) {
                         var lastMessage = messageCollection.first(),
-                            updateCampus = campus.updateData(campusCursor.key);
+                            updateCampus = null;
 
                         campus.set('lastMessage', lastMessage.get('messageId'));
                         campus.set('lastCheckDate', new Date());
+
+                        updateCampus = campus.updateData(campusCursor.key);
 
                         $.when(updateCampus).done(function () {
                             var saveMessages = new Array();
