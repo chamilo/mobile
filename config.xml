@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="org.chamilo.messaging" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Chamilo Messaging</name>
+    <description>
+        The mini Messaging app for Chamilo LMS is a multi-mobile-OS application that will allow you to get your messages from Chamilo LMS.
+    </description>
+    <author email="angel.quiroz@beeznest.com" href="http://beeznest.com">
+        Beeznest Latino S.A.C
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+</widget>
