@@ -23,10 +23,36 @@ update that in the future.
 Installation
 ------------
 
-At this time, the mobile app is not finished, but you can try it out by
-[installing PhoneGap on your machine][1], cloning this repository and installing
-the PhoneGap Developer app from the Android Play Store (or any other app store
-that works for you).
+First, clone this repository
+
+
+```
+cd mobile-messaging
+```
+
+Add the Android platform
+
+```
+cordova platform add android
+```
+
+Add the Network Information plugin
+
+```
+cordova plugin add org.apache.cordova.network-information
+```
+
+Build an Android APK
+
+```
+cordova build android
+```
+
+Install on an Android devide
+
+```
+cordova run android
+```
 
 Contributing
 ------------
