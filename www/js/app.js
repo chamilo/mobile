@@ -1,8 +1,11 @@
 var app = {
+    lang: {},
     initialize: function () {
         document.addEventListener('deviceready', this.onDeviceReady, false);
     },
     onDeviceReady: function () {
+        app.loadLanguage();
+
         var setup = app.setUpDatabase();
 
         $.when(setup).done(function () {
@@ -57,5 +60,17 @@ var app = {
         };
 
         return deferred.promise();
+    },
+    loadLanguage: function () {
+        navigator.globalization.getPreferredLanguage(
+            function (prefferedLanguage) {
+                var language = prefferedLanguage.value.split('-');
+
+                $.getScript('lang/' + language[0] + '.js');
+            },
+            function () {
+                $.getScript('lang/en.js');
+            }
+        );
     }
 };

@@ -72,10 +72,8 @@ Chamilo.View.FrmLogin = Backbone.View.extend({
 Chamilo.View.FrmLoader = Backbone.View.extend({
     tagName: 'section',
     template: _.template($('#frm-loader').html()),
-    render: function (message) {
-        var htmlTemplate = this.template({
-            message: message
-        });
+    render: function () {
+        var htmlTemplate = this.template();
 
         this.$el.html(htmlTemplate);
 
