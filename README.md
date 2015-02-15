@@ -36,10 +36,11 @@ Add the Android platform
 cordova platform add android
 ```
 
-Add the Network Information plugin
+Add the Cordova plugins
 
 ```
 cordova plugin add org.apache.cordova.network-information
+cordova plugin add org.apache.cordova.globalization
 ```
 
 Build an Android APK
@@ -48,7 +49,7 @@ Build an Android APK
 cordova build android
 ```
 
-Install on an Android devide
+Install on an Android device
 
 ```
 cordova run android
