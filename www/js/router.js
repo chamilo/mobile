@@ -43,7 +43,7 @@ Chamilo.Router = Backbone.Router.extend({
             campus = new Chamilo.Model.Campus(),
             getData = campus.getData();
 
-        $('#app').html(frmLoader.render('Getting new messages').$el);
+        $('#app').html(frmLoader.render().$el);
 
         $.when(getData).done(function (campusCursor) {
             if (campusCursor) {
