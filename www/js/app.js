@@ -66,7 +66,9 @@ var app = {
             function (prefferedLanguage) {
                 var language = prefferedLanguage.value.split('-');
 
-                $.getScript('lang/' + language[0] + '.js');
+                $.getScript('lang/' + language[0] + '.js').fail(function() {
+                    $.getScript('lang/en.js');
+                });
             },
             function () {
                 $.getScript('lang/en.js');
