@@ -1,7 +1,7 @@
 Chamilo LMS Mobile Messaging app
 ================================
 
-This is a PhoneGap mobile app to get notifications of new messages from the 
+This is a Cordova mobile app to get notifications of new messages from the 
 Chamilo LMS campus of your choice.
 
 The finished application should:
@@ -34,13 +34,6 @@ Add the Android platform
 
 ```
 cordova platform add android
-```
-
-Add the Cordova plugins
-
-```
-cordova plugin add org.apache.cordova.network-information
-cordova plugin add org.apache.cordova.globalization
 ```
 
 Build an Android APK
