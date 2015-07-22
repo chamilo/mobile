@@ -1,0 +1,22 @@
+define({
+    "host": "Servidor",
+    "domain": "Dominio",
+    "account": "Cuenta",
+    "username": "Nombre de usuario",
+    "password": "Contraseña",
+    "signIn": "Iniciar sesión",
+    "enterTheDomain": "Por favor, ingresa el nombre de dominio.",
+    "enterTheUsername": "Por favor, ingresa el nombre de usuario.",
+    "enterThePassword": "Por favor, ingresa la contraseña.",
+    "incorrectCredentials": "El usuario o la contraseña son incorrectas.",
+    "noConnectionToServer": "No podemos conectarnos al servidor.",
+    "hasAttachments": "Contiene archivos adjuntos",
+    "singOut": "Cerrar sesión",
+    "back": "Regresar",
+    "viewInPlatform": "Ver en la plataforma",
+    "signingOut": "Cerrando sesión",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "noMessages": "No tiene mensajes.",
+    "update": "Actualizar"
+});
