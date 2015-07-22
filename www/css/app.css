@@ -1,7 +1,14 @@
 body {
     padding-top: 80px;
 }
+hr {
+    margin: 10px 0;
+}
 
-.frm-full-message {
-    margin-bottom: 60px;
+.navbar-brand {
+    font-size: 20px;
+}
+
+.message-view {
+    padding-bottom: 70px;
 }
