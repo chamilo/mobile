@@ -1,0 +1,33 @@
+<header class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="javascript:history.back();">
+                    <i class="glyphicon glyphicon-arrow-left"></i> <%= lang.back %>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container message-view">
+    <article class="panel panel-primary">
+        <header class="panel-heading">
+            <h3 class="panel-title"><%= title %></h3>
+        </header>
+        <div class="panel-body">
+            <i class="glyphicon glyphicon-user"></i> <%= sender %>
+            <a href="<%= url %>" target="_blank" rel="external" class="btn btn-xs btn-warning pull-right">
+                <i class="glyphicon glyphicon-link"></i> <%= lang.viewInPlatform %>
+            </a>
+            <br>
+            <i class="glyphicon glyphicon-time"></i> <%= sendDate %>
+            <% if (hasAttachment) { %>
+            <br>
+            <i class="glyphicon glyphicon-paperclip"></i> <%= lang.hasAttachments %>
+            <% } %>
+            <hr>
+            <%= content %>
+        </div>
+    </article>
+</div>

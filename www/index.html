@@ -1,164 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
     <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Chamilo Messaging</title>
+        <meta charset="UTF-8">
+        <title>Mobile Messaging - Chamilo LMS</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
         <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
         <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css" />
         <link rel="stylesheet" href="css/app.css" />
-    </head>
-    <body>
-        <script type="text/template" id="frm-login">
-            <img class="center-block" src="img/logo.png" alt="<% print(app.lang.chamiloMessaging); %>">
-            <form action="#" method="post">
-                <fieldset>
-                    <legend><% print(app.lang.host); %></legend>
-                    <div class="form-group">
-                        <label class="sr-only"><% print(app.lang.hostName); %></label>
-                        <input type="url" name="hostname" class="form-control" required placeholder="https://">
-                    </div>
-                </fieldset>
-                <fieldset>
-                    <legend><% print(app.lang.account); %></legend>
-                    <div class="form-group">
-                        <label class="sr-only"><% print(app.lang.username); %></label>
-                        <input type="text" name="username" class="form-control" required placeholder="<% print(app.lang.username); %>">
-                        <label class="sr-only"><% print(app.lang.password); %></label>
-                        <div class="row">
-                            <div class="col-xs-12">
-                                <div class="input-group">
-                                    <input type="password" name="password" class="form-control" required placeholder="<% print(app.lang.password); %>">
-                                    <span class="input-group-addon">
-                                        <input type="checkbox">
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-                <div class="form-group">
-                    <button class="btn btn-primary btn-lg btn-block" type="submit"><% print(app.lang.logIn); %></button>
-                </div>
-            </form>
-        </script>
-
-        <script type="text/template" id="frm-loader">
-            <div class="container">
-                <p class="lead text-center"><% print(app.lang.loading); %></p>
-                <div class="progress">
-                    <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                        <span class="sr-only">45% <% print(app.lang.completed); %></span>
-                    </div>
-                </div>
-            </div>
-        </script>
-
-        <script type="text/template" id="frm-header">
-            <div class="container">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                    <span class="sr-only"><% print(app.lang.toggleNavigation); %></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="#"><% print(app.lang.chamiloMessaging); %></a>
-                </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li>
-                            <a href="#logout">
-                                <i class="glyphicon glyphicon-log-out"></i> <% print(app.lang.logout); %>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </script>
-
-        <script type="text/template" id="frm-inbox-content-message">
-            <div class="panel-body">
-                <h4>
-                    <a href="#message/<%= cid %>"><%= title  %></a>
-                </h4>
-                <p>
-                    <i class="glyphicon glyphicon-user"></i> <%= sender %>
-                </p>
-                <p>
-                    <i class="glyphicon glyphicon-calendar"></i> <%= sendDate %>
-                </p>
-            </div>
-            <div class="panel-footer text-right">
-                <% if (hasAttachment) { %>
-                    <span class="btn btn-link disabled">
-                        <b><i class="glyphicon glyphicon-paperclip"></i> <% print(app.lang.hasAttachments); %></b>
-                    </span>
-                <% } %>
-                <a href="<%= url %>" target="_blank" class="btn btn-link">
-                    <i class="glyphicon glyphicon-link"></i> <% print(app.lang.viewInPlatform); %>
-                </a>
-            </div>
-        </script>
-
-        <script type="text/template" id="frm-full-message-content">
-            <article class="panel panel-default">
-                <header class="panel-heading">
-                    <h1 class="panel-title"><%= title  %></h1>
-                </header>
-                <div class="panel-body">
-                    <p>
-                        <i class="glyphicon glyphicon-user"></i> By <i><%= sender %></i>
-                        <br>
-                        <i class="glyphicon glyphicon-calendar"></i> On <i><%= sendDate %></i>
-                    </p>
-                    <hr>
-                    <%= content %>
-                </div>
-            </article>
-        </script>
-
-        <script type="text/template" id="frm-gull-message-footer">
-            <div class="container">
-            </div>
-        </script>
-
-        <script type="text/template" id="frm-full-message-footer-left">
-            <li>
-                <a href="#message/<%= cid %>">
-                    <i class="glyphicon glyphicon-chevron-left"></i> <% print(app.lang.previous); %>
-                </a>
-            </li>
-        </script>
-
-        <script type="text/template" id="frm-full-message-footer-right">
-            <li>
-                <a href="#message/<%= cid %>">
-                    <% print(app.lang.next); %> <i class="glyphicon glyphicon-chevron-right"></i>
-                </a>
-            </li>
-        </script>
-
-        <div id="app"></div>
 
         <script src="cordova.js"></script>
 
-        <script src="js/vendor/jquery.min.js"></script>
-        <script src="js/vendor/underscore-min.js"></script>
-        <script src="js/vendor/backbone-min.js"></script>
-        <script src="js/vendor/IndexedDBShim.min.js"></script>
-
+        <script src="js/libs/jquery/jquery.min.js"></script>
         <script src="bootstrap/js/bootstrap.min.js"></script>
-
-        <script src="js/init.js"></script>
-        <script src="js/views.js"></script>
-        <script src="js/models.js"></script>
-        <script src="js/collections.js"></script>
-        <script src="js/router.js"></script>
-        <script src="js/app.js"></script>
+        <script data-main="js/main" src="js/libs/require.js/require.js"></script>
 
         <script>
-            app.initialize();
+            document.addEventListener('deviceready', function () {
+                require([
+                    '../js/app',
+                    'i18n!../js/nls/app'
+                ], function (App, appLang) {
+                    window.lang = appLang;
+
+                    App.initialize();
+                });
+            });
         </script>
-    </body>
+    </head>
+    <body></body>
 </html>
