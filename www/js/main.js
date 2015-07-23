@@ -1,5 +1,5 @@
-requirejs.config({
-    urlArgs: "v=" + (new Date()).getTime(),
+require.config({
+    baseUrl: 'js',
     paths: {
         jquery: 'libs/jquery/jquery.min',
         underscore: 'libs/underscore.js/underscore',
@@ -8,4 +8,15 @@ requirejs.config({
         i18n: 'libs/require-i18n/i18n',
         template: '../templates'
     }
+});
+
+document.addEventListener('deviceready', function () {
+    require([
+        'app',
+        'i18n!nls/app'
+    ], function (App, appLang) {
+        window.lang = appLang;
+
+        App.initialize();
+    });
 });
