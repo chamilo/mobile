@@ -9,6 +9,10 @@ define([
     var messagesCollection = new MessagesCollection();
 
     var loadMessages = function () {
+        if (!window.navigator.onLine) {
+            return;
+        }
+
         var url = campusModel.get('url') + '/main/webservices/rest.php';
         var getMessages = $.post(url, {
             action: 'getNewMessages',
@@ -55,13 +59,7 @@ define([
 
             var fetchMessages = messagesCollection.fetch();
 
-            $.when(fetchMessages).done(function () {
-                if (!window.navigator.onLine) {
-                    return;
-                }
-
-                loadMessages();
-            });
+            $.when(fetchMessages).done(loadMessages);
 
             messagesCollection.on('add', this.renderMessage, this);
         },
