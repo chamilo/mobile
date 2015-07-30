@@ -12,3 +12,40 @@ hr {
 .message-view {
     padding-bottom: 70px;
 }
+
+.alert-container {
+    bottom: 0px;
+    left: 0px;
+    margin: 0px;
+    padding: 0px;
+    position: fixed;
+    right: 0px;
+}
+.alert-container .tooltip {
+    display: block;
+    margin: 10px 20px;
+    opacity: 1;
+    position: relative;
+}
+.alert-container .tooltip-inner {
+    margin: 0 auto;
+    max-width: 80%;
+}
+
+/* Small devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    .alert-container .tooltip-inner {
+        max-width: 50%;
+    }
+}
+
+/* Medium devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    .alert-container .tooltip-inner {
+        max-width: 30%;
+    }
+}
+
+/* Large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+}
