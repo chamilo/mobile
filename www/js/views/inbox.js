@@ -3,13 +3,26 @@ define([
     'backbone',
     'collections/messages',
     'views/inbox-message',
-    'text!template/inbox.html'
-], function (_, Backbone, MessagesCollection, InboxMessageView, InboxTemplate) {
+    'text!template/inbox.html',
+    'views/alert'
+], function (
+    _,
+    Backbone,
+    MessagesCollection,
+    InboxMessageView,
+    InboxTemplate,
+    AlertView
+) {
     var campusModel = null;
     var messagesCollection = new MessagesCollection();
 
     var loadMessages = function () {
         if (!window.navigator.onLine) {
+            new AlertView({
+                model: {
+                    message: window.lang.notOnLine
+                }
+            });
             return;
         }
 
@@ -39,6 +52,11 @@ define([
             });
 
             if (response.messages.length === 0) {
+                new AlertView({
+                    model: {
+                        message: window.lang.noNewMessages
+                    }
+                });
                 return;
             }
 

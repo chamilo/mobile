@@ -6,8 +6,19 @@ define([
     'views/login',
     'views/inbox',
     'views/message',
-    'views/logout'
-], function ($, Backbone, CampusModel, MessageModel, LoginView, InboxView, MessageView, LogoutView) {
+    'views/logout',
+    'views/alert'
+], function (
+    $,
+    Backbone,
+    CampusModel,
+    MessageModel,
+    LoginView,
+    InboxView,
+    MessageView,
+    LogoutView,
+    AlertView
+) {
     var Router = Backbone.Router.extend({
         routes: {
             '': 'showIndex',
@@ -41,6 +52,12 @@ define([
         messageId = parseInt(messageId);
 
         if (!messageId) {
+            new AlertView({
+                model: {
+                    message: window.lang.unspecifiedMessage
+                }
+            });
+
             return;
         }
 
@@ -59,12 +76,20 @@ define([
             });
 
             $.when(getMessageData).fail(function () {
-                alert('No message');
+                new AlertView({
+                    model: {
+                        message: window.lang.messageDoesNotExists
+                    }
+                });
             });
         });
 
         $.when(getCampusData).fail(function () {
-            alert('Login, please');
+            new AlertView({
+                model: {
+                    message: window.lang.youHaveNotLogged
+                }
+            });
         });
     };
 

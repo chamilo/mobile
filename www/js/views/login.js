@@ -29,40 +29,31 @@ define([
             var password = self.$('#txt-password').val().trim();
 
             if (!hostName) {
-                var alertView = new AlertView({
+                new AlertView({
                     model: {
-                        type: 'warning',
                         message: window.lang.enterTheDomain
                     }
                 });
-
-                self.$('#div-alert').html(alertView.render().el);
 
                 return;
             }
 
             if (!username) {
-                var alertView = new AlertView({
+                new AlertView({
                     model: {
-                        type: 'warning',
                         message: window.lang.enterTheUsername
                     }
                 });
-
-                self.$('#div-alert').html(alertView.render().el);
 
                 return;
             }
 
             if (!password) {
-                var alertView = new AlertView({
+                new AlertView({
                     model: {
-                        type: 'warning',
                         message: window.lang.enterThePassword
                     }
                 });
-
-                self.$('#div-alert').html(alertView.render().el);
 
                 return;
             }
@@ -77,14 +68,12 @@ define([
 
             $.when(checkingLogin).done(function (response) {
                 if (!response.status) {
-                    var alertView = new AlertView({
+                    new AlertView({
                         model: {
-                            type: 'danger',
                             message: window.lang.incorrectCredentials
                         }
                     });
 
-                    self.$('#div-alert').html(alertView.render().el);
                     self.$('#btn-submit').prop('disabled', false);
 
                     return;
@@ -102,27 +91,22 @@ define([
                 });
 
                 $.when(savingCampus).fail(function () {
-                    var alertView = new AlertView({
+                    new AlertView({
                         model: {
-                            type: 'danger',
                             message: "Account don't saved."
                         }
                     });
 
-                    self.$('#div-alert').html(alertView.render().el);
                     self.$('#btn-submit').prop('disabled', false);
                 });
             });
 
             $.when(checkingLogin).fail(function () {
-                var alertView = new AlertView({
+                new AlertView({
                     model: {
-                        type: 'danger',
                         message: window.lang.noConnectionToServer
                     }
                 });
-
-                self.$('#div-alert').html(alertView.render().el);
 
                 self.$('#btn-submit').prop('disabled', false);
             });
