@@ -18,5 +18,10 @@ define({
     "next": "Next",
     "previous": "Previous",
     "noMessages": "No messages",
-    "update": "Update"
+    "update": "Update",
+    "messageDoesNotExists": "The message does not exists",
+    "youHaveNotLogged": "You have not logged",
+    "unspecifiedMessage": "Unspecified message",
+    "notOnLine": "You are not online",
+    "noNewMessages": "No new messages"
 });
