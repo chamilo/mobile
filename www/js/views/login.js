@@ -82,7 +82,8 @@ define([
                 var campusModel = new CampusModel({
                     url: hostName,
                     username: username,
-                    apiKey: response.apiKey
+                    apiKey: response.apiKey,
+                    gcmSenderId: response.gcmSenderId
                 });
                 var savingCampus = campusModel.save();
 

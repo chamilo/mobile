@@ -1,6 +1,6 @@
 define({
     name: 'chamilo-messaging',
-    version: 2,
+    version: 3,
     TABLE_ACCOUNT: 'account',
     TABLE_MESSAGE: 'message',
     conx: null,
@@ -21,6 +21,9 @@ define({
             });
             accountStore.createIndex('lastMessage', 'lastMessage');
             accountStore.createIndex('lastCheckDate', 'lastCheckDate');
+            accountStore.createIndex('gcmSenderId', 'gcmSenderId', {
+                unique: true
+            });
 
             var messageStore = database.createObjectStore(self.TABLE_MESSAGE, {
                 autoIncrement: true

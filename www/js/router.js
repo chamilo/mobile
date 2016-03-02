@@ -33,6 +33,31 @@ define([
         var getCampusData = campusModel.getData();
 
         $.when(getCampusData).done(function () {
+            var pushNotification = PushNotification.init({
+                android: {
+                    senderID: campusModel.get('gcmSenderId')
+                },
+                ios: {
+                    alert: 'true',
+                    badge: 'true',
+                    sound: 'true'
+                },
+                windows: {}
+            });
+            pushNotification.on('registration', function (data) {
+                $.post(campusModel.get('url') + '/main/webservices/rest.php', {
+                    action: 'setGcmRegistrationId',
+                    username: campusModel.get('username'),
+                    api_key: campusModel.get('apiKey'),
+                    registration_id: data.registrationId
+                });
+            });
+            pushNotification.on('notification', function (data) {
+                Backbone.history.navigate('', true);
+            });
+            pushNotification.on('error', function (e) {
+            });
+
             var inboxView = new InboxView({
                 model: campusModel
             });
