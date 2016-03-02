@@ -27,6 +27,7 @@ First, clone this repository
 
 
 ```
+git clone git@github.com:chamilo/mobile-messaging.git
 cd mobile-messaging
 ```
 
@@ -34,6 +35,11 @@ Add the Android platform
 
 ```
 cordova platform add android
+```
+
+Add the plugins
+```
+cordova plugin add phonegap-plugin-push
 ```
 
 Build an Android APK
@@ -60,3 +66,4 @@ trying out HTML+JS stuff to generate a mobile app, but we have good grounds with
 PSR-1 and PSR-2, so we will not accept ugly code, but we will comment on it.
 
 [1]: http://beeznest.wordpress.com/2014/09/05/quick-phonegap-setup-on-ubuntu/
+[2]: https://support.chamilo.org/issues/7402
