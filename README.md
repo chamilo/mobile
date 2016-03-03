@@ -39,6 +39,7 @@ cordova platform add android
 
 Add the plugins
 ```
+cordova plugin add cordova-plugin-network-information
 cordova plugin add phonegap-plugin-push
 ```
 
