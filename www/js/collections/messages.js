@@ -33,7 +33,7 @@ define([
             ], 'readonly');
             var store = transaction.objectStore(DB.TABLE_MESSAGE);
             var index = store.index('sendDate');
-            var request = index.openCursor(null, 'prev');
+            var request = index.openCursor(null);
 
             request.onsuccess = function (e) {
                 var cursor = e.target.result;
@@ -41,7 +41,6 @@ define([
                 if (cursor) {
                     var message = new MessageModel(cursor.value);
                     message.cid = cursor.primaryKey;
-
                     self.add(message);
 
                     cursor.continue();

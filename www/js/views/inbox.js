@@ -26,48 +26,51 @@ define([
             return;
         }
 
-        var url = campusModel.get('url') + '/main/webservices/rest.php';
-        var getMessages = $.post(url, {
-            action: 'getNewMessages',
-            username: campusModel.get('username'),
-            api_key: campusModel.get('apiKey'),
-            last: campusModel.get('lastMessage')
-        });
-
-        $.when(getMessages).done(function (response) {
-            if (!response.status) {
-                return;
+        $.post(
+            campusModel.get('url') + '/main/webservices/rest.php',
+            {
+                action: 'getNewMessages',
+                username: campusModel.get('username'),
+                api_key: campusModel.get('apiKey'),
+                last: campusModel.get('lastMessage')
             }
-
-            response.messages.forEach(function (messageData) {
-                messagesCollection.create({
-                    messageId: parseInt(messageData.id),
-                    sender: messageData.sender.completeName,
-                    title: messageData.title,
-                    content: messageData.content,
-                    hasAttachment: messageData.hasAttachments,
-                    sendDate: messageData.sendDate,
-                    url: messageData.platform.messagingTool
-                });
-            });
-
-            if (response.messages.length === 0) {
-                new AlertView({
-                    model: {
-                        message: window.lang.noNewMessages
-                    }
-                });
-                return;
-            }
-
-            var lastMessage = _.first(response.messages);
-
-            campusModel.save({
-                lastMessage: parseInt(lastMessage.id),
-                lastCheckDate: new Date()
-            });
-        });
+        ).done(loadMessagesDone);
     };
+
+    function loadMessagesDone(response) {
+        if (!response.status) {
+            return;
+        }
+
+        if (!response.messages.length) {
+            new AlertView({
+                model: {
+                    message: window.lang.noNewMessages
+                }
+            });
+            return;
+        }
+
+        response.messages.reverse();
+        response.messages.forEach(function (messageData) {
+            messagesCollection.create({
+                messageId: parseInt(messageData.id),
+                sender: messageData.sender.completeName,
+                title: messageData.title,
+                content: messageData.content,
+                hasAttachment: messageData.hasAttachments,
+                sendDate: messageData.sendDate,
+                url: messageData.platform.messagingTool
+            });
+        });
+
+        var lastMessage = _.last(response.messages);
+
+        campusModel.save({
+            lastMessage: parseInt(lastMessage.id),
+            lastCheckDate: new Date()
+        });
+    }
 
     var InboxView = Backbone.View.extend({
         el: 'body',
@@ -75,9 +78,7 @@ define([
         initialize: function () {
             campusModel = this.model;
 
-            var fetchMessages = messagesCollection.fetch();
-
-            $.when(fetchMessages).done(loadMessages);
+            messagesCollection.fetch();
 
             messagesCollection.on('add', this.renderMessage, this);
         },
@@ -93,14 +94,9 @@ define([
                 model: messageModel
             });
 
-            this.$el.find('#messages-list').append(inboxMessageView.render().el);
+            this.$el.find('#messages-list').prepend(inboxMessageView.render().el);
         },
-        events: {
-            'click #messages-update': 'messagesUpdateOnClick'
-        },
-        messagesUpdateOnClick: function (e) {
-            e.preventDefault();
-
+        updateList: function () {
             loadMessages();
         }
     });
