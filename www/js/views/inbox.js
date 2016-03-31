@@ -78,9 +78,8 @@ define([
         initialize: function () {
             campusModel = this.model;
 
-            messagesCollection.fetch();
-
             messagesCollection.on('add', this.renderMessage, this);
+            messagesCollection.fetch();
         },
         render: function () {
             this.el.innerHTML = this.template();

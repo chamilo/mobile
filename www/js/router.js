@@ -150,7 +150,7 @@ define([
                 inboxView = new InboxView({
                     model: campusModel
                 });
-                inboxView.render();
+                inboxView.render().updateList();
             }
 
             function pushNotification(data) {
