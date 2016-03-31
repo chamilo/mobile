@@ -55,6 +55,19 @@ Install on an Android device
 cordova run android
 ```
 
+Enable Chamilo notification pushing
+-----------------------------------
+
+If you'd like to use push notifications (only tested on Android and only available from Chamilo v1.10.4), you will have to enable and set the following parameters in your Chamilo server's configuration file:
+```
+//Allow send a push notification when an email are sent
+//$_configuration['messaging_allow_send_push_notification'] = 'true';
+//Project number in the Google Developer Console
+//$_configuration['messaging_gdc_project_number'] = '';
+//Api Key in the Google Developer Console
+//$_configuration['messaging_gdc_api_key'] = '';
+```
+
 Contributing
 ------------
 
