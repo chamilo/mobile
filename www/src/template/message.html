@@ -1,19 +1,31 @@
-<header class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
     <div class="container">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="javascript:(function () {window.location.href = '';})()">
-                    <i class="glyphicon glyphicon-arrow-left"></i> Back
+        <ul class="nav navbar-nav pull-left">
+            <li>
+                <a id="btn-close" href="#" role="button">
+                    <i class="glyphicon glyphicon-remove"></i><span class="sr-only">Back</span>
                 </a>
-            </div>
-        </div>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav pull-right">
+            <li class="disabled">
+                <a id="prev-message" href="#" role="button">
+                    <i class="glyphicon glyphicon-chevron-left"></i><span class="sr-only">Previous</span>
+                </a>
+            </li>
+            <li class="disabled">
+                <a id="next-message" href="#" role="button">
+                    <i class="glyphicon glyphicon-chevron-right"></i><span class="sr-only">Next</span>
+                </a>
+            </li>
+        </ul>
     </div>
-</header>
+</nav>
 
-<div class="container message-view">
+<section class="container message-view">
     <article class="panel panel-primary">
         <header class="panel-heading">
-            <h3 class="panel-title"><%= title %></h3>
+            <h1 class="panel-title"><%= title %></h1>
         </header>
         <div class="panel-body">
             <i class="glyphicon glyphicon-user"></i> <%= sender %>
@@ -30,4 +42,4 @@
             <%= content %>
         </div>
     </article>
-</div>
+</section>
