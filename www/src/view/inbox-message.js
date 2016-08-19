@@ -1,18 +1,15 @@
 define([
-    'underscore',
     'backbone',
     'text!template/inbox-message.html'
-], function (_, Backbone, InboxMessageTemplate) {
+], function (Backbone, inboxMessageTemplate) {
     var InboxMessageView = Backbone.View.extend({
         tagName: 'a',
         className: 'list-group-item',
-        template: _.template(InboxMessageTemplate),
+        template: _.template(inboxMessageTemplate),
         render: function () {
             this.el.setAttribute('href', '#message/' + this.model.cid);
 
-            var template = this.template(this.model.toJSON());
-
-            this.el.innerHTML = template;
+            this.el.innerHTML = this.template(this.model.toJSON());
 
             return this;
         }

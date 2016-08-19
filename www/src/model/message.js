@@ -12,9 +12,16 @@ define([
             sendDate: new Date(),
             url: ''
         },
-        save: function (attributes) {
-            var deferred = $.Deferred();
+        save: function (attributes, options) {
             var self = this;
+
+            self.attributes = $.extend(self.attributes, attributes);
+
+            options = $.extend({
+                isNew: true,
+                success: null,
+                error: null
+            }, options);
 
             var transaction = DB.conx.transaction([
                 DB.TABLE_MESSAGE
@@ -22,7 +29,7 @@ define([
             var store = transaction.objectStore(DB.TABLE_MESSAGE);
             var request;
 
-            if (!attributes) {
+            if (options.isNew) {
                 request = store.add(this.toJSON());
             } else {
                 self.set(attributes);
@@ -34,45 +41,58 @@ define([
                     self.cid = e.target.result;
                 }
 
-                deferred.resolve();
-            };
-
-            request.onerror = function () {
-                deferred.reject();
-            };
-
-            return deferred.promise();
-        },
-        getData: function (cid) {
-            var self = this;
-            var deferred = $.Deferred();
-            var transaction = DB.conx.transaction([
-                DB.TABLE_MESSAGE
-            ]);
-            var store = transaction.objectStore(DB.TABLE_MESSAGE);
-            var request = store.get(cid);
-
-            request.onsuccess = function (e) {
-                if (request.result) {
-                    var data = request.result;
-
-                    self.cid = cid;
-                    self.set(data);
-
-                    deferred.resolve();
-                } else {
-                    deferred.reject();
+                if (options.success) {
+                    options.success();
                 }
             };
 
             request.onerror = function () {
-                deferred.reject();
+                if (options.error) {
+                    options.error(request.error);
+                }
+            };
+        },
+        fetch: function (options) {
+            var self = this;
+
+            options = $.extend({
+                success: null,
+                error: null
+            }, options);
+
+            var transaction = DB.conx.transaction([DB.TABLE_MESSAGE]);
+            var store = transaction.objectStore(DB.TABLE_MESSAGE);
+            var request = store.get(this.cid);
+
+            request.onsuccess = function (e) {
+                if (!request.result) {
+                    if (options.error) {
+                        options.error(request.error);
+                    }
+
+                    return;
+                }
+
+                if (request.result) {
+                    self.set(request.result);
+
+                    if (options.success) {
+                        options.success();
+                    }
+                }
             };
 
-            return deferred.promise();
+            request.onerror = function () {
+                if (options.error) {
+                    options.error(request.error);
+                }
+            };
         },
-        getNext: function (currentKey) {
-            var deferred = $.Deferred();
+        next: function (options) {
+            options = $.extend({
+                success: null,
+                error: null
+            }, options);
 
             var range = IDBKeyRange.lowerBound(this.get('messageId'), true);
             var transaction = DB.conx.transaction([
@@ -91,17 +111,22 @@ define([
                     nextMessage.cid = cursor.primaryKey;
                 }
 
-                deferred.resolve(nextMessage);
+                if (options.success) {
+                    options.success(nextMessage);
+                }
             };
 
             request.onerror = function () {
-                deferred.reject();
+                if (options.error) {
+                    options.error(request.error);
+                }
             };
-
-            return deferred.promise();
         },
-        getPrevious: function () {
-            var deferred = $.Deferred();
+        previous: function (options) {
+            options = $.extend({
+                success: null,
+                error: null
+            }, options);
 
             var range = IDBKeyRange.upperBound(this.get('messageId'), true);
             var transaction = DB.conx.transaction([
@@ -120,14 +145,16 @@ define([
                     previousMessage.cid = cursor.primaryKey;
                 }
 
-                deferred.resolve(previousMessage);
+                if (options.success) {
+                    options.success(previousMessage);
+                }
             };
 
             request.onerror = function () {
-                deferred.reject();
+                if (options.error) {
+                    options.error(request.error);
+                }
             };
-
-            return deferred.promise();
         },
         delete: function () {
             var deferred = $.Deferred();

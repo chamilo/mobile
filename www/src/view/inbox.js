@@ -1,102 +1,91 @@
 define([
-    'underscore',
     'backbone',
-    'collections/messages',
-    'views/inbox-message',
     'text!template/inbox.html',
-    'views/alert'
-], function (
-    _,
-    Backbone,
-    MessagesCollection,
-    InboxMessageView,
-    InboxTemplate,
-    AlertView
-) {
-    var campusModel = null;
-    var messagesCollection = new MessagesCollection();
+    'collection/messages',
+    'view/inbox-message'
+], function (Backbone, inboxTemplate, MessagesCollection, InboxMessageView) {
+    var campus = null,
+        messages = null;
 
     var loadMessages = function () {
         if (!window.navigator.onLine) {
-            new AlertView({
-                model: {
-                    message: window.lang.notOnLine
-                }
-            });
+            alert('No online');
+
             return;
         }
 
-        $.post(
-            campusModel.get('url') + '/main/webservices/rest.php',
-            {
-                action: 'getNewMessages',
-                username: campusModel.get('username'),
-                api_key: campusModel.get('apiKey'),
-                last: campusModel.get('lastMessage')
-            }
-        ).done(loadMessagesDone);
+        if (!campus) {
+            alert('No campus');
+
+            return;
+        }
+
+        $.post(campus.get('url') + '/main/webservices/api/v2.php', {
+            action: 'user_messages',
+            username: campus.get('username'),
+            api_key: campus.get('apiKey'),
+            last: campus.get('lastMessage')
+        })
+            .done(function (response) {
+                if (response.error) {
+                    alert(response.message);
+
+                    return;
+                }
+
+                response.data.reverse();
+
+                response.data.forEach(function (messageDetail) {
+                    messages.create({
+                        messageId: parseInt(messageDetail.id),
+                        sender: messageDetail.sender.completeName,
+                        title: messageDetail.title,
+                        content: messageDetail.content,
+                        hasAttachment: messageDetail.hasAttachments,
+                        sendDate: messageDetail.sendDate,
+                        url: messageDetail.url
+                    });
+                });
+
+                if (response.data.length) {
+                    var lastMessage = _.last(response.data);
+
+                    campus.save({
+                        lastMessage: parseInt(lastMessage.id),
+                        lastCheckDate: new Date()
+                    });
+                }
+            });
     };
-
-    function loadMessagesDone(response) {
-        if (!response.status) {
-            return;
-        }
-
-        if (!response.messages.length) {
-            new AlertView({
-                model: {
-                    message: window.lang.noNewMessages
-                }
-            });
-            return;
-        }
-
-        response.messages.reverse();
-        response.messages.forEach(function (messageData) {
-            messagesCollection.create({
-                messageId: parseInt(messageData.id),
-                sender: messageData.sender.completeName,
-                title: messageData.title,
-                content: messageData.content,
-                hasAttachment: messageData.hasAttachments,
-                sendDate: messageData.sendDate,
-                url: messageData.platform.messagingTool
-            });
-        });
-
-        var lastMessage = _.last(response.messages);
-
-        campusModel.save({
-            lastMessage: parseInt(lastMessage.id),
-            lastCheckDate: new Date()
-        });
-    }
 
     var InboxView = Backbone.View.extend({
         el: 'body',
-        template: _.template(InboxTemplate),
         initialize: function () {
-            campusModel = this.model;
+            this.collection = new MessagesCollection();
+            this.collection.on('add', this.renderMessage, this);
 
-            messagesCollection.on('add', this.renderMessage, this);
-            messagesCollection.fetch();
+            campus = this.model;
+            messages = this.collection;
         },
+        template: _.template(inboxTemplate),
         render: function () {
             this.el.innerHTML = this.template();
+            this.collection.each(this.renderMessage, this);
+            this.collection.fetch();
 
-            messagesCollection.each(this.renderMessage, this);
+            loadMessages();
 
             return this;
         },
-        renderMessage: function (messageModel) {
-            var inboxMessageView = new InboxMessageView({
-                model: messageModel
+        renderMessage: function (message) {
+            var messageView = new InboxMessageView({
+                model: message
             });
 
-            this.$el.find('#messages-list').prepend(inboxMessageView.render().el);
-        },
-        updateList: function () {
-            loadMessages();
+            this.$el.find('#messages-list')
+                .prepend(
+                    messageView.render().el
+                );
         }
     });
 

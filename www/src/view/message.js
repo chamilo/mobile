@@ -1,19 +1,39 @@
 define([
-    'underscore',
     'backbone',
-    'views/message-nav',
-    'text!template/message.html'
-], function (_, Backbone, MessageNavView, MessageTemplate) {
+    'text!template/message.html',
+    'model/message',
+    'view/message-nav'
+], function (
+    Backbone,
+    messageTemplate,
+    MessageModel,
+    MessageNavView
+) {
     var MessageView = Backbone.View.extend({
         el: 'body',
-        template: _.template(MessageTemplate),
-        render: function () {
-            var messageNavView = new MessageNavView({
+        template: _.template(messageTemplate),
+        navView: null,
+        initialize: function (options) {
+            this.model = new MessageModel();
+            this.model.cid = options.messageId;
+            this.model.fetch();
+            this.model.on('change', this.render, this);
+
+            this.navView = new MessageNavView({
                 model: this.model
             });
-
-            this.el.innerHTML = this.template(this.model.toJSON());
-            this.el.appendChild(messageNavView.render().el);
+        },
+        render: function () {
+            if (!this.model.get('messageId')) {
+                return this;
+            }
+            
+            this.el.innerHTML = this.template(
+                this.model.toJSON()
+            );
+            this.el.appendChild(
+                this.navView.render().el
+            );
 
             return this;
         }

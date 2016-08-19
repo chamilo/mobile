@@ -1,19 +1,25 @@
 define([
-    'underscore',
     'backbone',
     'text!template/message-nav.html'
-], function (_, Backbone, MessageNavTemplate) {
+], function (
+    Backbone,
+    MessageNavTemplate
+) {
+    var previousMessage = null,
+        nextMessage = null;
+
     var MessageNavView = Backbone.View.extend({
         tagName: 'nav',
         className: 'navbar navbar-default navbar-fixed-bottom',
-        attribute: {
+        attributes: {
             role: 'navigation'
         },
         template: _.template(MessageNavTemplate),
         prevButton: null,
         nextButton: null,
         events: {
-            'click li a': 'checkLinkOnClick'
+            'click a#prev-message': 'btnPrevMessageOnClick',
+            'click a#next-message': 'btnNextMessageOnClick'
         },
         render: function () {
             var self = this;
@@ -22,36 +28,48 @@ define([
             this.prevButton = self.$('#prev-message');
             this.nextButton = self.$('#next-message');
 
-            this.prevButton.parent().addClass('disabled');
-            this.nextButton.parent().addClass('disabled');
+            this.model.previous({
+                success: function (message) {
+                    if (!message) {
+                        return;
+                    }
 
-            var getPrevious = this.model.getPrevious();
-            var getNext = this.model.getNext();
+                    previousMessage = message;
 
-            $.when.apply($, [
-                getPrevious, getNext
-            ]).then(function (previousMessage, nextMessage) {
-                if (previousMessage) {
                     self.prevButton.parent().removeClass('disabled');
-                    self.prevButton.attr({
-                        href: '#message/' + previousMessage.cid
-                    });
                 }
+            });
+            this.model.next({
+                success: function (message) {
+                    if (!message) {
+                        return;
+                    }
 
-                if (nextMessage) {
+                    nextMessage = message;
+
                     self.nextButton.parent().removeClass('disabled');
-                    self.nextButton.attr({
-                        href: '#message/' + nextMessage.cid
-                    });
                 }
             });
 
             return this;
         },
-        checkLinkOnClick: function (e) {
-            if ($(e.target).parent().hasClass('disabled')) {
-                e.preventDefault();
+        btnPrevMessageOnClick: function (e) {
+            e.preventDefault();
+
+            if (this.prevButton.parent().hasClass('disabled')) {
+                return;
             }
+
+            this.model.set(previousMessage.toJSON());
+        },
+        btnNextMessageOnClick: function (e) {
+            e.preventDefault();
+
+            if (this.nextButton.parent().hasClass('disabled')) {
+                return;
+            }
+
+            this.model.set(nextMessage.toJSON());
         }
     });
 

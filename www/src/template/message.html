@@ -3,7 +3,7 @@
         <div class="container-fluid">
             <div class="navbar-header">
                 <a class="navbar-brand" href="javascript:(function () {window.location.href = '';})()">
-                    <i class="glyphicon glyphicon-arrow-left"></i> <%= lang.back %>
+                    <i class="glyphicon glyphicon-arrow-left"></i> Back
                 </a>
             </div>
         </div>
@@ -18,13 +18,13 @@
         <div class="panel-body">
             <i class="glyphicon glyphicon-user"></i> <%= sender %>
             <a href="<%= url %>" target="_blank" rel="external" class="btn btn-xs btn-warning pull-right">
-                <i class="glyphicon glyphicon-link"></i> <%= lang.viewInPlatform %>
+                <i class="glyphicon glyphicon-link"></i> View in platform
             </a>
             <br>
             <i class="glyphicon glyphicon-time"></i> <%= sendDate %>
             <% if (hasAttachment) { %>
-            <br>
-            <i class="glyphicon glyphicon-paperclip"></i> <%= lang.hasAttachments %>
+                <br>
+                <i class="glyphicon glyphicon-paperclip"></i> Has attachments
             <% } %>
             <hr>
             <%= content %>

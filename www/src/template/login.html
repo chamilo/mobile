@@ -1,36 +1,38 @@
-<p>
-    <img class="center-block" src="img/logo.png" alt="Chamilo Messaging">
-</p>
+<section class="container">
+    <p>
+        <img class="center-block" src="img/logo.png" alt="Chamilo Messaging">
+    </p>
 
-<div id="div-alert"></div>
+    <div id="div-alert"></div>
 
-<form action="#" id="frm-login" method="post">
-    <fieldset>
-        <legend><%= lang.host %></legend>
-        <div class="form-group">
-            <label class="sr-only"><%= lang.domain %></label>
-            <input type="url" name="hostname" id="txt-hostname" required class="form-control" placeholder="https://">
-        </div>
-    </fieldset>
-    <fieldset>
-        <legend><%= lang.account %></legend>
-        <div class="form-group">
-            <label class="sr-only"><%= lang.username %></label>
-            <input type="text" name="username" id="txt-username" required class="form-control" placeholder="<%= lang.username %>">
-            <label class="sr-only"><%= lang.password %></label>
-            <div class="row">
-                <div class="col-xs-12">
-                    <div class="input-group">
-                        <input type="password" id="txt-password" required name="password" class="form-control" placeholder="<%= lang.password %>">
-                        <span class="input-group-addon">
-                            <input type="checkbox" id="chk-password">
-                        </span>
+    <form action="#" id="frm-login" method="post">
+        <fieldset>
+            <legend>Host</legend>
+            <div class="form-group">
+                <label class="sr-only">Domain</label>
+                <input type="url" name="hostname" id="txt-hostname" required class="form-control" placeholder="https://" value="http://192.168.0.30/111x">
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>User account</legend>
+            <div class="form-group">
+                <label class="sr-only">Username</label>
+                <input type="text" name="username" id="txt-username" required class="form-control" placeholder="Username">
+                <label class="sr-only">Password</label>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="input-group">
+                            <input type="password" id="txt-password" required name="password" class="form-control" placeholder="Password">
+                            <span class="input-group-addon">
+                                <input type="checkbox" id="chk-password">
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
+        </fieldset>
+        <div class="form-group">
+            <button class="btn btn-primary btn-lg btn-block" id="btn-submit" type="submit">Sign In</button>
         </div>
-    </fieldset>
-    <div class="form-group">
-        <button class="btn btn-primary btn-lg btn-block" id="btn-submit" type="submit"><%= lang.signIn %></button>
-    </div>
-</form>
+    </form>
+</section>

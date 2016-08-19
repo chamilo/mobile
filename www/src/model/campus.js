@@ -11,9 +11,13 @@ define([
             lastCheckDate: new Date(),
             gcmSenderId: null
         },
-        getData: function () {
+        fetch: function (options) {
+            options = $.extend({
+                success: null,
+                error: null
+            }, options);
+
             var self = this;
-            var deferred = $.Deferred();
 
             var transaction = DB.conx.transaction([
                 DB.TABLE_ACCOUNT
@@ -24,32 +28,45 @@ define([
             request.onsuccess = function (e) {
                 var cursor = e.target.result;
 
-                if (cursor) {
-                    self.cid = cursor.key;
-                    self.set({
-                        url: cursor.value.url,
-                        username: cursor.value.username,
-                        apiKey: cursor.value.apiKey,
-                        lastMessage: cursor.value.lastMessage,
-                        lastCheckDate: cursor.value.lastCheckDate,
-                        gcmSenderId: cursor.value.gcmSenderId
-                    });
+                if (!cursor) {
+                    if (options.error) {
+                        options.error(e);
+                    }
 
-                    deferred.resolve(e);
-                } else {
-                    deferred.reject();
+                    return;
+                }
+
+                self.cid = cursor.key;
+                self.set({
+                    url: cursor.value.url,
+                    username: cursor.value.username,
+                    apiKey: cursor.value.apiKey,
+                    lastMessage: cursor.value.lastMessage,
+                    lastCheckDate: cursor.value.lastCheckDate,
+                    gcmSenderId: cursor.value.gcmSenderId
+                });
+
+                if (options.success) {
+                    options.success(e);
                 }
             };
 
-            request.onerror = function () {
-                deferred.reject();
+            request.onerror = function (e) {
+                if (options.error) {
+                    options.error(e);
+                }
             };
-
-            return deferred.promise();
         },
-        save: function (attributes) {
-            var deferred = $.Deferred();
+        save: function (attributes, options) {
             var self = this;
+            
+            self.attributes = $.extend(self.attributes, attributes);
+
+            options = $.extend({
+                isNew: true,
+                success: null,
+                error: null
+            }, options);
 
             var transaction = DB.conx.transaction([
                 DB.TABLE_ACCOUNT
@@ -57,7 +74,7 @@ define([
             var store = transaction.objectStore(DB.TABLE_ACCOUNT);
             var request;
 
-            if (!attributes) {
+            if (options.isNew) {
                 request = store.add(this.toJSON());
             } else {
                 self.set(attributes);
@@ -69,17 +86,24 @@ define([
                     self.cid = e.target.result;
                 }
 
-                deferred.resolve();
+                if (options.success) {
+                    options.success();
+                }
             };
 
             request.onerror = function () {
-                deferred.reject();
+                if (options.error) {
+                    options.error(request.error);
+                }
+                ;
             };
-
-            return deferred.promise();
         },
-        delete: function () {
-            var deferred = $.Deferred();
+        destroy: function (options) {
+            options = $.extend({
+                success: null,
+                error: null
+            }, options);
+
             var transaction = DB.conx.transaction([
                 DB.TABLE_ACCOUNT
             ], 'readwrite');
@@ -87,14 +111,16 @@ define([
             var request = store.clear();
 
             request.onsuccess = function () {
-                deferred.resolve();
+                if (options.success) {
+                    options.success();
+                }
             };
 
             request.onerror = function () {
-                deferred.reject();
+                if (options.error) {
+                    options.error();
+                }
             };
-
-            return deferred.promise();
         }
     });
 

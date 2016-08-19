@@ -1,22 +1,67 @@
-require.config({
-    baseUrl: 'js',
-    paths: {
-        jquery: 'libs/jquery/jquery.min',
-        underscore: 'libs/underscore.js/underscore',
-        backbone: 'libs/backbone.js/backbone-min',
-        text: 'libs/require-text/text',
-        i18n: 'libs/require-i18n/i18n',
-        template: '../templates'
-    }
-});
-
 document.addEventListener('deviceready', function () {
     require([
-        'app',
-        'i18n!nls/app'
-    ], function (App, appLang) {
-        window.lang = appLang;
+        'backbone',
+        'view/login',
+        'model/campus',
+        'view/home',
+        'view/inbox',
+        'view/message'
+    ], function (
+        Backbone,
+        LoginView,
+        CampusModel,
+        HomeView,
+        InboxView,
+        MessageView
+    ) {
+        var campus = null;
 
-        App.initialize();
+        var Router = Backbone.Router.extend({
+            routes: {
+                '' : 'index',
+                'courses': 'courses',
+                'messages': 'messages',
+                'profile': 'profile',
+                'message/:id': 'message'
+            },
+            index: function () {
+                campus = new CampusModel();
+                campus.fetch({
+                    success: function () {
+                        var homeView = new HomeView();
+                        homeView.render();
+                    },
+                    error: function () {
+                        var loginView = new LoginView();
+                        loginView.render();
+                    }
+                });
+            },
+            courses: function () {
+            },
+            messages: function () {
+                var inboxView = new InboxView({
+                    model: campus
+                });
+                inboxView.render();
+            },
+            message: function (messageId) {
+                if (!messageId) {
+                    alert('No message');
+
+                    return;
+                }
+
+                var messageView = new MessageView({
+                    messageId: parseInt(messageId)
+                });
+                messageView.render();
+            },
+            profile: function () {
+            }
+        });
+
+        new Router();
+        Backbone.history.start();
     });
 });
