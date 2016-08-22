@@ -5,14 +5,16 @@ document.addEventListener('deviceready', function () {
         'model/campus',
         'view/home',
         'view/inbox',
-        'view/message'
+        'view/message',
+        'view/user-profile'
     ], function (
         Backbone,
         LoginView,
         CampusModel,
         HomeView,
         InboxView,
-        MessageView
+        MessageView,
+        UserProfileView
     ) {
         var campus = null;
 
@@ -58,6 +60,9 @@ document.addEventListener('deviceready', function () {
                 messageView.render();
             },
             profile: function () {
+                new UserProfileView({
+                    campus: campus.toJSON()
+                });
             }
         });
 

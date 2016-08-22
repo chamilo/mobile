@@ -1,0 +1,37 @@
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <ul class="nav navbar-nav pull-left">
+            <li>
+                <a id="btn-close" href="#" role="button">
+                    <i class="glyphicon glyphicon-remove"></i> My profile
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<section class="container">
+    <img src="<%= pictureUri %>" alt="<%= username %>'s picture" class="img-responsive img-circle center-block">
+    <h3 class="page-header">
+        <%= fullName %>
+        <% if (officialCode) { %>
+            <small><%= officialCode %></small>
+        <% } %>
+    </h3>
+    <dl>
+        <dt>Username</dt>
+        <dd><%= username %></dd>
+        <% if (phone) { %>
+            <dt>Phone</dt>
+            <dd><%= phone %></dd>
+        <% } %>
+    </dl>
+    <% if (extra) { %>
+        <dl>
+            <% extra.forEach(function (item) { %>
+                <dt><%= item.title %></dt>
+                <dd><%= item.value %></dd>
+            <% }); %>
+        </dl>
+    <% } %>
+</section>
