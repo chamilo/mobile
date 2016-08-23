@@ -24,6 +24,10 @@ hr {
     color: #FFF;
 }
 
+.btn-course-tool {
+    padding-bottom: 15px;
+}
+
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 }

@@ -7,7 +7,8 @@ document.addEventListener('deviceready', function () {
         'view/inbox',
         'view/message',
         'view/user-profile',
-        'view/courses'
+        'view/courses',
+        'view/course-home'
     ], function (
         Backbone,
         LoginView,
@@ -16,7 +17,8 @@ document.addEventListener('deviceready', function () {
         InboxView,
         MessageView,
         UserProfileView,
-        CoursesView
+        CoursesView,
+        CourseHomeView
     ) {
         var campus = null;
 
@@ -26,7 +28,8 @@ document.addEventListener('deviceready', function () {
                 'messages': 'messages',
                 'profile': 'profile',
                 'message/:id': 'message',
-                'courses': 'courses'
+                'courses': 'courses',
+                'course/:id': 'courseHome'
             },
             index: function () {
                 campus = new CampusModel();
@@ -67,6 +70,12 @@ document.addEventListener('deviceready', function () {
             courses: function () {
                 new CoursesView({
                     campus: campus.toJSON()
+                });
+            },
+            courseHome: function (courseId) {
+                new CourseHomeView({
+                    campus: campus.toJSON(),
+                    courseId: courseId
                 });
             }
         });
