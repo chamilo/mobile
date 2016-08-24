@@ -11,7 +11,8 @@ document.addEventListener('deviceready', function () {
         'view/course-home',
         'view/course-descriptions',
         'view/course-announcements',
-        'view/course-announcement'
+        'view/course-announcement',
+        'view/course-agenda'
     ], function (
         Backbone,
         LoginView,
@@ -24,7 +25,8 @@ document.addEventListener('deviceready', function () {
         CourseHomeView,
         CourseDescriptionsView,
         CourseAnnouncementsView,
-        CourseAnnouncementView
+        CourseAnnouncementView,
+        CourseAgendaView
     ) {
         var campus = null;
 
@@ -38,7 +40,8 @@ document.addEventListener('deviceready', function () {
                 'course/:id': 'courseHome',
                 'description/:id': 'courseDescription',
                 'announcements/:id': 'courseAnnouncements',
-                'announcement/:course/:id': 'courseAnnouncement'
+                'announcement/:course/:id': 'courseAnnouncement',
+                'agenda/:id': 'courseAgenda'
             },
             index: function () {
                 campus = new CampusModel();
@@ -101,7 +104,7 @@ document.addEventListener('deviceready', function () {
 
                 $('body').html(
                     courseAnnouncementsView.render().el
-                );
+                    );
             },
             courseAnnouncement: function (courseId, announcementId) {
                 var courseAnnouncementView = new CourseAnnouncementView({
@@ -112,6 +115,16 @@ document.addEventListener('deviceready', function () {
 
                 $('body').html(
                     courseAnnouncementView.render().el
+                );
+            },
+            courseAgenda: function (courseId) {
+                var courseAgendaView = new CourseAgendaView({
+                    campus: campus.toJSON(),
+                    courseId: courseId
+                });
+
+                $('body').html(
+                    courseAgendaView.render().el
                 );
             }
         });

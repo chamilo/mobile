@@ -1,0 +1,31 @@
+<header class="panel-heading">
+    <h3 class="panel-title"><%= title %></h3>
+</header>
+<div class="panel-body">
+    <ul class='list-unstyled'>
+        <% if (startDate == endDate) { %>
+            <li>
+                <span class="glyphicon glyphicon-time" aria-hidden="true"></span> <%= startDate %>
+            </li>
+            <% if (isAllDay) { %>
+                <li>All day</li>
+            <% } %>
+        <% } else { %>
+            <li>
+                <span class="glyphicon glyphicon-time" aria-hidden="true"></span> <%= startDate %>
+            </li>
+            <li>
+                <% if (isAllDay) { %>
+                    All day
+                <% } else { %>
+                    <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
+                    <%= endDate %>
+                <% } %>
+            </li>
+        <% } %>
+    </ul>
+    <hr>
+    <div class="article-content">
+        <%= content %>
+    </div>
+</div>
