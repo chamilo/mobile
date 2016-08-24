@@ -28,6 +28,10 @@ hr {
     padding-bottom: 25px;
 }
 
+.article-content {
+    overflow-x: auto;
+}
+
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 }

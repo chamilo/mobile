@@ -4,6 +4,8 @@ define([
     'collection/course-announcements',
     'view/course-announcement-item'
 ], function (Backbone, viewTemplate, CourseAnnouncementsCollection, CourseAnnouncementItemView) {
+    var courseId = 0;
+
     var CourseAnnouncementsView = Backbone.View.extend({
         tagName: 'div',
         attributes: {
@@ -11,6 +13,8 @@ define([
         },
         template: _.template(viewTemplate),
         initialize: function (options) {
+            courseId = options.courseId;
+
             this.collection = new CourseAnnouncementsCollection();
             this.collection
                 .on('add', this.renderAnnouncement, this);
@@ -27,13 +31,16 @@ define([
         },
         renderAnnouncement: function (announcement) {
             var announcementItemView = new CourseAnnouncementItemView({
-                model: announcement
+                model: announcement,
+                attributes: {
+                    href: '#announcement/' + courseId + '/' + announcement.get('id')
+                }
             });
-            
+
             this.$el
                 .find('#ls-course-announcements')
                 .append(announcementItemView.render().el);
-            
+
             return this;
         },
         events: {

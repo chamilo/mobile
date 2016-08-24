@@ -1,0 +1,33 @@
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <ul class="nav navbar-nav navbar-left">
+            <li>
+                <a id="btn-back" href="#" role="button">
+                    <i class="glyphicon glyphicon-arrow-left"></i> Announcement
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<section class="container">
+    <article class="panel panel-default" id="course-announcement-<%= id %>">
+        <header class="panel-heading">
+            <h3 class="panel-title"><%= title %></h3>
+        </header>
+        <div class="panel-body">
+            <ul class="list-unstyled">
+                <li>
+                    <span class="glyphicon glyphicon-user" aria-hidden="true"></span> <%= creatorName %>
+                </li>
+                <li>
+                    <span class="glyphicon glyphicon-time" aria-hidden="true"></span> <%= date %>
+                </li>
+            </ul>
+            <hr>
+            <div class="article-content">
+                <%= content %>
+            </div>
+        </div>
+    </article>
+</section>
