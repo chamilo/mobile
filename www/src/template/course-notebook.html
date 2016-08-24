@@ -1,0 +1,14 @@
+<header class="panel-heading">
+    <h3 class="panel-title"><%= title %></h3>
+</header>
+<div class="panel-body">
+    <%= description %>
+</div>
+<div class="panel-footer">
+    <ul class="list-unstyled">
+        <li>Creation date: <%= creationDate %></li>
+        <% if (updateDate) { %>
+            <li>Update date: <%= updateDate %></li>
+        <% } %>
+    </ul>
+</div>

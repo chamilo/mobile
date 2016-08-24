@@ -12,7 +12,8 @@ document.addEventListener('deviceready', function () {
         'view/course-descriptions',
         'view/course-announcements',
         'view/course-announcement',
-        'view/course-agenda'
+        'view/course-agenda',
+        'view/course-notebooks'
     ], function (
         Backbone,
         LoginView,
@@ -26,7 +27,8 @@ document.addEventListener('deviceready', function () {
         CourseDescriptionsView,
         CourseAnnouncementsView,
         CourseAnnouncementView,
-        CourseAgendaView
+        CourseAgendaView,
+        CourseNotebooksView
     ) {
         var campus = null;
 
@@ -41,7 +43,8 @@ document.addEventListener('deviceready', function () {
                 'description/:id': 'courseDescription',
                 'announcements/:id': 'courseAnnouncements',
                 'announcement/:course/:id': 'courseAnnouncement',
-                'agenda/:id': 'courseAgenda'
+                'agenda/:id': 'courseAgenda',
+                'notebook/:id': 'courseNotebooks'
             },
             index: function () {
                 campus = new CampusModel();
@@ -125,6 +128,16 @@ document.addEventListener('deviceready', function () {
 
                 $('body').html(
                     courseAgendaView.render().el
+                );
+            },
+            courseNotebooks: function (courseId) {
+                var courseNotebooksView = new CourseNotebooksView({
+                    campus: campus.toJSON(),
+                    courseId: courseId
+                });
+
+                $('body').html(
+                    courseNotebooksView.render().el
                 );
             }
         });
