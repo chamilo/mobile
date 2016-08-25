@@ -1,0 +1,12 @@
+<a href="#" class="btn-download" target="_blank">
+    <div class="media-left">
+        <img class="media-object" src="img/<%= icon %>" alt="<%= title %>" width="40">
+    </div>
+    <div class="media-body word-break-all">
+        <h5 class="media-heading"><%= title %></h5>
+        <%= path %>
+        <% if (type === 'file') { %>
+            <br><%= size %>
+        <% } %>
+    </div>
+</a>
