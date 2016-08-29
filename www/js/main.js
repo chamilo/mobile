@@ -15,7 +15,8 @@ document.addEventListener('deviceready', function () {
         'view/course-agenda',
         'view/course-notebooks',
         'view/course-documents',
-        'view/course-forumcategories'
+        'view/course-forumcategories',
+        'view/course-forum'
     ], function (
         Backbone,
         LoginView,
@@ -32,7 +33,8 @@ document.addEventListener('deviceready', function () {
         CourseAgendaView,
         CourseNotebooksView,
         CourseDocumentsView,
-        CourseForumCategoriesView
+        CourseForumCategoriesView,
+        CourseForumView
     ) {
         var campus = null;
 
@@ -50,7 +52,8 @@ document.addEventListener('deviceready', function () {
                 'agenda/:id': 'courseAgenda',
                 'notebook/:id': 'courseNotebooks',
                 'documents/:id/:dir_id': 'courseDocuments',
-                'forumcategories/:id': 'courseForumCategories'
+                'forumcategories/:id': 'courseForumCategories',
+                'forum/:id': 'courseForum'
             },
             index: function () {
                 campus = new CampusModel();
@@ -165,6 +168,16 @@ document.addEventListener('deviceready', function () {
                 
                 $('body').html(
                     forumCategoriesView.render().el
+                );
+            },
+            courseForum: function (forumId) {
+                var forumView = new CourseForumView({
+                    campus: campus.toJSON(),
+                    forumId: forumId
+                });
+
+                $('body').html(
+                    forumView.render().el
                 );
             }
         });

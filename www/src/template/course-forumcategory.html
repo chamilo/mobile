@@ -6,7 +6,7 @@
     </h4>
 </header>
 <div id="collapse-<%= id %>" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading-<%= id %>">
-    <% if (description.length) { %>
+    <% if (description) { %>
         <div class="panel-body">
             <%= description %>
         </div>
@@ -15,14 +15,18 @@
     <% if (forums.length) { %>
         <ul class="list-group">
             <% forums.forEach(function (forum) { %>
-                <li class="list-group-item" id="forum-<%= forum-id %>">
-                    <h5 class="list-group-item-heading"><%= forum.title %></h5>
+                <li class="list-group-item" id="forum-<%= forum.id %>">
+                    <h5 class="list-group-item-heading">
+                        <a href="#forum/<%= forum.forumId %>"><%= forum.title %></a>
+                    </h5>
                     <div class="list-group-item-text">
-                        <% if (description.length) { %>
-                            <%= description %>
-                            <br>
+                        <% if (forum.description) { %>
+                            <%= forum.description %>
                         <% } %>
-                        <small><%= forum.lastPost.user %> - <%= forum.lastPost.date %></small>
+
+                        <% if (forum.lastPost) { %>
+                            <small><%= forum.lastPost.user %> - <%= forum.lastPost.date %></small>
+                        <% } %>
                     </div>
                 </li>
             <% }) %>

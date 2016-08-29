@@ -7,7 +7,8 @@ define([
             title: '',
             catId: 0,
             description: '',
-            forums: []
+            forums: [],
+            courseId: 0
         }
     });
 
