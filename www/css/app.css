@@ -36,15 +36,6 @@ hr {
     word-break: break-all;
 }
 
-.media a,
-.media a:focus {
-    color: #000;
-}
-.media a:hover,
-.media a:focus {
-    text-decoration: none;
-}
-
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 }
