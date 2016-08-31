@@ -3,19 +3,21 @@
         <ul class="nav navbar-nav pull-left">
             <li>
                 <a id="btn-close" href="#" role="button">
-                    <i class="glyphicon glyphicon-remove"></i><span class="sr-only">Back</span>
+                    <span class="fa fa-arrow-left" aria-hidden="true"></span><span class="sr-only">Back</span>
                 </a>
             </li>
         </ul>
         <ul class="nav navbar-nav pull-right">
             <li class="disabled">
                 <a id="prev-message" href="#" role="button">
-                    <i class="glyphicon glyphicon-chevron-left"></i><span class="sr-only">Previous</span>
+                    <span class="fa fa-chevron-left" aria-hidden="true"></span>
+                    <span class="sr-only">Previous</span>
                 </a>
             </li>
             <li class="disabled">
                 <a id="next-message" href="#" role="button">
-                    <i class="glyphicon glyphicon-chevron-right"></i><span class="sr-only">Next</span>
+                    <span class="fa fa-chevron-right" aria-hidden="true"></span>
+                    <span class="sr-only">Next</span>
                 </a>
             </li>
         </ul>
@@ -28,15 +30,15 @@
             <h1 class="panel-title"><%= title %></h1>
         </header>
         <div class="panel-body">
-            <i class="glyphicon glyphicon-user"></i> <%= sender %>
+            <span class="fa fa-user" aria-hidden="true"></span> <%= sender %>
             <a href="<%= url %>" target="_blank" rel="external" class="btn btn-xs btn-warning pull-right">
-                <i class="glyphicon glyphicon-link"></i> View in platform
+                <span class="fa fa-link" aria-hidden="true"></span> View in platform
             </a>
             <br>
-            <i class="glyphicon glyphicon-time"></i> <%= sendDate %>
+            <span class="fa fa-clock-o" aria-hidden="true"></span> <%= sendDate %>
             <% if (hasAttachment) { %>
                 <br>
-                <i class="glyphicon glyphicon-paperclip"></i> Has attachments
+                <span class="fa fa-paperclip" aria-hidden="true"></span> Has attachments
             <% } %>
             <hr>
             <%= content %>

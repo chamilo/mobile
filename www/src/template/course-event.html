@@ -5,20 +5,20 @@
     <ul class='list-unstyled'>
         <% if (startDate == endDate) { %>
             <li>
-                <span class="glyphicon glyphicon-time" aria-hidden="true"></span> <%= startDate %>
+                <span class="fa fa-clock-o" aria-hidden="true"></span> <%= startDate %>
             </li>
             <% if (isAllDay) { %>
                 <li>All day</li>
             <% } %>
         <% } else { %>
             <li>
-                <span class="glyphicon glyphicon-time" aria-hidden="true"></span> <%= startDate %>
+                <span class="fa fa-clock-o" aria-hidden="true"></span> <%= startDate %>
             </li>
             <li>
                 <% if (isAllDay) { %>
                     All day
                 <% } else { %>
-                    <span class="glyphicon glyphicon-time" aria-hidden="true"></span>
+                    <span class="fa fa-clock-o" aria-hidden="true"></span>
                     <%= endDate %>
                 <% } %>
             </li>
