@@ -4,7 +4,6 @@ define([
     var CourseForumModel = Backbone.Model.extend({
         defaults: {
             id: 0,
-            forumId: 0,
             title: '',
             description: '',
             image: '',

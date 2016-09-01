@@ -6,8 +6,6 @@ define([
             id: 0,
             cId: 0,
             title: '',
-            numberOfReplies: 0,
-            numberOfViews: 0,
             forumId: 0,
             posts: []
         },
