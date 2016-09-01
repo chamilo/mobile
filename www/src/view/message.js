@@ -38,8 +38,8 @@ define([
                 this.model.toJSON()
             );
 
-            this.btnPrev = this.$('#prev-message');
-            this.btnNext = this.$('#next-message');
+            this.btnPrev = this.$el.find('#prev-message');
+            this.btnNext = this.$el.find('#next-message');
 
             this.model.previous({
                 success: function (message) {
