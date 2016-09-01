@@ -24,8 +24,25 @@
                             <%= forum.description %>
                         <% } %>
 
+                        <div class="row">
+                            <div class="col-xs-6">
+                                Number of threads
+                            </div>
+                            <div class="col-xs-6">
+                                forum.numberOfThreads
+                            </div>
+                        </div>
+
                         <% if (forum.lastPost) { %>
-                            <small><%= forum.lastPost.user %> - <%= forum.lastPost.date %></small>
+                            <div class="row">
+                                <div class="col-xs-6">
+                                    Last post
+                                </div>
+                                <div class="col-xs-6">
+                                    forum.lastPost.user<br>
+                                    forum.lastPost.date
+                                </div>
+                            </div>
                         <% } %>
                     </div>
                 </li>

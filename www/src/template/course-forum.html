@@ -20,7 +20,7 @@
     <div class="list-group" id="ls-course-forum-threads">
         <% if (threads.length) { %>
             <% threads.forEach(function (thread) { %>
-                <a href="#forumthread/<%= thread.iid %>" class="list-group-item" id="forum-thread-<%= thread.iid %>">
+                <a href="#forumthread/<%= thread.id %>" class="list-group-item" id="forum-thread-<%= thread.id %>">
                     <h4 class="list-group-item-heading"><%= thread.title %></h4>
                     <ul class="list-unstyled">
                         <li>
