@@ -59,10 +59,14 @@ define([
     };
 
     var InboxView = Backbone.View.extend({
-        el: 'body',
+        tagName: 'div',
+        attributes: {
+            id: 'inbox'
+        },
         initialize: function () {
             this.collection = new MessagesCollection();
-            this.collection.on('add', this.renderMessage, this);
+            this.collection
+                .on('add', this.renderMessage, this);
 
             campus = this.model;
             messages = this.collection;
@@ -70,8 +74,10 @@ define([
         template: _.template(inboxTemplate),
         render: function () {
             this.el.innerHTML = this.template();
-            this.collection.each(this.renderMessage, this);
-            this.collection.fetch();
+            this.collection
+                .each(this.renderMessage, this);
+            this.collection
+                .fetch();
 
             loadMessages();
 
@@ -82,10 +88,19 @@ define([
                 model: message
             });
 
-            this.$el.find('#messages-list')
+            this.$el
+                .find('#messages-list')
                 .prepend(
                     messageView.render().el
                 );
+        },
+        events: {
+            'click #btn-back': 'btnBackOnClick'
+        },
+        btnBackOnClick: function (e) {
+            e.preventDefault();
+
+            window.history.back();
         }
     });
 

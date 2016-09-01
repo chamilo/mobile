@@ -75,7 +75,10 @@ document.addEventListener('deviceready', function () {
                 var inboxView = new InboxView({
                     model: campus
                 });
-                inboxView.render();
+
+                $('body').html(
+                    inboxView.render().el
+                );
             },
             message: function (messageId) {
                 if (!messageId) {
