@@ -17,7 +17,8 @@ document.addEventListener('deviceready', function () {
         'view/course-documents',
         'view/course-forumcategories',
         'view/course-forum',
-        'view/course-forumthread'
+        'view/course-forumthread',
+        'view/course-lpcategories'
     ], function (
         Backbone,
         LoginView,
@@ -36,7 +37,8 @@ document.addEventListener('deviceready', function () {
         CourseDocumentsView,
         CourseForumCategoriesView,
         CourseForumView,
-        CourseForumThreadView
+        CourseForumThreadView,
+        CourseLpCategoriesView
     ) {
         var campus = null;
 
@@ -57,7 +59,7 @@ document.addEventListener('deviceready', function () {
                 'forumcategories/:id': 'courseForumCategories',
                 'forum/:id': 'courseForum',
                 'forumthread/:id': 'courseForumThread',
-                'learningpath/:id': 'courseLearningPath'
+                'lpcategories/:id': 'courseLpCategories'
             },
             index: function () {
                 campus = new CampusModel();
@@ -197,8 +199,15 @@ document.addEventListener('deviceready', function () {
                     forumThreadView.render().el
                 );
             },
-            courseLearningPath: function (courseId) {
-                
+            courseLpCategories: function (courseId) {
+                var lpCategoriesView = new CourseLpCategoriesView({
+                    campus: campus.toJSON(),
+                    courseId: courseId
+                });
+
+                $('body').html(
+                    lpCategoriesView.render().el
+                );
             }
         });
 

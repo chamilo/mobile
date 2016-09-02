@@ -1,0 +1,11 @@
+<h3 class="page-header"><%= name %></h3>
+<% if (learnpaths.length) { %>
+    <ul class="list-group">
+        <% learnpaths.forEach(function (learnPath) { %>
+            <li class="list-group-item">
+                <span class="badge"><%= learnPath.progress %>%</span>
+                <%= learnPath.title %>
+            </li>
+        <% }) %>
+    </ul>
+<% } %>
