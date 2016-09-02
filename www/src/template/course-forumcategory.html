@@ -17,7 +17,7 @@
             <% forums.forEach(function (forum) { %>
                 <li class="list-group-item" id="forum-<%= forum.id %>">
                     <h5 class="list-group-item-heading">
-                        <a href="#forum/<%= forum.forumId %>"><%= forum.title %></a>
+                        <a href="#forum/<%= forum.id %>"><%= forum.title %></a>
                     </h5>
                     <div class="list-group-item-text">
                         <% if (forum.description) { %>
@@ -29,7 +29,7 @@
                                 Number of threads
                             </div>
                             <div class="col-xs-6">
-                                forum.numberOfThreads
+                                <%= forum.numberOfThreads %>
                             </div>
                         </div>
 
@@ -39,8 +39,8 @@
                                     Last post
                                 </div>
                                 <div class="col-xs-6">
-                                    forum.lastPost.user<br>
-                                    forum.lastPost.date
+                                    <%= forum.lastPost.user %><br>
+                                    <%= forum.lastPost.date %>
                                 </div>
                             </div>
                         <% } %>
