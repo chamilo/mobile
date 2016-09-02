@@ -56,7 +56,8 @@ document.addEventListener('deviceready', function () {
                 'documents/:id/:dir_id': 'courseDocuments',
                 'forumcategories/:id': 'courseForumCategories',
                 'forum/:id': 'courseForum',
-                'forumthread/:id': 'courseForumThread'
+                'forumthread/:id': 'courseForumThread',
+                'learningpath/:id': 'courseLearningPath'
             },
             index: function () {
                 campus = new CampusModel();
@@ -195,6 +196,9 @@ document.addEventListener('deviceready', function () {
                 $('body').html(
                     forumThreadView.render().el
                 );
+            },
+            courseLearningPath: function (courseId) {
+                
             }
         });
 
