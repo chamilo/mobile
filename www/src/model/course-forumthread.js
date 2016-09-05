@@ -1,6 +1,7 @@
 define([
-    'backbone'
-], function (Backbone) {
+    'backbone',
+    'model/course-forumpost'
+], function (Backbone, CourseForumPostModel) {
     var CourseForumThreadModel = Backbone.Model.extend({
         defaults: {
             id: 0,
@@ -26,7 +27,22 @@ define([
                         return;
                     }
 
-                    self.set(response.data);
+                    self.set({
+                        id: response.data.id,
+                        cId: response.data.cId,
+                        forumId: response.data.forumId,
+                        title: response.data.title
+                    });
+
+                    var posts = [];
+
+                    _.each(response.data.posts, function (postData) {
+                        var forumPost = new CourseForumPostModel(postData);
+
+                        posts.push(forumPost);
+                    });
+
+                    self.set('posts', posts);
 
                     deferred.resolve();
                 })

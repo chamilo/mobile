@@ -1,8 +1,9 @@
 define([
     'backbone',
     'text!template/course-forumthread.html',
-    'model/course-forumthread'
-], function (Backbone, viewTemplate, CourseForumThreadModel) {
+    'model/course-forumthread',
+    'view/course-forumpost-item'
+], function (Backbone, viewTemplate, CourseForumThreadModel, CourseForumPostItemView) {
     var CourseForumThreadView = Backbone.View.extend({
         tagName: 'div',
         attributes: {
@@ -25,7 +26,20 @@ define([
                     .innerHTML = this.template(this.model.toJSON());
             }
 
+            _.each(this.model.get('posts'), this.renderPost, this);
+
             return this;
+        },
+        renderPost: function (post) {
+            var postView = new CourseForumPostItemView({
+                model: post
+            });
+
+            this.$el
+                .find('#lst-posts')
+                .append(
+                    postView.render().el
+                );
         }
     });
 

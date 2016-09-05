@@ -14,40 +14,7 @@
     <header>
         <h2 class="page-header"><%= title %></h2>
     </header>
-    <hr>
     <% if (posts.length) { %>
-        <div class="media-list">
-            <% posts.forEach(function (post) { %>
-                <article class="media" id="forum-thread-post-<%= post.id %>">
-                    <div class="media-body">
-                        <header class="media-heading">
-                            <h4><%= post.title %></h4>
-                        </header>
-                        <div>
-                            <ul class="list-unstyled">
-                                <li>
-                                    <span class="fa fa-user"></span> <%= post.author %>
-                                </li>
-                                <li>
-                                    <span class="fa fa-clock-o"></span> <%= post.date %>
-                                </li>
-                            </ul>
-                            <%= post.text %>
-                        </div>
-                        <footer class="text-right">
-                            <div class="btn-group">
-                                <a href="#" class="btn btn-primary">
-                                    <span class="fa fa-reply" aria-hidden="true"></span> Reply
-                                </a>
-                                <a href="#" class="btn btn-info">
-                                    <span class="fa fa-quote-left" aria-hidden="true"></span> Quote
-                                </a>
-                            </div>
-                        </footer>
-                    </div>
-                </article>
-                <hr>
-            <% }) %>
-        </div>
+        <div class="media-list" id="lst-posts"></div>
     <% } %>
 </section>
