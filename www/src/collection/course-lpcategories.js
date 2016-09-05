@@ -22,6 +22,10 @@ define([
                     }
 
                     response.data.forEach(function (lpCategory) {
+                        if (!lpCategory.learnpaths.length) {
+                            return;
+                        }
+
                         self.add(lpCategory);
                     });
 
