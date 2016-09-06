@@ -38,6 +38,10 @@ define([
 
                     _.each(response.data.posts, function (postData) {
                         var forumPost = new CourseForumPostModel(postData);
+                        forumPost.set({
+                            threadId: self.get('id'),
+                            forumId: self.get('forumId')
+                        });
 
                         posts.push(forumPost);
                     });

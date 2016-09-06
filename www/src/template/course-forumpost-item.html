@@ -15,13 +15,61 @@
     </div>
     <footer class="text-right">
         <div class="btn-group">
-            <a href="#" class="btn btn-primary">
+            <button class="btn btn-primary" id="btn-reply-<%= id %>" type="button" data-toggle="modal" data-target="#dlg-frmreply-<%= id %>" data-isquote="false">
                 <span class="fa fa-reply" aria-hidden="true"></span> Reply
-            </a>
-            <a href="#" class="btn btn-info">
+            </button>
+            <button class="btn btn-info" id="btn-quote-<%= id %>" type="button" data-toggle="modal" data-target="#dlg-frmreply-<%= id %>" data-isquote="true">
                 <span class="fa fa-quote-left" aria-hidden="true"></span> Quote
-            </a>
+            </button>
         </div>
     </footer>
     <hr>
 </div>
+
+<aside class="modal fade" id="dlg-frmreply-<%= id %>" tabindex="-1" role="dialog" aria-labelledby="dlg-frmreply-<%= id %>-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="dlg-frmreply-<%= id %>-label">Reply to <cite><%= title %></cite></h4>
+            </div>
+            <div class="modal-body">
+                <form action="#" method="post" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="txt-title-<%= id %>">Title</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="txt-title-<%= id %>" placeholder="Title">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="txt-text-<%= id %>">Text</label>
+                        <div class="col-sm-10">
+                            <blockquote id="lbl-quote-<%= id %>">
+                                <cite><%= author %></cite>
+                                <%= text %>
+                            </blockquote>
+                            <textarea class="form-control" id="txt-text-<%= id %>" rows="6"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" id="chk-notify-<%= id %>" value="1"> Notify me by email
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <button type="submit" class="btn btn-primary btn-block">Reply this post</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="txt-parent-<%= id %>" value="<%= parentId %>">
+                    <input type="hidden" id="txt-thread-<%= id %>" value="<%= threadId %>">
+                    <input type="hidden" id="txt-forum-<%= id %>" value="<%= forumId %>">
+                </form>
+            </div>
+        </div>
+    </div>
+</aside>
