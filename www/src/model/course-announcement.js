@@ -17,8 +17,8 @@ define([
                 api_key: options.campus.apiKey,
                 username: options.campus.username,
                 action: 'course_announcement',
-                c_id: options.courseId,
-                a_id: options.announcementId
+                course: options.courseId,
+                announcement: options.announcementId
             })
                 .done(function (response) {
                     if (response.error) {

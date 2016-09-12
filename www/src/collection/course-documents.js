@@ -12,7 +12,7 @@ define([
                 api_key: options.campus.apiKey,
                 username: options.campus.username,
                 action: 'course_documents',
-                c_id: options.courseId,
+                course: options.courseId,
                 dir_id: options.directoryId
             })
                 .done(function (response) {

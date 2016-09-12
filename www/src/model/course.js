@@ -26,7 +26,7 @@ define([
                 api_key: options.request.apiKey,
                 username: options.request.username,
                 action: 'course_info',
-                c_id: this.cid
+                course: this.cid
             }, function (response) {
                 if (response.error) {
                     deferred.reject(response.message);
