@@ -13,8 +13,7 @@ define([
             forumId: 0
         },
         save: function (attributes, options) {
-            var self = this,
-                deferred = new $.Deferred;
+            var deferred = new $.Deferred;
 
             $.post(options.campus.url + '/main/webservices/api/v2.php', {
                 username: options.campus.username,

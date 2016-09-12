@@ -30,9 +30,15 @@ define([
             var id = this.model.get('id'),
                 forumPost = new CourseForumPostModel();
 
+            var text = this.$el.find('#txt-text-' + id).val();
+
+            if (!$('#lbl-quote-' + id).is('hidden')) {
+                text = $('#lbl-quote-' + id).html() + text;
+            }
+
             forumPost.save({
                 title: this.$el.find('#txt-title-' + id).val(),
-                text: this.$el.find('#txt-text-' + id).val(),
+                text: text,
                 parentId: this.$el.find('#txt-parent-' + id).val(),
                 forumId: this.$el.find('#txt-forum-' + id).val(),
                 threadId: this.$el.find('#txt-thread-' + id).val()
