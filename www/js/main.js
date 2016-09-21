@@ -58,7 +58,7 @@ document.addEventListener('deviceready', function () {
                 'documents/:id/:dir_id': 'courseDocuments',
                 'forumcategories/:id': 'courseForumCategories',
                 'forum/:id': 'courseForum',
-                'forumthread/:id': 'courseForumThread',
+                'forumthread/:forum/:id': 'courseForumThread',
                 'lpcategories/:id': 'courseLpCategories'
             },
             index: function () {
@@ -110,6 +110,8 @@ document.addEventListener('deviceready', function () {
                     campus: campus.toJSON(),
                     courseId: courseId
                 });
+
+                window.sessionStorage.setItem('courseId', courseId);
             },
             courseDescription: function (courseId) {
                 new CourseDescriptionsView({
@@ -189,10 +191,11 @@ document.addEventListener('deviceready', function () {
                     forumView.render().el
                 );
             },
-            courseForumThread: function (threadId) {
+            courseForumThread: function (forum, thread) {
                 var forumThreadView = new CourseForumThreadView({
                     campus: campus.toJSON(),
-                    threadId: threadId
+                    forumId: forum,
+                    threadId: thread
                 });
 
                 $('body').html(

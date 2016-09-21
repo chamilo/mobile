@@ -23,7 +23,7 @@ define([
                 text: attributes.text,
                 thread: attributes.threadId,
                 forum: attributes.forumId,
-                notify: options.notify,
+                notify: options.notify ? 1 : 0,
                 parent: attributes.parentId,
                 course: options.courseId
             })

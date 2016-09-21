@@ -20,6 +20,14 @@ hr {
     color: #FFF !important;
 }
 
+.navbar-left {
+    float: left;
+}
+
+.navbar-right {
+    float: right;
+}
+
 .navbar-brand {
     color: #FFF;
 }

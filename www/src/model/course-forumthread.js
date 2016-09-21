@@ -18,7 +18,9 @@ define([
                 username: options.campus.username,
                 api_key: options.campus.apiKey,
                 action: 'course_forumthread',
-                thread: options.threadId
+                thread: options.threadId,
+                forum: options.forumId,
+                course: window.sessionStorage.getItem('courseId')
             })
                 .done(function (response) {
                     if (response.error) {

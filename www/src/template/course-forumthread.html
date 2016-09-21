@@ -7,6 +7,13 @@
                 </a>
             </li>
         </ul>
+        <ul class="nav navbar-nav navbar-right">
+            <li>
+                <a id="btn-reply" href="#" role="button" title="Reply" data-toggle="modal" data-target="#dlg-reply">
+                    <span class="fa fa-reply" aria-hidden="true"></span><span class="sr-only">Reply</span>
+                </a>
+            </li>
+        </ul>
     </div>
 </nav>
 
@@ -18,3 +25,46 @@
         <div class="media-list" id="lst-posts"></div>
     <% } %>
 </section>
+
+<aside class="modal fade" id="dlg-reply" tabindex="-1" role="dialog" aria-labelledby="dlg-reply-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="dlg-reply-label">Reply to <cite><%= title %></cite></h4>
+            </div>
+            <div class="modal-body">
+                <form action="#" method="post" id="frm-reply" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="txt-reply-title">Title</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="txt-reply-title" value="Re: <%= title %>" placeholder="Title">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="txt-reply-text">Text</label>
+                        <div class="col-sm-10">
+                            <textarea class="form-control" id="txt-reply-text" rows="8"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" id="chk-reply-notify" value="1"> Notify me by email
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <button type="submit" class="btn btn-primary btn-block">Reply this thread</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="txt-reply-thread" value="<%= id %>">
+                    <input type="hidden" id="txt-reply-forum" value="<%= forumId %>">
+                </form>
+            </div>
+        </div>
+    </div>
+</aside>

@@ -2,10 +2,10 @@ define([
     'backbone',
     'text!template/course-forumthread.html',
     'model/course-forumthread',
-    'view/course-forumpost-item'
-], function (Backbone, viewTemplate, CourseForumThreadModel, CourseForumPostItemView) {
-    var campus = null,
-        courseId = 0;
+    'view/course-forumpost-item',
+    'model/course-forumpost'
+], function (Backbone, viewTemplate, CourseForumThreadModel, CourseForumPostItemView, CourseForumPostModel) {
+    var campus = null;
 
     var CourseForumThreadView = Backbone.View.extend({
         tagName: 'div',
@@ -47,6 +47,41 @@ define([
                 .append(
                     postView.render().el
                 );
+        },
+        events: {
+            'click #btn-back': 'btnBackOnClick',
+            'submit #frm-reply': 'frmReplyOnSubmit'
+        },
+        btnBackOnClick: function (e) {
+            e.preventDefault();
+
+            window.history.back();
+        },
+        frmReplyOnSubmit: function (e) {
+            e.preventDefault();
+
+            var id = this.model.get('id'),
+                forumPost = new CourseForumPostModel();
+
+            forumPost.save({
+                title: this.$el.find('#txt-reply-title').val(),
+                text: this.$el.find('#txt-reply-text').val(),
+                forum: this.$el.find('#txt-reply-forum').val(),
+                threadId: this.$el.find('#txt-reply-thread').val()
+            }, {
+                courseId: window.sessionStorage.getItem('courseId'),
+                notify: this.$el.find('#chk-notify-' + id).is(':checked') ? 1 : 0,
+                campus: campus
+            })
+                .done(function () {
+                    var currentFragment = Backbone.history.fragment;
+
+                    Backbone.history.fragment = null;
+                    Backbone.history.navigate(currentFragment, true);
+                })
+                .fail(function (errorMessage) {
+                    alert(errorMessage ? errorMessage : 'Forum post not saved');
+                });
         }
     });
 
