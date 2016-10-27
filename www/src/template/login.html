@@ -1,28 +1,30 @@
-<section class="container">
-    <p>
-        <img class="center-block" src="img/logo.png" alt="Chamilo Messaging">
-    </p>
-
+<section id="page-login">
+<div class="container">
+    <div class="logotipo">
+        <img class="center-block" src="img/logo-chamilo.svg" alt="Chamilo Mobile">
+    </div>
+    <div class="cartoon">
+        <img class="center-block" src="img/cartoon.svg" alt="Chamilo Mobile">
+    </div>
     <div id="div-alert"></div>
-
-    <form action="#" id="frm-login" method="post">
-        <fieldset>
-            <legend>Host</legend>
+    <form action="#" class="form-login" id="frm-login" method="post">
+        <fieldset class="my-host">
+            <legend class="app-text-normal bold">Mi Chamilo</legend>
             <div class="form-group">
                 <label class="sr-only">Domain</label>
-                <input type="url" name="hostname" id="txt-hostname" required class="form-control" placeholder="https://" value="http://192.168.0.30/111x">
+                <input type="url" name="hostname" id="txt-hostname" required class="form-control app-text-normal" placeholder="https://" value="http://192.168.0.30/111x">
             </div>
         </fieldset>
-        <fieldset>
-            <legend>User account</legend>
+        <fieldset class="my-host">
+            <legend class="app-text-normal bold">Mi cuenta</legend>
             <div class="form-group">
                 <label class="sr-only">Username</label>
-                <input type="text" name="username" id="txt-username" required class="form-control" placeholder="Username">
+                <input type="text" name="username" id="txt-username" required class="form-control app-text-normal" placeholder="Username">
                 <label class="sr-only">Password</label>
                 <div class="row">
                     <div class="col-xs-12">
                         <div class="input-group">
-                            <input type="password" id="txt-password" required name="password" class="form-control" placeholder="Password">
+                            <input type="password" id="txt-password" required name="password" class="form-control app-text-normal" placeholder="Password">
                             <span class="input-group-addon">
                                 <input type="checkbox" id="chk-password">
                             </span>
@@ -32,9 +34,11 @@
             </div>
         </fieldset>
         <div class="form-group">
-            <button class="btn btn-primary btn-lg btn-block" id="btn-submit" type="submit">
-                <span class="fa fa-sign-in" aria-hidden="true"></span> Sign In
+            <button class="btn btn-block btn-warning btn-lg btn-raised" id="btn-submit" type="submit">
+                <span class="fa fa-sign-in" aria-hidden="true"></span> Iniciar Sesión
+                <div class="ripple-container"></div>
             </button>
         </div>
     </form>
+</div>
 </section>

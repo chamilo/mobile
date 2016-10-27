@@ -1,6 +1,6 @@
 body {
-    padding-top: 80px;
-    padding-bottom: 15px;
+    padding: 0;
+    margin: 0;
 }
 hr {
     margin: 10px 0;
@@ -39,7 +39,51 @@ hr {
 .word-break-all {
     word-break: break-all;
 }
-
+/* CSS PAGES */
+#page-login{
+    background: #01579b;
+    background: -moz-linear-gradient(top, #01579b 0%, #2196f3 100%);
+    background: -webkit-linear-gradient(top, #01579b 0%,#2196f3 100%);
+    background: linear-gradient(to bottom, #01579b 0%,#2196f3 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#01579b', endColorstr='#2196f3',GradientType=0 );
+    position: static;
+    top: 0;
+    margin: 0;
+    padding-bottom: 10%;
+    padding-top: 10%;
+}
+#page-login .form-group{
+    margin: 0;
+}
+.my-host legend{
+    border: none;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+.app-text-normal{
+    color: #FFFFFF;
+}
+.app-text-secundary{
+    color: #757575;
+}
+.app-text-primary{
+    color: #212121;
+}
+.app-color-accentuation{
+    color: #FF5722;
+}
+.app-color-primary{
+    color: #2196f3;
+}
+.app-color-dark{
+    color: #1976D2;
+}
+.app-color-primary-light{
+    color: #BBDEFB;
+}
+.bold{
+    font-weight: bold;
+}
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 }
