@@ -4,7 +4,7 @@ define([
 ], function (Backbone, courseTemplate) {
     var CourseItemView = Backbone.View.extend({
         tagName: 'div',
-        className: 'thumbnail',
+        className: 'panel panel-default',
         template: _.template(courseTemplate),
         render: function () {
             var html = this.template(
