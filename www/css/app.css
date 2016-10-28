@@ -41,7 +41,7 @@ hr {
 }
 /* CSS PAGES */
 .page-inside{
-    margin-top: 65px;
+    padding-top: 65px;
 }
 #page-login{
     background: #01579b;
@@ -110,8 +110,14 @@ hr {
 .btn-back a:hover, .btn-back a:focus{
     text-decoration: none;
 }
+.bg-white{
+    background-color: white;
+}
+.navbar .title span{
+    margin-right: 10px;
+}
 .navbar .title{
-    width: 340px;
+    width: 320px;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
@@ -135,15 +141,18 @@ hr {
     -moz-box-shadow: 0px 0px 8px 0px rgba(0,0,0,0.15);
     box-shadow: 0px 0px 8px 0px rgba(0,0,0,0.15);
 }
-.list-tools .tool:hover{
-    -webkit-box-shadow: 0px 0px 11px 0px rgba(0,0,0,0.35);
-    -moz-box-shadow: 0px 0px 11px 0px rgba(0,0,0,0.35);
-    box-shadow: 0px 0px 11px 0px rgba(0,0,0,0.35);
+.list-tools .tool:hover, .list-tools .tool:focus{
+    -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.45);
+    -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.45);
+    box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.45);
 }
 .list-tools .tool a{
     display: block;
     font-size: 14px;
     color: #212121;
+}
+.list-tools .tool a:hover, .list-tools .tool a:focus{
+    text-decoration: none;
 }
 .list-tools .tool .title{
     font-size: 12px;
