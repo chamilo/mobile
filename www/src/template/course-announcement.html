@@ -1,33 +1,38 @@
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-    <div class="container">
-        <ul class="nav navbar-nav navbar-left">
-            <li>
-                <a id="btn-back" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span> Announcement
-                </a>
-            </li>
-        </ul>
+<nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
+    <div class="container-fluid">
+        <div class="pull-left">
+            <div class="btn-back">
+                <div class="title">
+                    <a id="btn-back" href="#" role="button">
+                        <span class="fa fa-arrow-left" aria-hidden="true"></span> Announcement
+                    </a>
+                </div>
+            </div>
+        </div>     
     </div>
 </nav>
-
-<section class="container">
-    <article class="panel panel-default" id="course-announcement-<%= id %>">
-        <header class="panel-heading">
-            <h3 class="panel-title"><%= title %></h3>
-        </header>
-        <div class="panel-body">
-            <ul class="list-unstyled">
-                <li>
-                    <span class="fa fa-user" aria-hidden="true"></span> <%= creatorName %>
-                </li>
-                <li>
-                    <span class="fa fa-clock-o" aria-hidden="true"></span> <%= date %>
-                </li>
-            </ul>
-            <hr>
-            <div class="article-content">
-                <%= content %>
-            </div>
+<section class="page-inside">
+    <div class="container">
+        <div id="course-announcement-<%= id %>">
+            <article class="panel panel-default" >
+                <header class="panel-heading">
+                    <h3 class="panel-title"><%= title %></h3>
+                </header>
+                <div class="panel-body">
+                    <ul class="list-unstyled">
+                        <li>
+                            <span class="fa fa-user" aria-hidden="true"></span> <%= creatorName %>
+                        </li>
+                        <li>
+                            <span class="fa fa-clock-o" aria-hidden="true"></span> <%= date %>
+                        </li>
+                    </ul>
+                    <hr>
+                    <div class="article-content">
+                        <%= content %>
+                    </div>
+                </div>
+            </article>
         </div>
-    </article>
+    </div>
 </section>

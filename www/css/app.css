@@ -194,6 +194,10 @@ hr {
 .list-documents li .btn-download .media-body .size-file{
     color: #757575;
 }
+.panel-heading img{
+    float: left;
+    padding-right: 5px;
+}
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 }
