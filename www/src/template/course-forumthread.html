@@ -17,13 +17,17 @@
     </div>
 </nav>
 
-<section class="container" id="forum-thread-<%= id %>">
-    <header>
-        <h2 class="page-header"><%= title %></h2>
-    </header>
-    <% if (posts.length) { %>
-        <div class="media-list" id="lst-posts"></div>
-    <% } %>
+<section class="page-inside">
+    <div class="container">
+        <article id="forum-thread-<%= id %>">
+            <header>
+                <h2 class="page-header"><%= title %></h2>
+            </header>
+            <% if (posts.length) { %>
+                <div class="media-list" id="lst-posts"></div>
+            <% } %>
+        </article>
+    </div>
 </section>
 
 <aside class="modal fade" id="dlg-reply" tabindex="-1" role="dialog" aria-labelledby="dlg-reply-label">
