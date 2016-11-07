@@ -156,13 +156,11 @@ define([
                 }
             };
         },
-        delete: function () {
-            var deferred = $.Deferred();
-            var transaction = DB.conx.transaction([
-                DB.TABLE_MESSAGE
-            ], 'readwrite');
-            var store = transaction.objectStore(DB.TABLE_MESSAGE);
-            var request = store.clear();
+        clear: function () {
+            var deferred = $.Deferred(),
+                transaction = DB.conx.transaction([DB.TABLE_MESSAGE], 'readwrite'),
+                store = transaction.objectStore(DB.TABLE_MESSAGE),
+                request = store.clear();
 
             request.onsuccess = function () {
                 deferred.resolve();

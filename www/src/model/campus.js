@@ -98,29 +98,21 @@ define([
                 ;
             };
         },
-        destroy: function (options) {
-            options = $.extend({
-                success: null,
-                error: null
-            }, options);
-
-            var transaction = DB.conx.transaction([
-                DB.TABLE_ACCOUNT
-            ], 'readwrite');
-            var store = transaction.objectStore(DB.TABLE_ACCOUNT);
-            var request = store.clear();
+        clear: function () {
+            var deferred = new $.Deferred(),
+                transaction = DB.conx.transaction([DB.TABLE_ACCOUNT], 'readwrite'),
+                store = transaction.objectStore(DB.TABLE_ACCOUNT),
+                request = store.clear();
 
             request.onsuccess = function () {
-                if (options.success) {
-                    options.success();
-                }
+                deferred.resolve();
             };
 
             request.onerror = function () {
-                if (options.error) {
-                    options.error();
-                }
+                deferred.reject();
             };
+
+            return deferred.promise();
         }
     });
 

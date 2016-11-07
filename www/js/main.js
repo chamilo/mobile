@@ -18,7 +18,8 @@ document.addEventListener('deviceready', function () {
         'view/course-forumcategories',
         'view/course-forum',
         'view/course-forumthread',
-        'view/course-lpcategories'
+        'view/course-lpcategories',
+        'view/logout'
     ], function (
         Backbone,
         LoginView,
@@ -38,7 +39,8 @@ document.addEventListener('deviceready', function () {
         CourseForumCategoriesView,
         CourseForumView,
         CourseForumThreadView,
-        CourseLpCategoriesView
+        CourseLpCategoriesView,
+        LogoutView
     ) {
         var campus = null,
             pushNotification;
@@ -60,7 +62,8 @@ document.addEventListener('deviceready', function () {
                 'forumcategories/:id': 'courseForumCategories',
                 'forum/:id': 'courseForum',
                 'forumthread/:forum/:id': 'courseForumThread',
-                'lpcategories/:id': 'courseLpCategories'
+                'lpcategories/:id': 'courseLpCategories',
+                'logout': 'logout'
             },
             index: function () {
                 campus = new CampusModel();
@@ -257,6 +260,25 @@ document.addEventListener('deviceready', function () {
                 $('body').html(
                     lpCategoriesView.render().el
                 );
+            },
+            logout: function () {
+                var view = new LogoutView();
+
+                view.render();
+
+                $('body').html(view.el);
+
+                view.onClear(function () {
+                    if (!pushNotification) {
+                        return;
+                    }
+
+                    pushNotification.unregister(function () {
+                        console.log('unregister success');
+                    }, function () {
+                        console.log('unregister error');
+                    });
+                });
             }
         });
 
