@@ -40,7 +40,8 @@ document.addEventListener('deviceready', function () {
         CourseForumThreadView,
         CourseLpCategoriesView
     ) {
-        var campus = null;
+        var campus = null,
+            pushNotification;
 
         var Router = Backbone.Router.extend({
             routes: {
@@ -67,6 +68,51 @@ document.addEventListener('deviceready', function () {
                     success: function () {
                         var homeView = new HomeView();
                         homeView.render();
+
+                        var gcmSenderId = campus.get('gcmSenderId');
+
+                        if (!gcmSenderId) {
+                            return;
+                        }
+
+                        pushNotification = window.PushNotification.init({
+                            android: {
+                                senderID: gcmSenderId
+                            },
+                            ios: {
+                                alert: 'true',
+                                badge: 'true',
+                                sound: 'true'
+                            },
+                            windows: {}
+                        });
+                        pushNotification.on('error', pushError);
+                        pushNotification.on('registration', pushRegistration);
+                        pushNotification.on('notification', pushNotification);
+
+                        function pushError(e) {
+                            console.log('error' + e.message);
+                        }
+
+                        function pushRegistration(data) {
+                            console.log(data);
+                            $.post(
+                                campus.get('url') + '/main/webservices/api/v2.php',
+                                {
+                                    action: 'gcm_id',
+                                    username: campus.get('username'),
+                                    api_key: campus.get('apiKey'),
+                                    registration_id: data.registrationId
+                                },
+                                function (data) {
+                                    console.log(data);
+                                }
+                            );
+                        }
+
+                        function pushNotification(data) {
+                            console.log(data);
+                        }
                     },
                     error: function () {
                         var loginView = new LoginView();
