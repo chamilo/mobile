@@ -1,45 +1,51 @@
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-    <div class="container">
-        <ul class="nav navbar-nav navbar-left">
-            <li>
-                <a id="btn-back" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span> Forum
-                </a>
-            </li>
-        </ul>
+<nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
+    <div class="container-fluid">
+        <div class="pull-left">
+            <div class="btn-back">
+                <div class="title">
+                    <a id="btn-back" href="#" role="button">
+                        <span class="fa fa-arrow-left" aria-hidden="true"></span> Forum
+                    </a>
+                </div>
+            </div>
+        </div>     
     </div>
 </nav>
 
-<section class="container" id="course-forum-<%= id %>">
-    <header>
-        <h2 class="page-header"><%= title %></h2>
-    </header>
-    <% if (description) { %>
-        <%= description %>
-    <% } %>
-    <div class="list-group" id="ls-course-forum-threads">
-        <% if (threads.length) { %>
-            <% threads.forEach(function (thread) { %>
-                <a href="#forumthread/<%= id %>/<%= thread.id %>" class="list-group-item" id="forum-thread-<%= thread.id %>">
-                    <h4 class="list-group-item-heading"><%= thread.title %></h4>
-                    <ul class="list-unstyled">
-                        <li>
-                            <span class="fa fa-user" aria-hidden="true"></span> <%= thread.author %>
-                        </li>
-                        <li>
-                            <span class="fa fa-clock-o" aria-hidden="true"></span> <%= thread.lastEditDate %>
-                        </li>
-                    </ul>
-                    <div class="list-group-item-text">
-                        <div class="row">
-                            <div class="col-xs-3 text-right">Views</div>
-                            <div class="col-xs-3"><%= thread.numberOfViews %></div>
-                            <div class="col-xs-3 text-right">Replies</div>
-                            <div class="col-xs-3"><%= thread.numberOfReplies %></div>
-                        </div>
-                    </div>
-                </a>
-            <% }); %>
-        <% } %>
+<section class="page-inside">
+    <div class="container">
+        <article id="course-forum-<%= id %>">
+            <header>
+                <h2 class="page-header"><%= title %></h2>
+            </header>
+            <% if (description) { %>
+                <%= description %>
+            <% } %>
+            <div class="list-group" id="ls-course-forum-threads">
+                <% if (threads.length) { %>
+                    <% threads.forEach(function (thread) { %>
+                        <a href="#forumthread/<%= id %>/<%= thread.id %>" class="list-group-item" id="forum-thread-<%= thread.id %>">
+                            <h4 class="list-group-item-heading"><%= thread.title %></h4>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <span class="fa fa-user" aria-hidden="true"></span> <%= thread.author %>
+                                </li>
+                                <li>
+                                    <span class="fa fa-clock-o" aria-hidden="true"></span> <%= thread.lastEditDate %>
+                                </li>
+                            </ul>
+                            <div class="list-group-item-text">
+                                <div class="row">
+                                    <div class="col-xs-3 text-right">Views</div>
+                                    <div class="col-xs-3"><%= thread.numberOfViews %></div>
+                                    <div class="col-xs-3 text-right">Replies</div>
+                                    <div class="col-xs-3"><%= thread.numberOfReplies %></div>
+                                </div>
+                            </div>
+                        </a>
+                    <% }); %>
+                <% } %>
+            </div>
+        </article>
     </div>
 </section>

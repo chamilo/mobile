@@ -1,7 +1,7 @@
 var require = {
     paths: {
         jquery: '../vendor/jquery/jquery.min',
-        bootstrap: '../bootstrap/js/bootstrap.min',
+        bootstrap: '../vendor/bootstrap/js/bootstrap.min',
         underscore: '../vendor/underscore.js/underscore-min',
         backbone: '../vendor/backbone.js/backbone-min',
         text: '../vendor/require-text/text.min',

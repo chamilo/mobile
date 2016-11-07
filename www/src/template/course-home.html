@@ -1,72 +1,77 @@
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-    <div class="container">
-        <ul class="nav navbar-nav navbar-left">
-            <li>
-                <a id="btn-go-to-back" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= title %>
+<nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
+    <div class="container-fluid">
+        <div class="pull-left">
+            <div class="btn-back">
+                <a id="btn-close" href="#" role="button">
+                    <div class="title">
+                        <span class="fa fa-arrow-left" aria-hidden="true"></span><%= title %>
+                    </div>
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>     
     </div>
 </nav>
-
-<section class="container">
-    <div class="row">
-        <div class="col-xs-6 col-md-3">
-            <p>
-                <a href="#description/<%= id %>" class="btn btn-default">
-                    <img class="center-block" src="img/info.svg" alt="Description">
-                    <span class="h4">Description</span>
-                </a>
-            </p>
-        </div>
-        <div class="col-xs-6 col-md-3">
-            <p>
-                <a class="btn btn-default" href="#documents/<%= id %>/0">
-                    <img class="center-block" src="img/documents.svg" alt="Documents">
-                    <span class="h4">Documents</span>
-                </a>
-            </p>
-        </div>
-        <div class="col-xs-6 col-md-3">
-            <p>
-                <a class="btn btn-default" href="#lpcategories/<%= id %>">
-                    <img class="center-block" src="img/scorms.svg" alt="Documents">
-                    <span class="h4">Learning paths</span>
-                </a>
-            </p>
-        </div>
-        <div class="col-xs-6 col-md-3">
-            <p>
-                <a class="btn btn-default" href="#forumcategories/<%= id %>">
-                    <img class="center-block" src="img/forum.svg" alt="Forum">
-                    <span class="h4">Forum</span>
-                </a>
-            </p>
-        </div>
-        <div class="col-xs-6 col-md-3">
-            <p>
-                <a class="btn btn-default" href="#agenda/<%= id %>">
-                    <img class="center-block" src="img/agenda.svg" alt="Agenda">
-                    <span class="h4">Agenda</span>
-                </a>
-            </p>
-        </div>
-        <div class="col-xs-6 col-md-3">
-            <p>
-                <a class="btn btn-default" href="#notebook/<%= id %>">
-                    <img class="center-block" src="img/notebook.svg" alt="Notebook">
-                    <span class="h4">Notebook</span>
-                </a>
-            </p>
-        </div>
-        <div class="col-xs-6 col-xs-offset-3 col-md-3">
-            <p>
-                <a class="btn btn-default" href="#announcements/<%= id %>">
-                    <img class="center-block" src="img/valves.svg" alt="Announcement">
-                    <span class="h4">Announcements</span>
-                </a>
-            </p>
-        </div>
+<section class="page-inside bg-white">
+    <div class="container">
+        <article class="list-tools">
+            <div class="row">
+                <div class="col-xs-6 col-md-4">
+                    <div class="tool">
+                        <a href="#description/<%= id %>" class="items">
+                            <img class="center-block" src="img/info.svg" alt="Description">
+                            <div class="title">Description</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-4">
+                    <div class="tool">
+                        <a class="item" href="#documents/<%= id %>/0">
+                            <img class="center-block" src="img/documents.svg" alt="Documents">
+                            <div class="title">Documents</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-4">
+                    <div class="tool">
+                        <a class="item" href="#lpcategories/<%= id %>">
+                            <img class="center-block" src="img/scorms.svg" alt="Documents">
+                            <div class="title">Learning paths</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-4">
+                    <div class="tool">
+                        <a class="item" href="#forumcategories/<%= id %>">
+                            <img class="center-block" src="img/forum.svg" alt="Forum">
+                            <div class="title">Forum</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-4">
+                    <div class="tool">
+                        <a class="item" href="#agenda/<%= id %>">
+                            <img class="center-block" src="img/agenda.svg" alt="Agenda">
+                            <div class="title">Agenda</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-4">
+                    <div class="tool">
+                        <a class="item" href="#notebook/<%= id %>">
+                            <img class="center-block" src="img/notebook.svg" alt="Notebook">
+                            <div class="title">Notebook</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-4">
+                    <div class="tool">
+                        <a class="item" href="#announcements/<%= id %>">
+                            <img class="center-block" src="img/valves.svg" alt="Announcement">
+                            <div class="title">Announcements</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </article>
     </div>
 </section>

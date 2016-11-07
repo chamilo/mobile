@@ -4,9 +4,9 @@
     </div>
     <div class="media-body word-break-all">
         <h5 class="media-heading"><%= title %></h5>
-        <%= path %>
+        <p class="path-file"><%= path %></p>
         <% if (type === 'file') { %>
-            <br><%= size %>
+            <div class="size-file"><%= size %></div>
         <% } %>
     </div>
 </a>

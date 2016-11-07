@@ -1,6 +1,6 @@
 body {
-    padding-top: 80px;
-    padding-bottom: 15px;
+    padding: 0;
+    margin: 0;
 }
 hr {
     margin: 10px 0;
@@ -39,7 +39,165 @@ hr {
 .word-break-all {
     word-break: break-all;
 }
-
+/* CSS PAGES */
+.page-inside{
+    padding-top: 65px;
+}
+#page-login{
+    background: #01579b;
+    background: -moz-linear-gradient(top, #01579b 0%, #2196f3 100%);
+    background: -webkit-linear-gradient(top, #01579b 0%,#2196f3 100%);
+    background: linear-gradient(to bottom, #01579b 0%,#2196f3 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#01579b', endColorstr='#2196f3',GradientType=0 );
+    position: static;
+    top: 0;
+    margin: 0;
+    padding-bottom: 10%;
+    padding-top: 10%;
+}
+#page-login .form-group{
+    margin: 0;
+}
+.my-host legend{
+    border: none;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+.app-text-normal{
+    color: #FFFFFF;
+}
+.app-text-secundary{
+    color: #757575;
+}
+.app-text-primary{
+    color: #212121;
+}
+.app-color-accentuation{
+    color: #FF5722;
+}
+.app-color-primary{
+    color: #2196f3;
+}
+.app-color-dark{
+    color: #1976D2;
+}
+.app-color-primary-light{
+    color: #BBDEFB;
+}
+.bold{
+    font-weight: bold;
+}
+.description{
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+.description .title{
+    font-size: 18px;
+    margin: 0;
+}
+.description .code{
+    font-size: 12px;
+    padding-bottom: 4px;
+    padding-top: 4px;
+}
+.btn-back{
+    color: #FFFFFF;
+    padding-top: 15px;
+}
+.btn-back a{
+    color: #FFFFFF;
+}
+.btn-back a:hover, .btn-back a:focus{
+    text-decoration: none;
+}
+.bg-white{
+    background-color: white;
+}
+.navbar .title span{
+    margin-right: 10px;
+}
+.navbar .title{
+    width: 320px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.nav-shadow{
+    -webkit-box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
+    -moz-box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
+    box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
+}
+.list-tools .tool{
+    text-align: center;
+    border: 1px solid #bdbdbd;
+    background-color: #FFFFFF;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    margin-bottom: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    -webkit-box-shadow: 0px 0px 8px 0px rgba(0,0,0,0.15);
+    -moz-box-shadow: 0px 0px 8px 0px rgba(0,0,0,0.15);
+    box-shadow: 0px 0px 8px 0px rgba(0,0,0,0.15);
+}
+.list-tools .tool:hover, .list-tools .tool:focus{
+    -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.45);
+    -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.45);
+    box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.45);
+}
+.list-tools .tool a{
+    display: block;
+    font-size: 14px;
+    color: #212121;
+}
+.list-tools .tool a:hover, .list-tools .tool a:focus{
+    text-decoration: none;
+}
+.list-tools .tool .title{
+    font-size: 12px;
+    color: #212121;
+}
+.list-documents{
+    padding: 0;
+    margin: 0;
+    border-left: 1px solid #DDD;
+    border-right: 1px solid #DDD;
+    margin-bottom: 15px;
+}
+.list-documents li{
+    padding: 0;
+    border-top: 1px solid #DDD;
+    border-bottom: 1px solid #DDD;
+    margin-bottom: -1px;
+}
+.list-documents li.media{
+    margin-top: 0;
+}
+.list-documents li .btn-download{
+    display: inline-block;
+    padding: 10px;
+}
+.list-documents li .btn-download .media-heading{
+    color: #212121;
+}
+.list-documents li .btn-download:hover,
+.list-documents li .btn-download:focus
+{
+    background-color: #E5EDF9;
+    text-decoration: none;
+}
+.list-documents li .btn-download .media-body .path-file{
+    color: #212121;
+    margin-bottom: 5px;
+}
+.list-documents li .btn-download .media-body .size-file{
+    color: #757575;
+}
+.panel-heading img{
+    float: left;
+    padding-right: 5px;
+}
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 }
