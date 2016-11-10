@@ -39,7 +39,10 @@ hr {
 .page-inside{
     padding-top: 65px;
 }
-#page-login{
+.splash{
+    padding-top: 150px;
+}
+#page-login, #page-splash{
     background: #01579b;
     background: -moz-linear-gradient(top, #01579b 0%, #2196f3 100%);
     background: -webkit-linear-gradient(top, #01579b 0%,#2196f3 100%);
