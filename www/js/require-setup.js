@@ -6,7 +6,6 @@ var require = {
         backbone: '../vendor/backbone.js/backbone-min',
         text: '../vendor/require-text/text.min',
         i18n: '../vendor/require-i18n/i18n.min',
-        router: '../js/router',
         ripples: '../vendor/bootstrap-material-design/js/ripples.min',
         material: '../vendor/bootstrap-material-design/js/material.min'
     },
@@ -34,12 +33,5 @@ var require = {
         }
     },
     baseUrl: 'src',
-    deps: ['database', 'bootstrap', 'ripples', 'material'],
-    callback: function (DB) {
-        DB
-            .setUp()
-            .fail(function (e) {
-                alert('Database setup: Fail');
-            });
-    }
+    deps: ['bootstrap', 'ripples', 'material']
 };

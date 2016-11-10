@@ -1,7 +1,3 @@
-body {
-    padding: 0;
-    margin: 0;
-}
 hr {
     margin: 10px 0;
 }
@@ -48,13 +44,19 @@ hr {
     background: -moz-linear-gradient(top, #01579b 0%, #2196f3 100%);
     background: -webkit-linear-gradient(top, #01579b 0%,#2196f3 100%);
     background: linear-gradient(to bottom, #01579b 0%,#2196f3 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#01579b', endColorstr='#2196f3',GradientType=0 );
-    position: static;
+    bottom: 0;
+    display: table;
+    height: 100%;
+    position: absolute;
     top: 0;
-    margin: 0;
-    padding-bottom: 10%;
-    padding-top: 10%;
+    width: 100%;
 }
+#page-login .container,
+#page-splash .container {
+    display: table-cell;
+    vertical-align: middle;
+}
+
 #page-login .form-group{
     margin: 0;
 }
