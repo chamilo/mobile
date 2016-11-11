@@ -5,9 +5,7 @@ var require = {
         underscore: '../vendor/underscore.js/underscore-min',
         backbone: '../vendor/backbone.js/backbone-min',
         text: '../vendor/require-text/text.min',
-        i18n: '../vendor/require-i18n/i18n.min',
-        ripples: '../vendor/bootstrap-material-design/js/ripples.min',
-        material: '../vendor/bootstrap-material-design/js/material.min'
+        i18n: '../vendor/require-i18n/i18n.min'
     },
     shim: {
         ripples: {
@@ -19,7 +17,7 @@ var require = {
             exports: 'jQuery.material'
         },
         bootstrap: {
-            'deps': ['jquery']
+            deps: ['jquery']
         },
         backbone: {
             deps: ['underscore', 'jquery']
@@ -33,5 +31,5 @@ var require = {
         }
     },
     baseUrl: 'src',
-    deps: ['bootstrap', 'ripples', 'material']
+    deps: ['bootstrap']
 };
