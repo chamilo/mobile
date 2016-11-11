@@ -12,16 +12,10 @@ define([
             gcmSenderId: null
         },
         fetch: function (options) {
-            options = $.extend({
-                success: null,
-                error: null
-            }, options);
+            var self = this,
+                deferred = new $.Deferred();
 
-            var self = this;
-
-            var transaction = DB.conx.transaction([
-                DB.TABLE_ACCOUNT
-            ], 'readwrite');
+            var transaction = DB.conx.transaction([DB.TABLE_ACCOUNT], 'readwrite');
             var store = transaction.objectStore(DB.TABLE_ACCOUNT);
             var request = store.openCursor();
 
@@ -29,9 +23,7 @@ define([
                 var cursor = e.target.result;
 
                 if (!cursor) {
-                    if (options.error) {
-                        options.error(e);
-                    }
+                    deferred.reject();
 
                     return;
                 }
@@ -46,16 +38,14 @@ define([
                     gcmSenderId: cursor.value.gcmSenderId
                 });
 
-                if (options.success) {
-                    options.success(e);
-                }
+                deferred.resolve();
             };
 
             request.onerror = function (e) {
-                if (options.error) {
-                    options.error(e);
-                }
+                deferred.reject();
             };
+
+            return deferred.promise();
         },
         save: function (attributes, options) {
             var self = this;

@@ -6,7 +6,6 @@ define([
     'view/inbox',
     'view/message',
     'view/user-profile',
-    'view/courses',
     'view/course-home',
     'view/course-descriptions',
     'view/course-announcements',
@@ -27,7 +26,6 @@ define([
     InboxView,
     MessageView,
     UserProfileView,
-    CoursesView,
     CourseHomeView,
     CourseDescriptionsView,
     CourseAnnouncementsView,
@@ -50,7 +48,6 @@ define([
             'messages': 'messages',
             'profile': 'profile',
             'message/:id': 'message',
-            'courses': 'courses',
             'course/:id': 'courseHome',
             'description/:id': 'courseDescription',
             'announcements/:id': 'courseAnnouncements',
@@ -66,8 +63,17 @@ define([
         },
         index: function () {
             campus = new CampusModel();
-            campus.fetch({
-                success: function () {
+            campus.fetch()
+                .done(function () {
+                    $.ajaxSetup({
+                        url: campus.get('url') + '/main/webservices/api/v2.php',
+                        data: {
+                            api_key: campus.get('apiKey'),
+                            username: campus.get('username')
+                        },
+                        dataType: 'json'
+                    });
+
                     var homeView = new HomeView();
                     homeView.render();
 
@@ -88,39 +94,26 @@ define([
                         },
                         windows: {}
                     });
-                    pushNotification.on('error', pushError);
-                    pushNotification.on('registration', pushRegistration);
-                    pushNotification.on('notification', pushNotification);
-
-                    function pushError(e) {
-                        console.log('error' + e.message);
-                    }
-
-                    function pushRegistration(data) {
-                        console.log(data);
-                        $.post(
-                            campus.get('url') + '/main/webservices/api/v2.php',
-                            {
+                    pushNotification.on('error', function (e) {
+                        console.log(e);
+                    });
+                    pushNotification.on('registration', function (data) {
+                        $.ajax({
+                            type: 'post',
+                            data: {
                                 action: 'gcm_id',
-                                username: campus.get('username'),
-                                api_key: campus.get('apiKey'),
                                 registration_id: data.registrationId
-                            },
-                            function (data) {
-                                console.log(data);
                             }
-                        );
-                    }
-
-                    function pushNotification(data) {
+                        });
+                    });
+                    pushNotification.on('notification', function (data) {
                         console.log(data);
-                    }
-                },
-                error: function () {
+                    });
+                })
+                .fail(function () {
                     var loginView = new LoginView();
                     loginView.render();
-                }
-            });
+                });
         },
         messages: function () {
             var inboxView = new InboxView({
@@ -145,11 +138,6 @@ define([
         },
         profile: function () {
             new UserProfileView({
-                campus: campus.toJSON()
-            });
-        },
-        courses: function () {
-            new CoursesView({
                 campus: campus.toJSON()
             });
         },

@@ -21,13 +21,12 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
-            $
-                .post(campus.url + '/main/webservices/api/v2.php', {
-                    action: 'user_courses',
-                    api_key: campus.apiKey,
-                    username: campus.username
-                })
-                .done(function (response) {
+            $.ajax({
+                type: 'post',
+                data: {
+                    action: 'user_courses'
+                },
+                success: function (response) {
                     if (response.error) {
                         deferred.reject(response.message);
 
@@ -39,10 +38,11 @@ define([
                     });
 
                     deferred.resolve();
-                })
-                .fail(function () {
+                },
+                error: function () {
                     deferred.reject();
-                });
+                }
+            });
 
             return deferred.promise();
         }
