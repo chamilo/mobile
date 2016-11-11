@@ -2,26 +2,9 @@ hr {
     margin: 10px 0;
 }
 
-.nav.navbar-nav {
-    font-size: 20px;
-}
-.nav.navbar-nav li {
-    display: inline-block;
-}
-.nav.navbar-nav li a {
-    color: #FFF !important;
-}
 .nav.navbar-nav li.disabled a {
     opacity: 0.5 !important;
     color: #FFF !important;
-}
-
-.navbar-left {
-    float: left;
-}
-
-.navbar-right {
-    float: right;
 }
 
 .navbar-brand {
@@ -60,13 +43,9 @@ hr {
     vertical-align: middle;
 }
 
-#page-login .form-group{
-    margin: 0;
-}
 .my-host legend{
     border: none;
-    margin-bottom: 10px;
-    font-size: 18px;
+    margin-bottom: 0;
 }
 .app-text-normal{
     color: #FFFFFF;
