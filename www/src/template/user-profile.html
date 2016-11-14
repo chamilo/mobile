@@ -3,7 +3,7 @@
         <ul class="nav navbar-nav pull-left">
             <li>
                 <a id="btn-close" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span> My profile
+                    <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.myProfile %>
                 </a>
             </li>
         </ul>
@@ -19,10 +19,10 @@
         <% } %>
     </h3>
     <dl>
-        <dt>Username</dt>
+        <dt><%= lang.username %></dt>
         <dd><%= username %></dd>
         <% if (phone) { %>
-            <dt>Phone</dt>
+            <dt><%= lang.phoneNumber %></dt>
             <dd><%= phone %></dd>
         <% } %>
     </dl>

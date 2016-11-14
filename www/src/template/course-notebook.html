@@ -6,9 +6,9 @@
 </div>
 <div class="panel-footer">
     <ul class="list-unstyled">
-        <li>Creation date: <%= creationDate %></li>
+        <li><%= lang.creationDate(creationDate) %></li>
         <% if (updateDate) { %>
-            <li>Update date: <%= updateDate %></li>
+            <li><%= lang.updateDate(updateDate) %></li>
         <% } %>
     </ul>
 </div>

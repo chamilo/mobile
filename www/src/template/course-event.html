@@ -11,7 +11,7 @@
                 <span class="fa fa-clock-o" aria-hidden="true"></span> <%= startDate %>
             </li>
             <% if (isAllDay) { %>
-                <li>All day</li>
+                <li><%= lang.allDay %></li>
             <% } %>
         <% } else { %>
             <li>
@@ -19,7 +19,7 @@
             </li>
             <li>
                 <% if (isAllDay) { %>
-                    All day
+                    <%= lang.allDay %>
                 <% } else { %>
                     <span class="fa fa-clock-o" aria-hidden="true"></span>
                     <%= endDate %>

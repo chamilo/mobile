@@ -3,14 +3,14 @@
         <ul class="nav navbar-nav navbar-left">
             <li>
                 <a id="btn-back" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span> Thread
+                    <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.thread %>
                 </a>
             </li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
             <li>
                 <a id="btn-reply" href="#" role="button" title="Reply" data-toggle="modal" data-target="#dlg-reply">
-                    <span class="fa fa-reply" aria-hidden="true"></span><span class="sr-only">Reply</span>
+                    <span class="fa fa-reply" aria-hidden="true"></span><span class="sr-only"><%= lang.reply %></span>
                 </a>
             </li>
         </ul>
@@ -40,13 +40,13 @@
             <div class="modal-body">
                 <form action="#" method="post" id="frm-reply" class="form-horizontal">
                     <div class="form-group">
-                        <label class="col-sm-2 control-label" for="txt-reply-title">Title</label>
+                        <label class="col-sm-2 control-label" for="txt-reply-title"><%= lang.title %></label>
                         <div class="col-sm-10">
-                            <input type="text" class="form-control" id="txt-reply-title" value="Re: <%= title %>" placeholder="Title">
+                            <input type="text" class="form-control" id="txt-reply-title" value="Re: <%= title %>" placeholder="<%= lang.title %>">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="col-sm-2 control-label" for="txt-reply-text">Text</label>
+                        <label class="col-sm-2 control-label" for="txt-reply-text"><%= lang.text %></label>
                         <div class="col-sm-10">
                             <textarea class="form-control" id="txt-reply-text" rows="8"></textarea>
                         </div>
@@ -55,14 +55,14 @@
                         <div class="col-sm-offset-2 col-sm-10">
                             <div class="checkbox">
                                 <label>
-                                    <input type="checkbox" id="chk-reply-notify" value="1"> Notify me by email
+                                    <input type="checkbox" id="chk-reply-notify" value="1"> <%= lang.notifyMeByEmail %>
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">
-                            <button type="submit" class="btn btn-primary btn-block">Reply this thread</button>
+                            <button type="submit" class="btn btn-primary btn-block"><%= lang.replyThisThread %></button>
                         </div>
                     </div>
                     <input type="hidden" id="txt-reply-thread" value="<%= id %>">

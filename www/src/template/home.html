@@ -7,24 +7,24 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a id="btn-back-url" class="navbar-brand no-event" href="#exit">Home</a>
+            <a id="btn-back-url" class="navbar-brand no-event" href="#exit"><% print(lang.myCourses) %></a>
         </div>
 
         <div class="collapse navbar-collapse" id="navbar-collapse">
             <ul class="nav navbar-nav navbar-right">
                 <li>
                     <a href="#messages">
-                        <span class="fa fa-inbox" aria-hidden="true"></span> Messages
+                        <span class="fa fa-inbox" aria-hidden="true"></span> <% print(lang.messages) %>
                     </a>
                 </li>
                 <li>
                     <a href="#profile">
-                        <span class="fa fa-user" aria-hidden="true"></span> Profile
+                        <span class="fa fa-user" aria-hidden="true"></span> <% print(lang.profile) %>
                     </a>
                 </li>
                 <li>
                     <a href="#logout">
-                        <span class="fa fa-sign-out" aria-hidden="true"></span> Sing out
+                        <span class="fa fa-sign-out" aria-hidden="true"></span> <% print(lang.signOut) %>
                     </a>
                 </li>
             </ul>

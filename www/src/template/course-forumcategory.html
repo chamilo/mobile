@@ -26,7 +26,7 @@
 
                         <div class="row">
                             <div class="col-xs-6">
-                                Number of threads
+                                <%= lang.numberOfThreads %>
                             </div>
                             <div class="col-xs-6">
                                 <%= forum.numberOfThreads %>
@@ -36,7 +36,7 @@
                         <% if (forum.lastPost) { %>
                             <div class="row">
                                 <div class="col-xs-6">
-                                    Last post
+                                    <%= lastPost %>
                                 </div>
                                 <div class="col-xs-6">
                                     <%= forum.lastPost.user %><br>

@@ -31,5 +31,8 @@ var require = {
         }
     },
     baseUrl: 'src',
-    deps: ['bootstrap']
+    deps: ['i18n!nls/lang', 'bootstrap'],
+    callback: function (lang) {
+        window.lang = lang;
+    }
 };
