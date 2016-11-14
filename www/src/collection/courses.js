@@ -2,22 +2,9 @@ define([
     'backbone',
     'model/course'
 ], function (Backbone, CourseModel) {
-    var campus = null;
-
     var CoursesCollection = Backbone.Collection.extend({
         model: CourseModel,
-        initialize: function (models, options) {
-            options = $.extend({
-                campus: {
-                    username: '',
-                    url: '',
-                    apiKey: ''
-                }
-            }, options);
-
-            campus = options.campus;
-        },
-        fetch: function (options) {
+        fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
 
@@ -33,9 +20,10 @@ define([
                         return;
                     }
 
-                    response.data.forEach(function (course) {
-                        self.add(course);
-                    });
+                    response.data
+                        .forEach(function (course) {
+                            self.add(course);
+                        });
 
                     deferred.resolve();
                 },

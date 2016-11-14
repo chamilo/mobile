@@ -14,30 +14,28 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
-            options = $.extend({
-                request: {
-                    username: '',
-                    baseUrl: '',
-                    apiKey: ''
-                }
-            }, options);
+            $
+                .ajax({
+                    type: 'post',
+                    data: {
+                        action: 'course_info',
+                        course: this.cid
+                    },
+                    success: function (response) {
+                        if (response.error) {
+                            deferred.reject(response.message);
 
-            $.post(options.request.baseUrl + '/main/webservices/api/v2.php', {
-                api_key: options.request.apiKey,
-                username: options.request.username,
-                action: 'course_info',
-                course: this.cid
-            }, function (response) {
-                if (response.error) {
-                    deferred.reject(response.message);
+                            return;
+                        }
 
-                    return;
-                }
+                        self.set(response.data);
 
-                self.set(response.data);
-
-                deferred.resolve();
-            });
+                        deferred.resolve();
+                    },
+                    error: function () {
+                        deferred.reject();
+                    }
+                });
 
             return deferred.promise();
         }

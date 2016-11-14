@@ -8,29 +8,32 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
-            $.post(options.campus.url + '/main/webservices/api/v2.php', {
-                api_key: options.campus.apiKey,
-                username: options.campus.username,
-                action: 'course_announcements',
-                course: options.courseId
-            })
-                .done(function (response) {
-                    if (response.error) {
-                        deferred.reject(response.message);
+            $
+                .ajax({
+                    type: 'post',
+                    data: {
+                        action: 'course_announcements',
+                        course: options.courseId
+                    },
+                    success: function (response) {
+                        if (response.error) {
+                            deferred.reject(response.message);
 
-                        return;
+                            return;
+                        }
+
+                        response.data
+                            .forEach(function (announcement) {
+                                self.add(announcement);
+                            });
+
+                        deferred.resolve();
+                    },
+                    error: function () {
+                        deferred.reject();
                     }
-                    
-                    response.data.forEach(function (announcement) {
-                        self.add(announcement);
-                    });
-
-                    deferred.resolve();
-                })
-                .fail(function () {
-                    deferred.reject();
                 });
-                
+
             return deferred.promise();
         }
     });

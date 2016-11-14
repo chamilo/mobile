@@ -7,28 +7,31 @@ define([
         fetch: function (options) {
             var self = this,
                 deferred = new $.Deferred();
+            
+            $
+                .ajax({
+                    type: 'post',
+                    data: {
+                        action: 'course_forumcategories',
+                        course: options.courseId
+                    },
+                    success: function (response) {
+                        if (response.error) {
+                            deferred.reject(response.message);
 
-            $.post(options.campus.url + '/main/webservices/api/v2.php', {
-                api_key: options.campus.apiKey,
-                username: options.campus.username,
-                action: 'course_forumcategories',
-                course: options.courseId
-            })
-                .done(function (response) {
-                    if (response.error) {
-                        deferred.reject(response.message);
+                            return;
+                        }
 
-                        return;
+                        response.data
+                            .forEach(function (forumcategory) {
+                                self.add(forumcategory);
+                            });
+
+                        deferred.resolve();
+                    },
+                    error: function () {
+                        deferred.reject();
                     }
-
-                    response.data.forEach(function (forumcategory) {
-                        self.add(forumcategory);
-                    });
-
-                    deferred.resolve();
-                })
-                .fail(function () {
-                    deferred.reject();
                 });
 
             return deferred.promise();

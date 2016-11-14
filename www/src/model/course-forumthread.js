@@ -14,46 +14,47 @@ define([
             var self = this,
                 deferred = new $.Deferred;
 
-            $.post(options.campus.url + '/main/webservices/api/v2.php', {
-                username: options.campus.username,
-                api_key: options.campus.apiKey,
-                action: 'course_forumthread',
-                thread: options.threadId,
-                forum: options.forumId,
-                course: window.sessionStorage.getItem('courseId')
-            })
-                .done(function (response) {
-                    if (response.error) {
-                        deferred.reject(response.message);
+            $
+                .ajax({
+                    type: 'post',
+                    data: {
+                        action: 'course_forumthread',
+                        thread: options.threadId,
+                        forum: options.forumId,
+                        course: window.sessionStorage.getItem('courseId')
+                    },
+                    success: function (response) {
+                        if (response.error) {
+                            deferred.reject(response.message);
 
-                        return;
-                    }
+                            return;
+                        }
 
-                    self.set({
-                        id: response.data.id,
-                        cId: response.data.cId,
-                        forumId: response.data.forumId,
-                        title: response.data.title
-                    });
-
-                    var posts = [];
-
-                    _.each(response.data.posts, function (postData) {
-                        var forumPost = new CourseForumPostModel(postData);
-                        forumPost.set({
-                            threadId: self.get('id'),
-                            forumId: self.get('forumId')
+                        self.set({
+                            id: response.data.id,
+                            cId: response.data.cId,
+                            forumId: response.data.forumId,
+                            title: response.data.title
                         });
 
-                        posts.push(forumPost);
-                    });
+                        var posts = [];
 
-                    self.set('posts', posts);
+                        _.each(response.data.posts, function (postData) {
+                            postData.threadId = self.get('id');
+                            postData.forumId = self.get('forumId');
 
-                    deferred.resolve();
-                })
-                .fail(function () {
-                    deferred.reject();
+                            var forumPost = new CourseForumPostModel(postData);
+
+                            posts.push(forumPost);
+                        });
+
+                        self.set('posts', posts);
+
+                        deferred.resolve();
+                    },
+                    error: function () {
+                        deferred.reject();
+                    }
                 });
 
             return deferred.promise();
