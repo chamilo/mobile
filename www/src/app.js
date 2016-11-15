@@ -62,6 +62,8 @@ define([
             'logout': 'logout'
         },
         index: function () {
+            window.sessionStorage.removeItem('courseId');
+
             campus = new CampusModel();
             campus.fetch()
                 .done(function () {
