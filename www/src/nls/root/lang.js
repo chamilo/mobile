@@ -51,5 +51,7 @@ define({
     inbox: "Inbox",
     myProfile: "My profile",
     phoneNumber: "Phone number",
-    signingOut: "Signing out"
+    signingOut: "Signing out",
+    loading: "Loading",
+    noContentAvailable: "No content available"
 });

@@ -1,0 +1,6 @@
+<% if (loading) { %>
+    <span class="fa fa-circle-o-notch fa-spin fa-4x" aria-hidden="true"></span>
+    <span class="sr-only"><%= lang.loading %></span>
+<% } else if (noContent) { %>
+    <p class="lead"><%= lang.noContentAvailable %></p>
+<% } %>
