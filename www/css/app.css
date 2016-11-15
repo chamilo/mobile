@@ -2,6 +2,13 @@ hr {
     margin: 10px 0;
 }
 
+.container > .navbar-header,
+.container-fluid .navbar-header,
+.container > .navbar-collapse,
+.container-fluid .navbar-collapse {
+    margin-right: -15px;
+}
+
 .nav.navbar-nav li.disabled a {
     opacity: 0.5 !important;
     color: #FFF !important;

@@ -11,9 +11,9 @@ define([
         nextMessage = null;
 
     var MessageView = Backbone.View.extend({
-        el: 'body',
+        tagName: 'div',
+        className: 'page-inside',
         template: _.template(messageTemplate),
-        btnClose: null,
         btnPrev: null,
         btnNext: null,
         initialize: function (options) {
@@ -23,7 +23,6 @@ define([
             this.model.on('change', this.render, this);
         },
         events: {
-            'click a#btn-close': 'btnCloseOnClick',
             'click a#prev-message': 'btnPrevMessageOnClick',
             'click a#next-message': 'btnNextMessageOnClick'
         },
@@ -49,7 +48,7 @@ define([
 
                     previousMessage = message;
 
-                    self.btnPrev.parent().removeClass('disabled');
+                    self.btnPrev.removeClass('hide');
                 }
             });
             this.model.next({
@@ -60,21 +59,16 @@ define([
 
                     nextMessage = message;
 
-                    self.btnNext.parent().removeClass('disabled');
+                    self.btnNext.removeClass('hide');
                 }
             });
 
             return this;
         },
-        btnCloseOnClick: function (e) {
-            e.preventDefault();
-
-            window.history.back();
-        },
         btnPrevMessageOnClick: function (e) {
             e.preventDefault();
 
-            if (this.btnPrev.parent().hasClass('disabled')) {
+            if (this.btnPrev.is('.hide')) {
                 return;
             }
 
@@ -83,7 +77,7 @@ define([
         btnNextMessageOnClick: function (e) {
             e.preventDefault();
 
-            if (this.btnNext.parent().hasClass('disabled')) {
+            if (this.btnNext.is('.disabled')) {
                 return;
             }
 

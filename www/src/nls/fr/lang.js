@@ -51,5 +51,7 @@ define({
     inbox: "Boîte aux lettres",
     myProfile: "Mon profil",
     phoneNumber: "Numéro de tél",
-    signingOut: "Déconnexion"
+    signingOut: "Déconnexion",
+    loading: "Loading",
+    noContentAvailable: "No content available"
 });

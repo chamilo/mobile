@@ -1,26 +1,18 @@
 <nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
     <div class="container">
-        <ul class="nav navbar-nav pull-left">
-            <li>
-                <a id="btn-close" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span><span class="sr-only">Back</span>
-                </a>
-            </li>
-        </ul>
-        <ul class="nav navbar-nav pull-right">
-            <li class="disabled">
-                <a id="prev-message" href="#" role="button">
-                    <span class="fa fa-chevron-left" aria-hidden="true"></span>
-                    <span class="sr-only">Previous</span>
-                </a>
-            </li>
-            <li class="disabled">
-                <a id="next-message" href="#" role="button">
-                    <span class="fa fa-chevron-right" aria-hidden="true"></span>
-                    <span class="sr-only">Next</span>
-                </a>
-            </li>
-        </ul>
+        <div class="navbar-header pull-right">
+            <a class="navbar-brand hide" id="prev-message" href="#" role="button">
+                <span class="fa fa-chevron-left fa-fw" aria-hidden="true"></span><span class="sr-only">Previous</span>
+            </a>
+            <a class="navbar-brand hide" id="next-message" href="#" role="button">
+                <span class="fa fa-chevron-right fa-fw" aria-hidden="true"></span><span class="sr-only">Next</span>
+            </a>
+        </div>
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript: history.back();">
+                <span class="fa fa-arrow-left fa-fw" aria-hidden="true"></span><span class="sr-only">Back</span></span>
+            </a>
+        </div>
     </div>
 </nav>
 

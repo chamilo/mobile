@@ -136,7 +136,10 @@ define([
             var messageView = new MessageView({
                 messageId: parseInt(messageId)
             });
-            messageView.render();
+
+            $('body').html(
+                    messageView.render().$el
+                );
         },
         profile: function () {
             new UserProfileView({

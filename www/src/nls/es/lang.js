@@ -51,5 +51,7 @@ define({
     inbox: "Bandeja de entrada",
     myProfile: "Mi perfil",
     phoneNumber: "Número de teléfono",
-    signingOut: "Cerrando sessión"
+    signingOut: "Cerrando sessión",
+    loading: "Cargando",
+    noContentAvailable: "Contenido no disponible"
 });
