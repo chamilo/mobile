@@ -6,36 +6,23 @@ define([
     var MessagesCollection = Backbone.Collection.extend({
         model: MessageModel,
         create: function (attributes, options) {
-            var self = this;
+            var self = this,
+                deferred = new $.Deferred();
 
-            options = $.extend({
-                success: null,
-                error: null
-            }, options);
+            var message = new MessageModel();
+            message.save(attributes)
+                .done(function () {
+                    self.add(message);
 
-            var messageModel = new MessageModel();
-            messageModel.save(attributes, {
-                success: function () {
-                    self.add(messageModel);
-
-                    if (options.success) {
-                        options.success();
-                    }
-                },
-                error: function () {
-                    if (options.error) {
-                        options.error();
-                    }
-                }
-            });
+                    deferred.resolve();
+                })
+                .fail(function () {
+                    deferred.reject();
+                });
         },
-        fetch: function (options) {
-            var self = this;
-
-            options = $.extend({
-                success: null,
-                error: null
-            }, options);
+        fetch: function () {
+            var self = this,
+                deferred = new $.Deferred();
 
             var transaction = DB.conx.transaction([DB.TABLE_MESSAGE], 'readonly'),
                 store = transaction.objectStore(DB.TABLE_MESSAGE),
@@ -46,25 +33,24 @@ define([
                 var cursor = e.target.result;
 
                 if (!cursor) {
-                    if (options.success) {
-                        options.success();
-                    }
-                    
+                    deferred.resolve();
+
                     return;
                 }
 
                 var message = new MessageModel(cursor.value);
-                message.cid = cursor.primaryKey;
+                message.id = cursor.primaryKey;
+                message.cid = message.id;
                 self.add(message);
 
                 cursor.continue();
             };
 
             request.onerror = function () {
-                if (options.error) {
-                    options.error();
-                }
+                deferred.reject();
             };
+
+            return deferred.promise();
         }
     });
 

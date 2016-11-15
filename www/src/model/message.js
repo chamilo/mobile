@@ -13,44 +13,27 @@ define([
             url: ''
         },
         save: function (attributes, options) {
-            var self = this;
+            var self = this,
+                deferred = new $.Deferred();
 
             self.attributes = $.extend(self.attributes, attributes);
 
-            options = $.extend({
-                isNew: true,
-                success: null,
-                error: null
-            }, options);
-
-            var transaction = DB.conx.transaction([
-                DB.TABLE_MESSAGE
-            ], 'readwrite');
-            var store = transaction.objectStore(DB.TABLE_MESSAGE);
-            var request;
-
-            if (options.isNew) {
-                request = store.add(this.toJSON());
-            } else {
-                self.set(attributes);
-                request = store.put(this.toJSON(), this.cid);
-            }
+            var transaction = DB.conx.transaction([DB.TABLE_MESSAGE], 'readwrite'),
+                store = transaction.objectStore(DB.TABLE_MESSAGE),
+                request = store.put(this.toJSON(), this.id);
 
             request.onsuccess = function (e) {
-                if (!attributes) {
-                    self.cid = e.target.result;
-                }
+                self.id = e.target.result;
+                self.cid = self.id;
 
-                if (options.success) {
-                    options.success();
-                }
+                deferred.resolve();
             };
 
             request.onerror = function () {
-                if (options.error) {
-                    options.error(request.error);
-                }
+                deferred.reject();
             };
+
+            return deferred.promise();
         },
         fetch: function (options) {
             var self = this;

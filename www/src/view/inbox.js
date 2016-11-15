@@ -2,8 +2,9 @@ define([
     'backbone',
     'text!template/inbox.html',
     'collection/messages',
-    'view/inbox-message'
-], function (Backbone, inboxTemplate, MessagesCollection, InboxMessageView) {
+    'view/inbox-message',
+    'view/spinner'
+], function (Backbone, inboxTemplate, MessagesCollection, InboxMessageView, SpinnerView) {
     var campus = null,
         messages = null;
 
@@ -20,13 +21,13 @@ define([
             return;
         }
 
-        $.post(campus.get('url') + '/main/webservices/api/v2.php', {
-            action: 'user_messages',
-            username: campus.get('username'),
-            api_key: campus.get('apiKey'),
-            last: campus.get('lastMessage')
-        })
-            .done(function (response) {
+        return $.ajax({
+            type: 'post',
+            data: {
+                action: 'user_messages',
+                last: campus.get('lastMessage')
+            },
+            success: function (response) {
                 if (response.error) {
                     alert(response.message);
 
@@ -55,52 +56,58 @@ define([
                         lastCheckDate: new Date()
                     });
                 }
-            });
+            }
+        });
     };
 
     var InboxView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'inbox'
-        },
+        className: 'page-inside',
+        id: 'inbox',
         initialize: function () {
             this.collection = new MessagesCollection();
-            this.collection
-                .on('add', this.renderMessage, this);
+            this.collection.on('add', this.renderMessage, this);
 
             campus = this.model;
             messages = this.collection;
         },
+        spinner: new SpinnerView(),
+        container: null,
         template: _.template(inboxTemplate),
         render: function () {
-            this.el.innerHTML = this.template();
-            this.collection
-                .each(this.renderMessage, this);
-            this.collection
-                .fetch();
+            var self = this;
 
-            loadMessages();
+            this.el.innerHTML = this.template();
+
+            this.container = this.$el.find('#container');
+            this.container.prepend(
+                    this.spinner.render().$el
+                );
+
+            this.collection.fetch()
+                .done(function () {
+                    loadMessages()
+                        .done(function () {
+                            if (self.collection.length) {
+                                self.spinner.stop();
+                                return;
+                            }
+
+                            self.spinner.stopFailed();
+                        });
+                });
 
             return this;
         },
-        renderMessage: function (message) {
+        renderMessage: function (message, messages) {
             var messageView = new InboxMessageView({
-                model: message
-            });
+                    model: message
+                });
 
-            this.$el
-                .find('#messages-list')
+            this.$el.find('#lst-messages')
                 .prepend(
                     messageView.render().el
                 );
-        },
-        events: {
-            'click #btn-back': 'btnBackOnClick'
-        },
-        btnBackOnClick: function (e) {
-            e.preventDefault();
-
-            window.history.back();
         }
     });
 
