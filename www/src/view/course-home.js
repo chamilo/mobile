@@ -1,33 +1,45 @@
 define([
+    'underscore',
     'backbone',
     'text!template/course-home.html',
-    'model/course'
-], function (Backbone, courseHomeTemplate, CourseModel) {
+    'model/course',
+    'view/spinner'
+], function (_, Backbone, courseHomeTemplate, CourseModel, SpinnerView) {
     var CourseHomeView = Backbone.View.extend({
-        el: 'body',
+        tagName: 'div',
         template: _.template(courseHomeTemplate),
-        initialize: function (options) {
+        spinner: null,
+        lblTitle: null,
+        container: null,
+        initialize: function () {
             this.model = new CourseModel();
-            this.model.cid = options.courseId;
-            this.model
-                .fetch({
-                    request: {
-                        baseUrl: options.campus.url,
-                        apiKey: options.campus.apiKey,
-                        username: options.campus.username
-                    }
-                })
-                .fail(function (errorMessage) {
-                    alert(errorMessage ? errorMessage : 'Course info failed');
-                });
-            this.model
-                .on('change', this.render, this);
+            this.model.cid = window.sessionStorage.getItem('courseId');
+            this.model.on('change', this.onChange, this);
+
+            this.spinner = new SpinnerView();
         },
         render: function () {
-            this.el
-                .innerHTML = this.template(this.model.toJSON());
+            var self = this;
+
+            this.el.innerHTML = this.template(this.model.toJSON());
+            this.lblTitle = this.$el.find('#lbl-title');
+
+            this.container = this.$el.find('#container');
+            this.container.html(
+                    this.spinner.render().$el
+                );
+
+            this.model.fetch()
+                .fail(function () {
+                    self.spinner.stopFailed();
+                });
 
             return this;
+        },
+        onChange: function (course) {
+            this.spinner.stop();
+
+            this.el.innerHTML = this.template(course.toJSON());
         }
     });
 

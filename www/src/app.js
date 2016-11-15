@@ -142,12 +142,14 @@ define([
             });
         },
         courseHome: function (courseId) {
-            new CourseHomeView({
-                campus: campus.toJSON(),
-                courseId: courseId
-            });
-
             window.sessionStorage.setItem('courseId', courseId);
+
+            var courseHome = new CourseHomeView();
+
+            $('body')
+                .html(
+                    courseHome.render().$el
+                );
         },
         courseDescription: function (courseId) {
             new CourseDescriptionsView({

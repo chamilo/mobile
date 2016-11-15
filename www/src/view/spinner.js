@@ -17,7 +17,7 @@ define([
             
             return this;
         },
-        startLoad: function () {
+        start: function () {
             this.model.set({
                     loading: true,
                     noContent: false

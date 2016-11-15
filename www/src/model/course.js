@@ -8,7 +8,16 @@ define([
             code: '',
             directory: '',
             urlPicture: null,
-            teachers: ''
+            teachers: '',
+            tools: [
+                {type: 'description'},
+                {type: 'documents'},
+                {type: 'learning_paths'},
+                {type: 'forum'},
+                {type: 'agenda'},
+                {type: 'notebook'},
+                {type: 'announcements'}
+            ]
         },
         fetch: function (options) {
             var self = this,
@@ -28,6 +37,8 @@ define([
                             return;
                         }
 
+                        self.cid = response.data.id;
+                        self.id = response.data.id;
                         self.set(response.data);
 
                         deferred.resolve();
