@@ -219,14 +219,11 @@ define([
             $('body').html(forumCategoriesView.render().el);
         },
         courseForum: function (forumId) {
-            var forumView = new CourseForumView({
-                campus: campus.toJSON(),
-                forumId: forumId
-            });
+            window.sessionStorage.forumId = forumId;
 
-            $('body').html(
-                forumView.render().el
-                );
+            var forumView = new CourseForumView();
+
+            $('body').html(forumView.render().el);
         },
         courseForumThread: function (forum, thread) {
             var forumThreadView = new CourseForumThreadView({
