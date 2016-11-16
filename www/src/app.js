@@ -206,14 +206,11 @@ define([
                 );
         },
         courseNotebooks: function (courseId) {
-            var courseNotebooksView = new CourseNotebooksView({
-                campus: campus.toJSON(),
-                courseId: courseId
-            });
+            window.sessionStorage.courseId = courseId;
 
-            $('body').html(
-                courseNotebooksView.render().el
-                );
+            var courseNotebooksView = new CourseNotebooksView();
+
+            $('body').html(courseNotebooksView.render().el);
         },
         courseDocuments: function (courseId, directoryId) {
             window.sessionStorage.courseId = courseId;

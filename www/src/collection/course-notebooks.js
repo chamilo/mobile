@@ -4,16 +4,20 @@ define([
 ], function (Backbone, CourseNotebookModel) {
     var CourseNotebooksCollection = Backbone.Collection.extend({
         model: CourseNotebookModel,
-        fetch: function (options) {
+        courseId: 0,
+        initialize: function () {
+            this.courseId = parseInt(window.sessionStorage.courseId);
+        },
+        fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
-            
+
             $
                 .ajax({
                     type: 'post',
                     data: {
                         action: 'course_notebooks',
-                        course: options.courseId
+                        course: this.courseId
                     },
                     success: function (response) {
                         if (response.error) {
@@ -22,8 +26,7 @@ define([
                             return;
                         }
 
-                        response.data
-                            .forEach(function (notebook) {
+                        response.data.forEach(function (notebook) {
                                 self.add(notebook);
                             });
 
