@@ -255,14 +255,11 @@ define([
                 );
         },
         courseLpCategories: function (courseId) {
-            var lpCategoriesView = new CourseLpCategoriesView({
-                campus: campus.toJSON(),
-                courseId: courseId
-            });
+            window.sessionStorage.courseId = courseId;
+            
+            var lpCategoriesView = new CourseLpCategoriesView();
 
-            $('body').html(
-                lpCategoriesView.render().el
-                );
+            $('body').html(lpCategoriesView.render().el);
         },
         logout: function () {
             var view = new LogoutView();

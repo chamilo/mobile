@@ -4,7 +4,11 @@ define([
 ], function (Backbone, CourseLpCategoryModel) {
     var CourseLpCategoriesCollection = Backbone.Collection.extend({
         model: CourseLpCategoryModel,
-        fetch: function (options) {
+        courseId: 0,
+        initialize: function () {
+            this.courseId = parseInt(window.sessionStorage.courseId);
+        },
+        fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
 
@@ -13,7 +17,7 @@ define([
                     type: 'post',
                     data: {
                         action: 'course_learnpaths',
-                        course: options.courseId
+                        course: this.courseId
                     },
                     success: function (response) {
                         if (response.error) {
