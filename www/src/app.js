@@ -168,10 +168,11 @@ define([
                 );
         },
         courseDescription: function (courseId) {
-            new CourseDescriptionsView({
-                campus: campus.toJSON(),
-                courseId: courseId
-            });
+            window.sessionStorage.courseId = courseId;
+
+            var courseDescriptionView = new CourseDescriptionsView();
+
+            $('body').html(courseDescriptionView.render().el);
         },
         courseAnnouncements: function (courseId) {
             var courseAnnouncementsView = new CourseAnnouncementsView({
