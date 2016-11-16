@@ -190,14 +190,11 @@ define([
             $('body').html(courseAnnouncementView.render().el);
         },
         courseAgenda: function (courseId) {
-            var courseAgendaView = new CourseAgendaView({
-                campus: campus.toJSON(),
-                courseId: courseId
-            });
+            window.sessionStorage.courseId = courseId;
 
-            $('body').html(
-                courseAgendaView.render().el
-                );
+            var courseAgendaView = new CourseAgendaView();
+
+            $('body').html(courseAgendaView.render().el);
         },
         courseNotebooks: function (courseId) {
             window.sessionStorage.courseId = courseId;
