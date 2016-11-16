@@ -2,41 +2,51 @@ define([
     'backbone',
     'text!template/course-documents.html',
     'collection/course-documents',
-    'view/course-document'
-], function (Backbone, viewTemplate, CourseDocumentsCollection, CourseDocumentView) {
-    var courseId = 0;
-    
+    'view/course-document',
+    'view/spinner'
+], function (Backbone, viewTemplate, CourseDocumentsCollection, CourseDocumentView, SpinnerView) {
     var CourseDocumentsView = Backbone.View.extend({
         id: 'course-documents',
         tagName: 'div',
         className: 'page-inside',
-        initialize: function (options) {
-            courseId = options.courseId;
+        spinner: null,
+        container: null,
+        initialize: function () {
+            this.spinner = new SpinnerView();
 
             this.collection = new CourseDocumentsCollection();
-            this.collection
-                .on('add', this.renderDocument, this);
-            this.collection
-                .fetch(options)
-                .fail(function (errorMessage) {
-                    alert(errorMessage ? errorMessage : 'Course documents failed');
-                });
-
-            this.render();
+            this.collection.on('add', this.renderDocument, this);
+            
         },
         template: _.template(viewTemplate),
         render: function () {
-            this.el
-                .innerHTML = this.template();
+            var self = this;
+
+            this.el.innerHTML = this.template();
+
+            this.container = this.$el.find('#container');
+            this.container.prepend(this.spinner.render().$el);
+
+            this.collection.fetch()
+                .always(function () {
+                    if (self.collection.length) {
+                        return;
+                    }
+
+                    self.spinner.stopFailed();
+                });
 
             return this;
         },
-        renderDocument: function (document) {
+        renderDocument: function (document, documents) {
+            if (documents.length === 1) {
+                this.spinner.stop();
+            }
+
             document.updateIcon();
 
             var courseDocumentView = new CourseDocumentView({
-                model: document,
-                courseId: courseId
+                model: document
             });
 
             this.$el
@@ -44,14 +54,6 @@ define([
                 .append(courseDocumentView.render().el);
 
             return this;
-        },
-        events: {
-            'click #btn-back': 'btnBackOnClick'
-        },
-        btnBackOnClick: function (e) {
-            e.preventDefault();
-
-            window.history.back();
         }
     });
 

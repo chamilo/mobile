@@ -4,17 +4,23 @@ define([
 ], function (Backbone, CourseDocumentModel) {
     var CourseDocumentsCollection = Backbone.Collection.extend({
         model: CourseDocumentModel,
-        fetch: function (options) {
+        courseId: 0,
+        directoryId: 0,
+        initialize: function () {
+            this.courseId = parseInt(window.sessionStorage.courseId);
+            this.directoryId = parseInt(window.sessionStorage.directoryId);
+        },
+        fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
-            
+
             $
                 .ajax({
                     type: 'post',
                     data: {
                         action: 'course_documents',
-                        course: options.courseId,
-                        dir_id: options.directoryId
+                        course: this.courseId,
+                        dir_id: this.directoryId
                     },
                     success: function (response) {
                         if (response.error) {

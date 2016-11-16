@@ -2,19 +2,12 @@ define([
     'backbone',
     'text!template/course-document.html'
 ], function (Backbone, viewTemplate) {
-    var courseId = 0;
-
     var CourseDocumentView = Backbone.View.extend({
         tagName: 'li',
         className: 'media',
         template: _.template(viewTemplate),
-        initialize: function (options) {
-            courseId = options.courseId;
-            path = options.path;
-        },
         render: function () {
-            this.el
-                .innerHTML = this.template(this.model.toJSON());
+            this.el.innerHTML = this.template(this.model.toJSON());
 
             return this;
         },
@@ -30,7 +23,7 @@ define([
                 return;
             }
 
-            Backbone.history.navigate('#documents/' + courseId + '/' + this.model.get('id'), {
+            Backbone.history.navigate('#documents/' + window.sessionStorage.courseId + '/' + this.model.get('id'), {
                 trigger: true
             });
         }

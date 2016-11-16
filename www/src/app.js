@@ -62,7 +62,7 @@ define([
             'logout': 'logout'
         },
         index: function () {
-            window.sessionStorage.removeItem('courseId');
+            window.sessionStorage.clear();
 
             var indexView = null;
 
@@ -215,15 +215,12 @@ define([
                 );
         },
         courseDocuments: function (courseId, directoryId) {
-            var courseDocumentsView = new CourseDocumentsView({
-                campus: campus.toJSON(),
-                courseId: courseId,
-                directoryId: directoryId
-            });
+            window.sessionStorage.courseId = courseId;
+            window.sessionStorage.directoryId = directoryId;
 
-            $('body').html(
-                courseDocumentsView.render().el
-                );
+            var courseDocumentsView = new CourseDocumentsView();
+
+            $('body').html(courseDocumentsView.render().el);
         },
         courseForumCategories: function (courseId) {
             var forumCategoriesView = new CourseForumCategoriesView({
