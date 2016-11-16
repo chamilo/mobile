@@ -4,35 +4,37 @@ define([
 ], function (Backbone, CourseForumCategoryModel) {
     var CourseForumCategoriesCollection = Backbone.Collection.extend({
         model: CourseForumCategoryModel,
-        fetch: function (options) {
+        courseId: 0,
+        initialize: function () {
+            this.courseId = parseInt(window.sessionStorage.courseId);
+        },
+        fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
             
-            $
-                .ajax({
-                    type: 'post',
-                    data: {
-                        action: 'course_forumcategories',
-                        course: options.courseId
-                    },
-                    success: function (response) {
-                        if (response.error) {
-                            deferred.reject(response.message);
+            $.ajax({
+                type: 'post',
+                data: {
+                    action: 'course_forumcategories',
+                    course: this.courseId
+                },
+                success: function (response) {
+                    if (response.error) {
+                        deferred.reject(response.message);
 
-                            return;
-                        }
-
-                        response.data
-                            .forEach(function (forumcategory) {
-                                self.add(forumcategory);
-                            });
-
-                        deferred.resolve();
-                    },
-                    error: function () {
-                        deferred.reject();
+                        return;
                     }
-                });
+
+                    response.data.forEach(function (forumcategory) {
+                            self.add(forumcategory);
+                        });
+
+                    deferred.resolve();
+                },
+                error: function () {
+                    deferred.reject();
+                }
+            });
 
             return deferred.promise();
         }

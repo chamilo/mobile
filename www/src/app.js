@@ -212,14 +212,11 @@ define([
             $('body').html(courseDocumentsView.render().el);
         },
         courseForumCategories: function (courseId) {
-            var forumCategoriesView = new CourseForumCategoriesView({
-                campus: campus.toJSON(),
-                courseId: courseId
-            });
+            window.sessionStorage.courseId = courseId;
 
-            $('body').html(
-                forumCategoriesView.render().el
-                );
+            var forumCategoriesView = new CourseForumCategoriesView();
+
+            $('body').html(forumCategoriesView.render().el);
         },
         courseForum: function (forumId) {
             var forumView = new CourseForumView({

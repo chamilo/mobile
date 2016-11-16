@@ -2,54 +2,52 @@ define([
     'backbone',
     'text!template/course-forumcategories.html',
     'collection/course-forumcategories',
-    'view/course-forumcategory'
-], function (Backbone, viewTemplate, CourseForumCategoriesCollection, CourseForumCategoryView) {
-    var courseId = 0;
-    
+    'view/course-forumcategory',
+    'view/spinner'
+], function (Backbone, viewTemplate, CourseForumCategoriesCollection, CourseForumCategoryView, SpinnerView) {
     var CourseForumCategoriesView = Backbone.View.extend({
         tagName: 'div',
         className: 'page-inside',
         id: 'course-forumcategories',
-        initialize: function (options) {
-            courseId = options.courseId;
+        spinner: null,
+        container: null,
+        initialize: function () {
+            this.spinner = new SpinnerView();
 
             this.collection = new CourseForumCategoriesCollection();
-            this.collection
-                .on('add', this.renderForumCategory, this);
-            this.collection
-                .fetch(options)
-                .fail(function (errorMessage) {
-                    alert(errorMessage ? errorMessage : 'Course forum categories failed');
-                });
-
-            this.render();
+            this.collection.on('add', this.renderForumCategory, this);
         },
         template: _.template(viewTemplate),
         render: function () {
-            this.el
-                .innerHTML = this.template();
+            var self = this;
+
+            this.el.innerHTML = this.template();
+
+            this.container = this.$el.find('#container');
+            this.container.prepend(this.spinner.render().$el);
+
+            this.collection.fetch()
+                .always(function () {
+                    if (!self.collection.length) {
+                        self.spinner.stopFailed();
+                    }
+                });
 
             return this;
         },
-        renderForumCategory: function (forumCategory) {
+        renderForumCategory: function (forumCategory, categories) {
+            if (categories.length === 1) {
+                this.spinner.stop();
+            }
+
             var courseForumCategoryView = new CourseForumCategoryView({
-                model: forumCategory,
-                courseId: courseId
+                model: forumCategory
             });
 
-            this.$el
-                .find('#ls-course-forumcategories')
+            this.$el.find('#ls-course-forumcategories')
                 .append(courseForumCategoryView.render().el);
 
             return this;
-        },
-        events: {
-            'click #btn-back': 'btnBackOnClick'
-        },
-        btnBackOnClick: function (e) {
-            e.preventDefault();
-
-            window.history.back();
         }
     });
 

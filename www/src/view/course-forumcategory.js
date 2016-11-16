@@ -4,14 +4,13 @@ define([
 ], function (Backbone, viewTemplate) {
     var CourseForumCategoryView = Backbone.View.extend({
         tagName: 'article',
-        attributes: {
-            id: 'forum-category'
-        },
+        id: 'forum-category',
         className: 'panel panel-default',
         template: _.template(viewTemplate),
         render: function () {
-            this.el
-                .innerHTML = this.template(this.model.toJSON());
+            this.el.innerHTML = this.template(
+                    this.model.toJSON()
+                );
 
             return this;
         }
