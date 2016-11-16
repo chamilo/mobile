@@ -3,6 +3,8 @@ define([
     'model/course-forumpost'
 ], function (Backbone, CourseForumPostModel) {
     var CourseForumThreadModel = Backbone.Model.extend({
+        courseId: 0,
+        forumId: 0,
         defaults: {
             id: 0,
             cId: 0,
@@ -10,7 +12,12 @@ define([
             forumId: 0,
             posts: []
         },
-        fetch: function (options) {
+        initialize: function () {
+            this.courseId = parseInt(window.sessionStorage.courseId);
+            this.forumId = parseInt(window.sessionStorage.forumId);
+            this.id = parseInt(window.sessionStorage.threadId);
+        },
+        fetch: function () {
             var self = this,
                 deferred = new $.Deferred;
 
@@ -19,9 +26,9 @@ define([
                     type: 'post',
                     data: {
                         action: 'course_forumthread',
-                        thread: options.threadId,
-                        forum: options.forumId,
-                        course: window.sessionStorage.getItem('courseId')
+                        thread: this.id,
+                        forum: this.forumId,
+                        course: this.courseId
                     },
                     success: function (response) {
                         if (response.error) {

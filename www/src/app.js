@@ -226,15 +226,12 @@ define([
             $('body').html(forumView.render().el);
         },
         courseForumThread: function (forum, thread) {
-            var forumThreadView = new CourseForumThreadView({
-                campus: campus.toJSON(),
-                forumId: forum,
-                threadId: thread
-            });
+            window.sessionStorage.forumId = forum;
+            window.sessionStorage.threadId = thread;
 
-            $('body').html(
-                forumThreadView.render().el
-                );
+            var forumThreadView = new CourseForumThreadView();
+
+            $('body').html(forumThreadView.render().$el);
         },
         courseLpCategories: function (courseId) {
             window.sessionStorage.courseId = courseId;
