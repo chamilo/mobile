@@ -1,36 +1,47 @@
 define([
     'backbone',
     'text!template/course-announcement.html',
-    'model/course-announcement'
-], function (Backbone, viewTemplate, CourseAnnouncementModel) {
+    'model/course-announcement',
+    'view/spinner'
+], function (Backbone, viewTemplate, CourseAnnouncementModel, SpinnerView) {
     var CourseAnnouncementView = Backbone.View.extend({
         tagName: 'div',
         id: 'course-announcement',
         className: 'page-inside',
+        spinner: null,
+        container: null,
         template: _.template(viewTemplate),
-        initialize: function (options) {
+        initialize: function () {
+            this.spinner = new SpinnerView();
+
             this.model = new CourseAnnouncementModel();
-            this.model
-                .on('change', this.render, this);
-            this.model
-                .fetch(options)
-                .fail(function (errorMessage) {
-                    alert(errorMessage ? errorMessage : 'Course announcement failed');
-                });
+            this.model.on('change', this.onChange, this);
         },
         render: function () {
-            this.el
-                .innerHTML = this.template(this.model.toJSON());
+            var self = this;
+
+            this.el.innerHTML = this.template(
+                    this.model.toJSON()
+                );
+
+            this.container = this.$el.find('#container');
+            this.container.html(this.spinner.render().$el);
+
+            this.model.fetch()
+                .fail(function () {
+                    if (!self.model.length) {
+                        self.spinner.stopFailed();
+                    }
+                });
 
             return this;
         },
-        events: {
-            'click #btn-back': 'btnBackOnClick'
-        },
-        btnBackOnClick: function (e) {
-            e.preventDefault();
+        onChange: function () {
+            this.spinner.stop();
 
-            window.history.back();
+            this.el.innerHTML = this.template(
+                    this.model.toJSON()
+                );
         }
     });
 

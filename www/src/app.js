@@ -182,15 +182,12 @@ define([
             $('body').html(courseAnnouncementsView.render().el);
         },
         courseAnnouncement: function (courseId, announcementId) {
-            var courseAnnouncementView = new CourseAnnouncementView({
-                campus: campus.toJSON(),
-                courseId: courseId,
-                announcementId: announcementId
-            });
+            window.sessionStorage.courseId = courseId;
+            window.sessionStorage.announcementId = announcementId;
 
-            $('body').html(
-                courseAnnouncementView.render().el
-                );
+            var courseAnnouncementView = new CourseAnnouncementView();
+
+            $('body').html(courseAnnouncementView.render().el);
         },
         courseAgenda: function (courseId) {
             var courseAgendaView = new CourseAgendaView({
