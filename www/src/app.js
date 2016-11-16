@@ -175,14 +175,11 @@ define([
             $('body').html(courseDescriptionView.render().el);
         },
         courseAnnouncements: function (courseId) {
-            var courseAnnouncementsView = new CourseAnnouncementsView({
-                campus: campus.toJSON(),
-                courseId: courseId
-            });
+            window.sessionStorage.courseId = courseId;
 
-            $('body').html(
-                courseAnnouncementsView.render().el
-                );
+            var courseAnnouncementsView = new CourseAnnouncementsView();
+
+            $('body').html(courseAnnouncementsView.render().el);
         },
         courseAnnouncement: function (courseId, announcementId) {
             var courseAnnouncementView = new CourseAnnouncementView({

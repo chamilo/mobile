@@ -2,53 +2,55 @@ define([
     'backbone',
     'text!template/course-announcements.html',
     'collection/course-announcements',
-    'view/course-announcement-item'
-], function (Backbone, viewTemplate, CourseAnnouncementsCollection, CourseAnnouncementItemView) {
-    var courseId = 0;
-
+    'view/course-announcement-item',
+    'view/spinner'
+], function (Backbone, viewTemplate, CourseAnnouncementsCollection, CourseAnnouncementItemView, SpinnerView) {
     var CourseAnnouncementsView = Backbone.View.extend({
         tagName: 'div',
         id: 'course-announcements',
         className: 'page-inside',
         template: _.template(viewTemplate),
-        initialize: function (options) {
-            courseId = options.courseId;
+        spinner: null,
+        container: null,
+        initialize: function () {
+            this.spinner = new SpinnerView();
 
             this.collection = new CourseAnnouncementsCollection();
-            this.collection
-                .on('add', this.renderAnnouncement, this);
-            this.collection
-                .fetch(options)
-                .fail(function (errorMessage) {
-                    alert(errorMessage ? errorMessage : 'Course announcements failed');
-                });
+            this.collection.on('add', this.renderAnnouncement, this);
         },
         render: function () {
+            var self = this;
+
             this.el.innerHTML = this.template();
+
+            this.container = this.$el.find('#container');
+            this.container.prepend(this.spinner.render().el);
+
+            this.collection.fetch()
+                .always(function () {
+                    if (!self.collection.length) {
+                        self.spinner.stopFailed();
+                    }
+                });
 
             return this;
         },
-        renderAnnouncement: function (announcement) {
+        renderAnnouncement: function (announcement, announcements) {
+            if (announcements.length === 1) {
+                this.spinner.stop();
+            }
+
             var announcementItemView = new CourseAnnouncementItemView({
                 model: announcement,
                 attributes: {
-                    href: '#announcement/' + courseId + '/' + announcement.get('id')
+                    href: '#announcement/' + window.sessionStorage.courseId + '/' + announcement.get('id')
                 }
             });
 
-            this.$el
-                .find('#ls-course-announcements')
+            this.$el.find('#ls-course-announcements')
                 .append(announcementItemView.render().el);
 
             return this;
-        },
-        events: {
-            'click #btn-back': 'btnBackOnClick'
-        },
-        btnBackOnClick: function (e) {
-            e.preventDefault();
-
-            window.history.back();
         }
     });
 

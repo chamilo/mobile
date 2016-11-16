@@ -4,7 +4,11 @@ define([
 ], function (Backbone, CourseAnnouncementModel) {
     var CourseAnnouncementsCollection = Backbone.Collection.extend({
         model: CourseAnnouncementModel,
-        fetch: function (options) {
+        courseId: 0,
+        initialize: function () {
+            this.courseId = parseInt(window.sessionStorage.courseId);
+        },
+        fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
 
@@ -13,7 +17,7 @@ define([
                     type: 'post',
                     data: {
                         action: 'course_announcements',
-                        course: options.courseId
+                        course: this.courseId
                     },
                     success: function (response) {
                         if (response.error) {
@@ -22,8 +26,7 @@ define([
                             return;
                         }
 
-                        response.data
-                            .forEach(function (announcement) {
+                        response.data.forEach(function (announcement) {
                                 self.add(announcement);
                             });
 
