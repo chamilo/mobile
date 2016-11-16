@@ -1,39 +1,42 @@
 define([
     'backbone',
     'text!template/user-profile.html',
-    'model/user'
-], function (Backbone, userProfileTemplate, UserModel) {
-    var campus = null;
-
+    'model/user',
+    'view/spinner'
+], function (Backbone, userProfileTemplate, UserModel, SpinnerView) {
     var UserProfileView = Backbone.View.extend({
-        el: 'body',
-        initialize: function (options) {
-            campus = options.capus;
-            
+        tagName: 'div',
+        className: 'page-inside',
+        spinner: null,
+        container: null,
+        initialize: function () {
+            this.spinner = new SpinnerView();
+
             this.model = new UserModel();
-            this.model.fetch({
-                campus: options.campus,
-                error: function (errorMessage) {
-                    alert(errorMessage);
-                }
-            });
-            this.model.on('change', this.render, this);
+            this.model.on('change', this.onChange, this);
         },
         template: _.template(userProfileTemplate),
         render: function () {
+            var self = this;
+
             this.el.innerHTML = this.template(
                 this.model.toJSON()
             );
 
+            this.container = this.$el.find('#container');
+            this.container.html(this.spinner.render().$el);
+
+            this.model.fetch()
+                .fail(function () {
+                    self.spinner.stopFailed();
+                });
+
             return this;
         },
-        events: {
-            'click a#btn-close': 'btnCloseOnClick'
-        },
-        btnCloseOnClick: function (e) {
-            e.preventDefault();
-
-            window.history.back();
+        onChange: function () {
+            this.el.innerHTML = this.template(
+                this.model.toJSON()
+            );
         }
     });
 

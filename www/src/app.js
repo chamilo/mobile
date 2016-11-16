@@ -142,9 +142,13 @@ define([
                 );
         },
         profile: function () {
-            new UserProfileView({
+            var userProfileView = new UserProfileView({
                 campus: campus.toJSON()
             });
+
+            $('body').html(
+                    userProfileView.render().$el
+                );
         },
         courseHome: function (courseId) {
             window.sessionStorage.setItem('courseId', courseId);

@@ -1,16 +1,14 @@
 <nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
     <div class="container">
-        <ul class="nav navbar-nav pull-left">
-            <li>
-                <a id="btn-close" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.myProfile %>
-                </a>
-            </li>
-        </ul>
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript: history.back();">
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.myProfile %>
+            </a>
+        </div>
     </div>
 </nav>
 
-<section class="container page-inside">
+<section class="container" id="container">
     <img src="<%= pictureUri %>" alt="<%= username %>'s picture" class="img-responsive img-circle center-block">
     <h3 class="page-header">
         <%= fullName %>

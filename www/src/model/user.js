@@ -10,34 +10,29 @@ define([
             phone: null,
             extra: []
         },
-        fetch: function (options) {
-            var self = this;
+        fetch: function () {
+            var self = this,
+                deferred = new $.Deferred();
 
-            options = $.extend({
-                success: null,
-                error: null
-            }, options);
+            $.ajax({
+                type: 'post',
+                data: {
+                    action: 'user_profile'
+                },
+                success: function (response) {
+                    if (response.error) {
+                        deferred.reject(response.message);
 
-            $
-                .ajax({
-                    type: 'post',
-                    data: {action: 'user_profile'},
-                    success: function (response) {
-                        if (response.error) {
-                            if (options.error) {
-                                options.error(response.message);
-                            }
-
-                            return;
-                        }
-
-                        self.set(response.data);
-
-                        if (options.success) {
-                            options.success();
-                        }
+                        return;
                     }
-                });
+
+                    self.set(response.data);
+
+                    deferred.resolve();
+                }
+            });
+
+            return deferred.promise();
         }
     });
 
