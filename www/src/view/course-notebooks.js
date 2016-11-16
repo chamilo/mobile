@@ -6,9 +6,8 @@ define([
 ], function (Backbone, viewTemplate, CourseNotebooksCollection, CourseNotebookView) {
     var CourseNotebooksView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'course-notebooks'
-        },
+        id: 'course-notebooks',
+        className: 'page-inside',
         initialize: function (options) {
             this.collection = new CourseNotebooksCollection();
             this.collection

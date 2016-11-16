@@ -4,7 +4,8 @@ define([
     'model/campus'
 ], function (Backbone, loginTemplate, CampusModel) {
     var LoginView = Backbone.View.extend({
-        el: 'body',
+        tagName: 'div',
+        id: 'page-login',
         template: _.template(loginTemplate),
         render: function () {
             this.el.innerHTML = this.template();

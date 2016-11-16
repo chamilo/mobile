@@ -8,9 +8,8 @@ define([
     
     var CourseForumCategoriesView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'course-forumcategories'
-        },
+        className: 'page-inside',
+        id: 'course-forumcategories',
         initialize: function (options) {
             courseId = options.courseId;
 

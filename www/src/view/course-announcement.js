@@ -5,9 +5,8 @@ define([
 ], function (Backbone, viewTemplate, CourseAnnouncementModel) {
     var CourseAnnouncementView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'course-announcement'
-        },
+        id: 'course-announcement',
+        className: 'page-inside',
         template: _.template(viewTemplate),
         initialize: function (options) {
             this.model = new CourseAnnouncementModel();

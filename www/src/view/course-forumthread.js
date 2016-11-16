@@ -9,9 +9,8 @@ define([
 
     var CourseForumThreadView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'forum-thread'
-        },
+        className: 'page-inside',
+        id: 'forum-thread',
         template: _.template(viewTemplate),
         initialize: function (options) {
             campus = options.campus;

@@ -1,33 +1,28 @@
 <nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
     <div class="container">
-        <ul class="nav navbar-nav navbar-left">
-            <li>
-                <a id="btn-back" href="#" role="button">
-                    <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.thread %>
-                </a>
-            </li>
-        </ul>
-        <ul class="nav navbar-nav navbar-right">
-            <li>
-                <a id="btn-reply" href="#" role="button" title="Reply" data-toggle="modal" data-target="#dlg-reply">
-                    <span class="fa fa-reply" aria-hidden="true"></span><span class="sr-only"><%= lang.reply %></span>
-                </a>
-            </li>
-        </ul>
+        <div class="navbar-header pull-right">
+            <a class="navbar-brand" id="btn-reply" href="#" role="button" title="Reply" data-toggle="modal" data-target="#dlg-reply">
+                <span class="fa fa-reply" aria-hidden="true"></span>
+                <span class="sr-only"><%= lang.reply %></span>
+            </a>
+        </div>
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript: history.back();" role="button">
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.thread %>
+            </a>
+        </div>
     </div>
 </nav>
 
-<section class="page-inside">
-    <div class="container">
-        <article id="forum-thread-<%= id %>">
-            <header>
-                <h2 class="page-header"><%= title %></h2>
-            </header>
-            <% if (posts.length) { %>
-                <div class="media-list" id="lst-posts"></div>
-            <% } %>
-        </article>
-    </div>
+<section class="container" id="container">
+    <article id="forum-thread-<%= id %>">
+        <header>
+            <h2 class="page-header"><%= title %></h2>
+        </header>
+        <% if (posts.length) { %>
+            <div class="media-list" id="lst-posts"></div>
+        <% } %>
+    </article>
 </section>
 
 <aside class="modal fade" id="dlg-reply" tabindex="-1" role="dialog" aria-labelledby="dlg-reply-label">

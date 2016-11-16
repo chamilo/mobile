@@ -7,6 +7,7 @@ define([
 ], function (_, Backbone, courseHomeTemplate, CourseModel, SpinnerView) {
     var CourseHomeView = Backbone.View.extend({
         tagName: 'div',
+        className: 'page-inside',
         template: _.template(courseHomeTemplate),
         spinner: null,
         lblTitle: null,

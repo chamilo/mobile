@@ -5,7 +5,8 @@ define([
     'view/course-description'
 ], function (Backbone, courseDescriptionsTemplate, CourseDescriptionsCollection, CourseDescriptionView) {
     var CourseDescriptionsView = Backbone.View.extend({
-        el: 'body',
+        tagName: 'div',
+        className: 'page-inside',
         initialize: function (options) {
             this.collection = new CourseDescriptionsCollection();
             this.collection

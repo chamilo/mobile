@@ -1,20 +1,13 @@
 <nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
-    <div class="container-fluid">
-        <div class="pull-left">
-            <div class="btn-back">
-                <div class="title">
-                    <a id="btn-back" href="#" role="button">
-                        <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.courseNotebook %>
-                    </a>
-                </div>
-            </div>
-        </div>     
-    </div>
-</nav>
-<section class="page-inside">
     <div class="container">
-        <div id="ls-course-notebooks">
-            
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript: history.back();">
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.courseNotebook %>
+            </a>
         </div>
     </div>
+</nav>
+
+<section class="container" id="container">
+    <div id="ls-course-notebooks"></div>
 </section>

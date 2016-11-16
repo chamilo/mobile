@@ -8,9 +8,8 @@ define([
 
     var CourseAnnouncementsView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'course-announcements'
-        },
+        id: 'course-announcements',
+        className: 'page-inside',
         template: _.template(viewTemplate),
         initialize: function (options) {
             courseId = options.courseId;

@@ -6,7 +6,9 @@ define([
     'model/message'
 ], function (_, Backbone, template, CampusModel, MessageModel) {
     var LogoutView = Backbone.View.extend({
-        className: 'container',
+        tagName: 'div',
+        id: 'sign-out',
+        className: 'page-inside',
         template: _.template(template),
         initialize: function () {
             this.campus = new CampusModel();

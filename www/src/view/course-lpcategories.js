@@ -6,9 +6,8 @@ define([
 ], function (Backbone, viewTemplate, CourseLpCategoriesCollection, CourseLpCategoryItemView) {
     var CourseLpCategoriesView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'course-lpcategories'
-        },
+        id: 'course-lpcategories',
+        className: 'page-inside',
         initialize: function (options) {
             this.collection = new CourseLpCategoriesCollection();
             this.collection

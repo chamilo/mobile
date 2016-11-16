@@ -64,6 +64,8 @@ define([
         index: function () {
             window.sessionStorage.removeItem('courseId');
 
+            var indexView = null;
+
             campus = new CampusModel();
             campus.fetch()
                 .done(function () {
@@ -76,8 +78,7 @@ define([
                         dataType: 'json'
                     });
 
-                    var homeView = new HomeView();
-                    homeView.render();
+                    indexView = new HomeView();
 
                     var gcmSenderId = campus.get('gcmSenderId');
 
@@ -113,8 +114,14 @@ define([
                     });
                 })
                 .fail(function () {
-                    var loginView = new LoginView();
-                    loginView.render();
+                    indexView = new LoginView();
+                })
+                .always(function () {
+                    if (!indexView) {
+                        return;
+                    }
+
+                    $('body').html(indexView.render().$el);
                 });
         },
         messages: function () {

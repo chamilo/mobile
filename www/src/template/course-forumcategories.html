@@ -1,21 +1,14 @@
 <nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
-    <div class="container-fluid">
-        <div class="pull-left">
-            <div class="btn-back">
-                <div class="title">
-                    <a id="btn-back" href="#" role="button">
-                        <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.forumCategories %>
-                    </a>
-                </div>
-            </div>
-        </div>     
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript: history.back();" role="button">
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.forumCategories %>
+            </a>
+        </div>
     </div>
 </nav>
 
-<section class="page-inside">
-    <div class="container">
-        <div class="panel-group" id="ls-course-forumcategories" role="tablist" aria-multiselectable="true">
-            
-        </div>
+<section class="container" id="container">
+    <div class="panel-group" id="ls-course-forumcategories" role="tablist" aria-multiselectable="true">
     </div>
 </section>

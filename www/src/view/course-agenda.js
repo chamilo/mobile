@@ -6,9 +6,8 @@ define([
 ], function (Backbone, viewTemplate, CourseEventsCollection, CourseEventView) {
     var CourseAgendaView = Backbone.View.extend({
         tagName: 'div',
-        attributes: {
-            id: 'course-agenda'
-        },
+        className: 'page-inside',
+        id: 'course-agenda',
         template: _.template(viewTemplate),
         initialize: function (options) {
             this.collection = new CourseEventsCollection();

@@ -1,48 +1,46 @@
-<section id="page-login">
-<div class="container">
+<section class="container">
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3">
-    <div class="logotipo">
-        <img class="center-block" src="img/logo-chamilo.svg" alt="Chamilo Mobile">
-    </div>
-    <div class="cartoon">
-        <img class="center-block" src="img/cartoon.svg" alt="Chamilo Mobile">
-    </div>
-    <div id="div-alert"></div>
-    <form action="#" class="form-login" id="frm-login" method="post">
-        <fieldset class="my-host">
-            <legend class="app-text-normal bold"><%= lang.myChamilo %></legend>
-            <div class="form-group">
-                <label class="sr-only"><%= lang.domain %></label>
-                <input type="url" name="hostname" id="txt-hostname" required class="form-control app-text-normal" placeholder="https://">
+            <div class="logotipo">
+                <img class="center-block" src="img/logo-chamilo.svg" alt="Chamilo Mobile">
             </div>
-        </fieldset>
-        <fieldset class="my-host">
-            <legend class="app-text-normal bold"><%= lang.myAccount %></legend>
-            <div class="form-group">
-                <label class="sr-only"><%= lang.username %></label>
-                <input type="text" name="username" id="txt-username" required class="form-control app-text-normal" placeholder="<%= lang.username %>">
-                <label class="sr-only"><%= lang.password %></label>
-                <div class="row">
-                    <div class="col-xs-12">
-                        <div class="input-group">
-                            <input type="password" id="txt-password" required name="password" class="form-control app-text-normal" placeholder="<%= lang.password %>">
-                            <span class="input-group-addon">
-                                <input type="checkbox" id="chk-password">
-                            </span>
+            <div class="cartoon">
+                <img class="center-block" src="img/cartoon.svg" alt="Chamilo Mobile">
+            </div>
+            <div id="div-alert"></div>
+            <form action="#" class="form-login" id="frm-login" method="post">
+                <fieldset class="my-host">
+                    <legend class="app-text-normal bold"><%= lang.myChamilo %></legend>
+                    <div class="form-group">
+                        <label class="sr-only"><%= lang.domain %></label>
+                        <input type="url" name="hostname" id="txt-hostname" required class="form-control app-text-normal" placeholder="https://">
+                    </div>
+                </fieldset>
+                <fieldset class="my-host">
+                    <legend class="app-text-normal bold"><%= lang.myAccount %></legend>
+                    <div class="form-group">
+                        <label class="sr-only"><%= lang.username %></label>
+                        <input type="text" name="username" id="txt-username" required class="form-control app-text-normal" placeholder="<%= lang.username %>">
+                        <label class="sr-only"><%= lang.password %></label>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="input-group">
+                                    <input type="password" id="txt-password" required name="password" class="form-control app-text-normal" placeholder="<%= lang.password %>">
+                                    <span class="input-group-addon">
+                                        <input type="checkbox" id="chk-password">
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </fieldset>
+                <div class="form-group">
+                    <button class="btn btn-block btn-warning btn-lg btn-raised" id="btn-submit" type="submit">
+                        <span class="fa fa-sign-in" aria-hidden="true"></span> <%= lang.signIn %>
+                        <div class="ripple-container"></div>
+                    </button>
                 </div>
-            </div>
-        </fieldset>
-        <div class="form-group">
-            <button class="btn btn-block btn-warning btn-lg btn-raised" id="btn-submit" type="submit">
-                <span class="fa fa-sign-in" aria-hidden="true"></span> <%= lang.signIn %>
-                <div class="ripple-container"></div>
-            </button>
-        </div>
-    </form>
+            </form>
         </div>
     </div>
-</div>
 </section>
