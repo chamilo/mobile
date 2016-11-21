@@ -14,7 +14,7 @@
             <%
                 _.each(tools, function (tool) {
                     switch (tool.type) {
-                        case 'description':
+                        case 'course_description':
             %>
             <div class="col-xs-6 col-md-4">
                 <a class="btn btn-raised btn-default btn-block" href="#description/<%= id %>">
@@ -24,7 +24,7 @@
             </div>
             <%
                             break;
-                        case 'documents':
+                        case 'document':
             %>
             <div class="col-xs-6 col-md-4">
                 <a class="btn btn-raised btn-default btn-block" href="#documents/<%= id %>/0">
@@ -34,7 +34,7 @@
             </div>
             <%
                             break;
-                        case 'learning_paths':
+                        case 'learnpath':
             %>
             <div class="col-xs-6 col-md-4">
                 <a class="btn btn-raised btn-default btn-block" href="#lpcategories/<%= id %>">
@@ -54,7 +54,7 @@
             </div>
             <%
                             break;
-                        case 'agenda':
+                        case 'calendar_event':
             %>
             <div class="col-xs-6 col-md-4">
                 <a class="btn btn-raised btn-default btn-block" href="#agenda/<%= id %>">
@@ -74,7 +74,7 @@
             </div>
             <%
                             break;
-                        case 'announcements':
+                        case 'announcement':
             %>
             <div class="col-xs-6 col-md-4">
                 <a class="btn btn-raised btn-default btn-block" href="#announcements/<%= id %>">
