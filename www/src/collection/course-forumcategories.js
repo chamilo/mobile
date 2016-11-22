@@ -7,7 +7,7 @@ define([
         fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
-            
+
             $.ajax({
                 type: 'post',
                 data: {

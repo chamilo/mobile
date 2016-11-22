@@ -16,28 +16,27 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
-            $
-                .ajax({
-                    type: 'post',
-                    data: {
-                        action: 'course_announcement',
-                        announcement: this.id
-                    },
-                    success: function (response) {
-                        if (response.error) {
-                            deferred.reject(response.message);
+            $.ajax({
+                type: 'post',
+                data: {
+                    action: 'course_announcement',
+                    announcement: this.id
+                },
+                success: function (response) {
+                    if (response.error) {
+                        deferred.reject(response.message);
 
-                            return;
-                        }
-
-                        self.set(response.data);
-
-                        deferred.resolve();
-                    },
-                    error: function () {
-                        deferred.reject();
+                        return;
                     }
-                });
+
+                    self.set(response.data);
+
+                    deferred.resolve();
+                },
+                error: function () {
+                    deferred.reject();
+                }
+            });
 
             return deferred.promise();
         }

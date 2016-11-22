@@ -7,9 +7,7 @@ define([
         template: _.template(template),
         render: function () {
             this.el.id = 'session-category-' + this.model.id;
-            this.el.innerHTML = this.template(
-                    this.model.toJSON()
-                );
+            this.el.innerHTML = this.template(this.model.toJSON());
 
             return this;
         }

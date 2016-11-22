@@ -24,9 +24,7 @@ define([
 
             this.$el
                 .find('#lst-learning-paths-' + this.model.get('id'))
-                .append(
-                    lpView.render().el
-                );
+                .append(lpView.render().el);
         }
     });
 

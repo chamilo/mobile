@@ -38,7 +38,7 @@ define([
     CourseForumThreadView,
     CourseLpCategoriesView,
     LogoutView
-) {
+    ) {
     var campus = null,
         pushNotification;
 
@@ -145,18 +145,14 @@ define([
                 messageId: parseInt(messageId)
             });
 
-            $('body').html(
-                    messageView.render().$el
-                );
+            $('body').html(messageView.render().$el);
         },
         profile: function () {
             var userProfileView = new UserProfileView({
                 campus: campus.toJSON()
             });
 
-            $('body').html(
-                    userProfileView.render().$el
-                );
+            $('body').html(userProfileView.render().$el);
         },
         courseHome: function (courseId, sessionId) {
             $.ajaxSetup({
@@ -168,10 +164,7 @@ define([
 
             var courseHome = new CourseHomeView();
 
-            $('body')
-                .html(
-                    courseHome.render().$el
-                );
+            $('body').html(courseHome.render().$el);
         },
         courseDescription: function (courseId) {
             var courseDescriptionView = new CourseDescriptionsView();

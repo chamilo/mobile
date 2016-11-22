@@ -26,9 +26,7 @@ define([
             this.lblTitle = this.$el.find('#lbl-title');
 
             this.container = this.$el.find('#container');
-            this.container.html(
-                    this.spinner.render().$el
-                );
+            this.container.html(this.spinner.render().$el);
 
             this.model.fetch()
                 .fail(function () {

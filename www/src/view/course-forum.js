@@ -20,9 +20,7 @@ define([
         render: function () {
             var self = this;
 
-            this.el.innerHTML = this.template(
-                    this.model.toJSON()
-                );
+            this.el.innerHTML = this.template(this.model.toJSON());
 
             this.container = this.$el.find('#container');
             this.container.html(this.spinner.render().$el);
@@ -37,9 +35,7 @@ define([
         onChange: function (forum) {
             this.spinner.stop();
 
-            this.el.innerHTML = this.template(
-                    forum.toJSON()
-                );
+            this.el.innerHTML = this.template(forum.toJSON());
         }
     });
 

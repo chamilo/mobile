@@ -14,7 +14,7 @@ define([
     CourseView,
     SessionCategoryView,
     SpinnerView
-) {
+    ) {
     var HomeView = Backbone.View.extend({
         tagName: 'div',
         className: 'page-inside',
@@ -40,7 +40,8 @@ define([
             this.$lstCourses.html(this.spinner.render().$el);
             this.$lstSessionCategories = this.$el.find('#lst-session-categories');
 
-            $.when(
+            $
+                .when(
                     this.courseCollection.fetch(),
                     this.sessionCollection.fetch()
                 )
@@ -58,25 +59,21 @@ define([
         },
         onAddCourse: function (course, collection) {
             var courseView = new CourseView({
-                    model: course
-                });
+                model: course
+            });
 
             this.$lstCourses
-                .append(
-                    courseView.render().$el
-                );
+                .append(courseView.render().$el);
         },
         onAddSession: function (sessionCategory, collection) {
             var sessionCategoryView = new SessionCategoryView({
-                    model: sessionCategory
-                });
+                model: sessionCategory
+            });
 
             this.$lstSessionCategories
-                .append(
-                    sessionCategoryView.render().$el
-                );
+                .append(sessionCategoryView.render().$el);
         }
     });
-    
+
     return HomeView;
 });

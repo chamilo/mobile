@@ -16,7 +16,6 @@ define([
 
             this.collection = new CourseDocumentsCollection();
             this.collection.on('add', this.renderDocument, this);
-            
         },
         template: _.template(viewTemplate),
         render: function () {

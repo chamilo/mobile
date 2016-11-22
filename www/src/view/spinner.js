@@ -14,14 +14,14 @@ define([
         },
         render: function () {
             this.el.innerHTML = this.template(this.model.toJSON());
-            
+
             return this;
         },
         start: function () {
             this.model.set({
-                    loading: true,
-                    noContent: false
-                });
+                loading: true,
+                noContent: false
+            });
         },
         stopFailed: function () {
             this.model.set({

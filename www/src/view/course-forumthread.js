@@ -29,9 +29,7 @@ define([
         render: function () {
             var self = this;
 
-            this.el.innerHTML = this.template(
-                    this.model.toJSON()
-                );
+            this.el.innerHTML = this.template(this.model.toJSON());
 
             this.container = this.$el.find('#container');
             this.container.html(this.spinner.render().$el);
@@ -44,9 +42,7 @@ define([
             return this;
         },
         onChange: function (thread) {
-            this.el.innerHTML = this.template(
-                    thread.toJSON()
-                );
+            this.el.innerHTML = this.template(thread.toJSON());
 
             _.each(thread.get('posts'), this.renderPost, this);
         },
@@ -58,9 +54,7 @@ define([
 
             this.$el
                 .find('#lst-posts')
-                .append(
-                    postView.render().el
-                );
+                .append(postView.render().el);
         },
         events: {
             'submit #frm-reply': 'frmReplyOnSubmit'
@@ -71,14 +65,15 @@ define([
             var id = this.model.get('id'),
                 forumPost = new CourseForumPostModel();
 
-            forumPost.save({
-                title: this.$el.find('#txt-reply-title').val(),
-                text: this.$el.find('#txt-reply-text').val(),
-                forum: this.$el.find('#txt-reply-forum').val(),
-                threadId: this.$el.find('#txt-reply-thread').val()
-            }, {
-                notify: this.$el.find('#chk-notify-' + id).is(':checked') ? 1 : 0
-            })
+            forumPost
+                .save({
+                    title: this.$el.find('#txt-reply-title').val(),
+                    text: this.$el.find('#txt-reply-text').val(),
+                    forum: this.$el.find('#txt-reply-forum').val(),
+                    threadId: this.$el.find('#txt-reply-thread').val()
+                }, {
+                    notify: this.$el.find('#chk-notify-' + id).is(':checked') ? 1 : 0
+                })
                 .done(function () {
                     var currentFragment = Backbone.history.fragment;
 

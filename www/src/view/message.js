@@ -6,7 +6,7 @@ define([
     Backbone,
     messageTemplate,
     MessageModel
-) {
+    ) {
     var previousMessage = null,
         nextMessage = null;
 
@@ -33,9 +33,7 @@ define([
 
             var self = this;
 
-            this.el.innerHTML = this.template(
-                this.model.toJSON()
-            );
+            this.el.innerHTML = this.template(this.model.toJSON());
 
             this.btnPrev = this.$el.find('#prev-message');
             this.btnNext = this.$el.find('#next-message');

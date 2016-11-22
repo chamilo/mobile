@@ -15,9 +15,9 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
-            var transaction = DB.conx.transaction([DB.TABLE_ACCOUNT], 'readwrite');
-            var store = transaction.objectStore(DB.TABLE_ACCOUNT);
-            var request = store.openCursor();
+            var transaction = DB.conx.transaction([DB.TABLE_ACCOUNT], 'readwrite'),
+                store = transaction.objectStore(DB.TABLE_ACCOUNT),
+                request = store.openCursor();
 
             request.onsuccess = function (e) {
                 var cursor = e.target.result;
@@ -49,7 +49,7 @@ define([
         },
         save: function (attributes, options) {
             var self = this;
-            
+
             self.attributes = $.extend(self.attributes, attributes);
 
             options = $.extend({
@@ -58,11 +58,9 @@ define([
                 error: null
             }, options);
 
-            var transaction = DB.conx.transaction([
-                DB.TABLE_ACCOUNT
-            ], 'readwrite');
-            var store = transaction.objectStore(DB.TABLE_ACCOUNT);
-            var request;
+            var transaction = DB.conx.transaction([DB.TABLE_ACCOUNT], 'readwrite'),
+                store = transaction.objectStore(DB.TABLE_ACCOUNT),
+                request;
 
             if (options.isNew) {
                 request = store.add(this.toJSON());
@@ -85,7 +83,6 @@ define([
                 if (options.error) {
                     options.error(request.error);
                 }
-                ;
             };
         },
         clear: function () {

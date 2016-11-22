@@ -15,8 +15,7 @@ define([
             courseId = options.courseId;
         },
         render: function () {
-            this.el
-                .innerHTML = this.template(this.model.toJSON());
+            this.el.innerHTML = this.template(this.model.toJSON());
 
             return this;
         },
@@ -26,7 +25,7 @@ define([
         },
         frmOnSubmit: function (e) {
             e.preventDefault();
-            
+
             var id = this.model.get('id'),
                 forumPost = new CourseForumPostModel();
 
@@ -36,17 +35,18 @@ define([
                 text = $('#lbl-quote-' + id).html() + text;
             }
 
-            forumPost.save({
-                title: this.$el.find('#txt-title-' + id).val(),
-                text: text,
-                parentId: this.$el.find('#txt-parent-' + id).val(),
-                forumId: this.$el.find('#txt-forum-' + id).val(),
-                threadId: this.$el.find('#txt-thread-' + id).val()
-            }, {
-                courseId: courseId,
-                notify: this.$el.find('#chk-notify-' + id).is(':checked') ? 1 : 0,
-                campus: campus
-            })
+            forumPost
+                .save({
+                    title: this.$el.find('#txt-title-' + id).val(),
+                    text: text,
+                    parentId: this.$el.find('#txt-parent-' + id).val(),
+                    forumId: this.$el.find('#txt-forum-' + id).val(),
+                    threadId: this.$el.find('#txt-thread-' + id).val()
+                }, {
+                    courseId: courseId,
+                    notify: this.$el.find('#chk-notify-' + id).is(':checked') ? 1 : 0,
+                    campus: campus
+                })
                 .done(function () {
                     var currentFragment = Backbone.history.fragment;
 
