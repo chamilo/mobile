@@ -4,10 +4,8 @@ define([
 ], function (Backbone, CourseDocumentModel) {
     var CourseDocumentsCollection = Backbone.Collection.extend({
         model: CourseDocumentModel,
-        courseId: 0,
         directoryId: 0,
         initialize: function () {
-            this.courseId = parseInt(window.sessionStorage.courseId);
             this.directoryId = parseInt(window.sessionStorage.directoryId);
         },
         fetch: function () {
@@ -19,7 +17,6 @@ define([
                     type: 'post',
                     data: {
                         action: 'course_documents',
-                        course: this.courseId,
                         dir_id: this.directoryId
                     },
                     success: function (response) {

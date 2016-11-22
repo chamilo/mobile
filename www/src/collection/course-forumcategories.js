@@ -4,10 +4,6 @@ define([
 ], function (Backbone, CourseForumCategoryModel) {
     var CourseForumCategoriesCollection = Backbone.Collection.extend({
         model: CourseForumCategoryModel,
-        courseId: 0,
-        initialize: function () {
-            this.courseId = parseInt(window.sessionStorage.courseId);
-        },
         fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
@@ -15,8 +11,7 @@ define([
             $.ajax({
                 type: 'post',
                 data: {
-                    action: 'course_forumcategories',
-                    course: this.courseId
+                    action: 'course_forumcategories'
                 },
                 success: function (response) {
                     if (response.error) {

@@ -53,5 +53,17 @@ define({
     phoneNumber: "Phone number",
     signingOut: "Signing out",
     loading: "Loading",
-    noContentAvailable: "No content available"
+    noContentAvailable: "No content available",
+    sessions: 'Sessions',
+    fromDateUntilDate: function (from, until) {
+        if (from && !until) {
+            return "From " + from;
+        }
+
+        if (!from && until) {
+            return "Until " + until;
+        }
+
+        return "From " + from + " until " + until;
+    }
 });

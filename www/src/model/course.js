@@ -27,8 +27,7 @@ define([
                 .ajax({
                     type: 'post',
                     data: {
-                        action: 'course_info',
-                        course: this.cid
+                        action: 'course_info'
                     },
                     success: function (response) {
                         if (response.error) {
