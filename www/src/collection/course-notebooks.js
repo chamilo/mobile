@@ -8,29 +8,32 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
-            $
-                .ajax({
-                    type: 'post',
-                    data: {
-                        action: 'course_notebooks'
-                    },
-                    success: function (response) {
-                        if (response.error) {
-                            deferred.reject(response.message);
+            $.ajax({
+                type: 'post',
+                data: {
+                    action: 'course_notebooks'
+                },
+                success: function (response) {
+                    if (response.error) {
+                        deferred.reject(response.message);
 
-                            return;
-                        }
-
-                        response.data.forEach(function (notebook) {
-                                self.add(notebook);
-                            });
-
-                        deferred.resolve();
-                    },
-                    error: function () {
-                        deferred.reject();
+                        return;
                     }
-                });
+
+                    response.data
+                        .forEach(function (notebookData) {
+                            var notebook = new CourseNotebookModel(notebookData);
+                            notebook.id = notebookData.id;
+
+                            self.add(notebook);
+                        });
+
+                    deferred.resolve();
+                },
+                error: function () {
+                    deferred.reject();
+                }
+            });
 
             return deferred.promise();
         }

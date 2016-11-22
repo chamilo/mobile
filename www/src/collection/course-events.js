@@ -8,30 +8,32 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
-            $
-                .ajax({
-                    type: 'post',
-                    data: {
-                        action: 'course_agenda'
-                    },
-                    success: function (response) {
-                        if (response.error) {
-                            deferred.reject(response.message);
+            $.ajax({
+                type: 'post',
+                data: {
+                    action: 'course_agenda'
+                },
+                success: function (response) {
+                    if (response.error) {
+                        deferred.reject(response.message);
 
-                            return;
-                        }
-
-                        response.data
-                            .forEach(function (event) {
-                                self.add(event);
-                            });
-
-                        deferred.resolve();
-                    },
-                    error: function () {
-                        deferred.reject();
+                        return;
                     }
-                });
+
+                    response.data
+                        .forEach(function (eventData) {
+                            var event = new CourseEventModel(eventData);
+                            event.id = eventData.id;
+
+                            self.add(event);
+                        });
+
+                    deferred.resolve();
+                },
+                error: function () {
+                    deferred.reject();
+                }
+            });
 
             return deferred.promise();
         }

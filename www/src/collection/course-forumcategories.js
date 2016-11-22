@@ -20,8 +20,12 @@ define([
                         return;
                     }
 
-                    response.data.forEach(function (forumcategory) {
-                            self.add(forumcategory);
+                    response.data
+                        .forEach(function (forumCategoryData) {
+                            var forumCategory = new CourseForumCategoryModel(forumCategoryData);
+                            forumCategory.id = forumCategoryData.id;
+
+                            self.add(forumCategory);
                         });
 
                     deferred.resolve();
