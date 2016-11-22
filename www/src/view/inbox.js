@@ -80,9 +80,7 @@ define([
             this.el.innerHTML = this.template();
 
             this.container = this.$el.find('#container');
-            this.container.prepend(
-                    this.spinner.render().$el
-                );
+            this.container.prepend(this.spinner.render().$el);
 
             this.collection.fetch()
                 .done(function () {
@@ -101,13 +99,11 @@ define([
         },
         renderMessage: function (message, messages) {
             var messageView = new InboxMessageView({
-                    model: message
-                });
+                model: message
+            });
 
             this.$el.find('#lst-messages')
-                .prepend(
-                    messageView.render().el
-                );
+                .prepend(messageView.render().el);
         }
     });
 

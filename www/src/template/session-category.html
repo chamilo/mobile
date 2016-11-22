@@ -1,0 +1,33 @@
+<% if (id) { %>
+    <h2 class="page-header"><%= name %></h2>
+<% } %>
+<% _.each(sessions, function (session) { %>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title"><%= session.get('name') %></h3>
+        </div>
+        <div class="panel-body">
+            <p>
+                <span class="fa fa-calendar" aria-hidden="true"></span>
+                <%= lang.fromDateUntilDate(session.get('accessStartDate'), session.get('accessEndDate')) %>
+            </p>
+            <div class="row">
+                <% _.each(session.get('courses'), function (course) { %>
+                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="thumbnail">
+                            <img src="<%= course.get('urlPicture') ? course.get('urlPicture') : 'img/session_default.png' %>" alt="<%= course.get('title') %>'s picture" class="img-responsive center-block">
+                            <div class="caption description">
+                                <h3 class="title app-text-primary"><%= course.get('title') %></h3>
+                                <div class="code app-text-secundary"><small><%= course.get('code') %></small></div>
+                                <p class="app-text-secundary"><%= course.get('teachers') %></p>
+                                <a href="#course/<%= course.get('id') %>/<%= session.get('id') %>" class="btn btn-raised btn-warning btn-block">
+                                    <%= lang.goToCourse %> <span class="fa fa-arrow-circle-right" aria-hidden="true"></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+<% }); %>

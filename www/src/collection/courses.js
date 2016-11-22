@@ -21,7 +21,10 @@ define([
                     }
 
                     response.data
-                        .forEach(function (course) {
+                        .forEach(function (courseData) {
+                            var course = new CourseModel(courseData);
+                            course.id = courseData.id;
+
                             self.add(course);
                         });
 

@@ -43,9 +43,9 @@ define([
                 error: null
             }, options);
 
-            var transaction = DB.conx.transaction([DB.TABLE_MESSAGE]);
-            var store = transaction.objectStore(DB.TABLE_MESSAGE);
-            var request = store.get(this.cid);
+            var transaction = DB.conx.transaction([DB.TABLE_MESSAGE]),
+                store = transaction.objectStore(DB.TABLE_MESSAGE),
+                request = store.get(this.cid);
 
             request.onsuccess = function (e) {
                 if (!request.result) {
@@ -77,17 +77,15 @@ define([
                 error: null
             }, options);
 
-            var range = IDBKeyRange.lowerBound(this.get('messageId'), true);
-            var transaction = DB.conx.transaction([
-                DB.TABLE_MESSAGE
-            ], 'readonly');
-            var store = transaction.objectStore(DB.TABLE_MESSAGE);
-            var index = store.index('messageId');
-            var request = index.openCursor(range);
+            var range = IDBKeyRange.lowerBound(this.get('messageId'), true),
+                transaction = DB.conx.transaction([DB.TABLE_MESSAGE], 'readonly'),
+                store = transaction.objectStore(DB.TABLE_MESSAGE),
+                index = store.index('messageId'),
+                request = index.openCursor(range);
 
             request.onsuccess = function (e) {
-                var nextMessage = null;
-                var cursor = e.target.result;
+                var nextMessage = null,
+                    cursor = e.target.result;
 
                 if (cursor) {
                     nextMessage = new MessageModel(cursor.value);
@@ -111,17 +109,15 @@ define([
                 error: null
             }, options);
 
-            var range = IDBKeyRange.upperBound(this.get('messageId'), true);
-            var transaction = DB.conx.transaction([
-                DB.TABLE_MESSAGE
-            ], 'readonly');
-            var store = transaction.objectStore(DB.TABLE_MESSAGE);
-            var index = store.index('messageId');
-            var request = index.openCursor(range, 'prev');
+            var range = IDBKeyRange.upperBound(this.get('messageId'), true),
+                transaction = DB.conx.transaction([DB.TABLE_MESSAGE], 'readonly'),
+                store = transaction.objectStore(DB.TABLE_MESSAGE),
+                index = store.index('messageId'),
+                request = index.openCursor(range, 'prev');
 
             request.onsuccess = function (e) {
-                var previousMessage = null;
-                var cursor = e.target.result;
+                var previousMessage = null,
+                    cursor = e.target.result;
 
                 if (cursor) {
                     previousMessage = new MessageModel(cursor.value);

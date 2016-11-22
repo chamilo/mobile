@@ -1,13 +1,11 @@
-<div class="panel panel-default">
-    <div class="panel-body">
-        <img src="<%= urlPicture ? urlPicture : 'img/session_default.png' %>" alt="<%= title %>'s picture" class="img-responsive center-block">
-        <div class="description">
-            <h3 class="title app-text-primary"><%= title %></h3>
-            <div class="code app-text-secundary"><small><%= code %></small></div>
-            <p class="app-text-secundary"><%= teachers %></p>
-            <a href="#course/<%= id %>" class="btn btn-raised btn-warning btn-block">
-                <%= lang.goToCourse %> <span class="fa fa-arrow-circle-right" aria-hidden="true"></span>
-            </a>
-        </div>
+<div class="thumbnail">
+    <img src="<%= urlPicture ? urlPicture : 'img/session_default.png' %>" alt="<%= title %>'s picture" class="img-responsive center-block">
+    <div class="caption description">
+        <h3 class="title app-text-primary"><%= title %></h3>
+        <div class="code app-text-secundary"><small><%= code %></small></div>
+        <p class="app-text-secundary"><%= teachers %></p>
+        <a href="#course/<%= id %>/0" class="btn btn-raised btn-warning btn-block">
+            <%= lang.goToCourse %> <span class="fa fa-arrow-circle-right" aria-hidden="true"></span>
+        </a>
     </div>
 </div>

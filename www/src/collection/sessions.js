@@ -1,17 +1,9 @@
 define([
-    'backbone'
-], function (Backbone) {
-    var CourseForumModel = Backbone.Model.extend({
-        defaults: {
-            id: 0,
-            title: '',
-            description: '',
-            image: '',
-            threads: []
-        },
-        initialize: function () {
-            this.id = parseInt(window.sessionStorage.forumId);
-        },
+    'backbone',
+    'model/sessioncategory'
+], function (Backbone, SessionCategoryModel) {
+    var SessionCollection = Backbone.Collection.extend({
+        model: SessionCategoryModel,
         fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
@@ -19,8 +11,7 @@ define([
             $.ajax({
                 type: 'post',
                 data: {
-                    action: 'course_forum',
-                    forum: this.id
+                    action: 'user_sessions'
                 },
                 success: function (response) {
                     if (response.error) {
@@ -29,7 +20,14 @@ define([
                         return;
                     }
 
-                    self.set(response.data);
+                    response.data
+                        .forEach(function (sessionCategoryData) {
+                            var sessionCategory = new SessionCategoryModel(sessionCategoryData);
+                            sessionCategory.id = sessionCategoryData.id || 0;
+
+                            self.add(sessionCategory);
+                        });
+
                     deferred.resolve();
                 },
                 error: function () {
@@ -41,5 +39,5 @@ define([
         }
     });
 
-    return CourseForumModel;
+    return SessionCollection;
 });

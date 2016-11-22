@@ -14,30 +14,30 @@
             <%
                 _.each(tools, function (tool) {
                     switch (tool.type) {
-                        case 'description':
+                        case 'course_description':
             %>
             <div class="col-xs-6 col-md-4">
-                <a class="btn btn-raised btn-default btn-block" href="#description/<%= id %>">
+                <a class="btn btn-raised btn-default btn-block" href="#description">
                     <img class="center-block" src="img/info.svg" alt="Description">
                     <div class="title"><%= lang.description %></div>
                 </a>
             </div>
             <%
                             break;
-                        case 'documents':
+                        case 'document':
             %>
             <div class="col-xs-6 col-md-4">
-                <a class="btn btn-raised btn-default btn-block" href="#documents/<%= id %>/0">
+                <a class="btn btn-raised btn-default btn-block" href="#documents/0">
                     <img class="center-block" src="img/documents.svg" alt="Documents">
                     <div class="title"><%= lang.documents %></div>
                 </a>
             </div>
             <%
                             break;
-                        case 'learning_paths':
+                        case 'learnpath':
             %>
             <div class="col-xs-6 col-md-4">
-                <a class="btn btn-raised btn-default btn-block" href="#lpcategories/<%= id %>">
+                <a class="btn btn-raised btn-default btn-block" href="#lpcategories">
                     <img class="center-block" src="img/scorms.svg" alt="Documents">
                     <div class="title"><%= lang.learningPaths %></div>
                 </a>
@@ -47,17 +47,17 @@
                         case 'forum':
             %>
             <div class="col-xs-6 col-md-4">
-                <a class="btn btn-raised btn-default btn-block" href="#forumcategories/<%= id %>">
+                <a class="btn btn-raised btn-default btn-block" href="#forumcategories">
                     <img class="center-block" src="img/forum.svg" alt="Forum">
                     <div class="title"><%= lang.forum %></div>
                 </a>
             </div>
             <%
                             break;
-                        case 'agenda':
+                        case 'calendar_event':
             %>
             <div class="col-xs-6 col-md-4">
-                <a class="btn btn-raised btn-default btn-block" href="#agenda/<%= id %>">
+                <a class="btn btn-raised btn-default btn-block" href="#agenda">
                     <img class="center-block" src="img/agenda.svg" alt="Agenda">
                     <div class="title"><%= lang.agenda %></div>
                 </a>
@@ -67,17 +67,17 @@
                         case 'notebook':
             %>
             <div class="col-xs-6 col-md-4">
-                <a class="btn btn-raised btn-default btn-block" href="#notebook/<%= id %>">
+                <a class="btn btn-raised btn-default btn-block" href="#notebook">
                     <img class="center-block" src="img/notebook.svg" alt="Notebook">
                     <div class="title"><%= lang.notebook %></div>
                 </a>
             </div>
             <%
                             break;
-                        case 'announcements':
+                        case 'announcement':
             %>
             <div class="col-xs-6 col-md-4">
-                <a class="btn btn-raised btn-default btn-block" href="#announcements/<%= id %>">
+                <a class="btn btn-raised btn-default btn-block" href="#announcements">
                     <img class="center-block" src="img/valves.svg" alt="Announcement">
                     <div class="title"><%= lang.announcements %></div>
                 </a>

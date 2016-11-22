@@ -23,7 +23,7 @@ define([
                 return;
             }
 
-            Backbone.history.navigate('#documents/' + window.sessionStorage.courseId + '/' + this.model.get('id'), {
+            Backbone.history.navigate('#documents/' + this.model.get('id'), {
                 trigger: true
             });
         }

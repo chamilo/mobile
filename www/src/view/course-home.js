@@ -14,7 +14,6 @@ define([
         container: null,
         initialize: function () {
             this.model = new CourseModel();
-            this.model.cid = window.sessionStorage.getItem('courseId');
             this.model.on('change', this.onChange, this);
 
             this.spinner = new SpinnerView();
@@ -26,9 +25,7 @@ define([
             this.lblTitle = this.$el.find('#lbl-title');
 
             this.container = this.$el.find('#container');
-            this.container.html(
-                    this.spinner.render().$el
-                );
+            this.container.html(this.spinner.render().$el);
 
             this.model.fetch()
                 .fail(function () {

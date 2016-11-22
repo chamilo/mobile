@@ -38,7 +38,7 @@ define([
     CourseForumThreadView,
     CourseLpCategoriesView,
     LogoutView
-) {
+    ) {
     var campus = null,
         pushNotification;
 
@@ -48,17 +48,17 @@ define([
             'messages': 'messages',
             'profile': 'profile',
             'message/:id': 'message',
-            'course/:id': 'courseHome',
-            'description/:id': 'courseDescription',
-            'announcements/:id': 'courseAnnouncements',
-            'announcement/:course/:id': 'courseAnnouncement',
-            'agenda/:id': 'courseAgenda',
-            'notebook/:id': 'courseNotebooks',
-            'documents/:id/:dir_id': 'courseDocuments',
-            'forumcategories/:id': 'courseForumCategories',
+            'course/:course/:session': 'courseHome',
+            'description': 'courseDescription',
+            'announcements': 'courseAnnouncements',
+            'announcement/:id': 'courseAnnouncement',
+            'agenda': 'courseAgenda',
+            'notebook': 'courseNotebooks',
+            'documents/:dir_id': 'courseDocuments',
+            'forumcategories': 'courseForumCategories',
             'forum/:id': 'courseForum',
             'forumthread/:forum/:id': 'courseForumThread',
-            'lpcategories/:id': 'courseLpCategories',
+            'lpcategories': 'courseLpCategories',
             'logout': 'logout'
         },
         index: function () {
@@ -75,7 +75,8 @@ define([
                             api_key: campus.get('apiKey'),
                             username: campus.get('username')
                         },
-                        dataType: 'json'
+                        dataType: 'json',
+                        crossDomain: true
                     });
 
                     indexView = new HomeView();
@@ -144,76 +145,62 @@ define([
                 messageId: parseInt(messageId)
             });
 
-            $('body').html(
-                    messageView.render().$el
-                );
+            $('body').html(messageView.render().$el);
         },
         profile: function () {
             var userProfileView = new UserProfileView({
                 campus: campus.toJSON()
             });
 
-            $('body').html(
-                    userProfileView.render().$el
-                );
+            $('body').html(userProfileView.render().$el);
         },
-        courseHome: function (courseId) {
-            window.sessionStorage.setItem('courseId', courseId);
+        courseHome: function (courseId, sessionId) {
+            $.ajaxSetup({
+                data: {
+                    course: courseId,
+                    session: sessionId
+                }
+            });
 
             var courseHome = new CourseHomeView();
 
-            $('body')
-                .html(
-                    courseHome.render().$el
-                );
+            $('body').html(courseHome.render().$el);
         },
-        courseDescription: function (courseId) {
-            window.sessionStorage.courseId = courseId;
-
+        courseDescription: function () {
             var courseDescriptionView = new CourseDescriptionsView();
 
             $('body').html(courseDescriptionView.render().el);
         },
-        courseAnnouncements: function (courseId) {
-            window.sessionStorage.courseId = courseId;
-
+        courseAnnouncements: function () {
             var courseAnnouncementsView = new CourseAnnouncementsView();
 
             $('body').html(courseAnnouncementsView.render().el);
         },
-        courseAnnouncement: function (courseId, announcementId) {
-            window.sessionStorage.courseId = courseId;
+        courseAnnouncement: function (announcementId) {
             window.sessionStorage.announcementId = announcementId;
 
             var courseAnnouncementView = new CourseAnnouncementView();
 
             $('body').html(courseAnnouncementView.render().el);
         },
-        courseAgenda: function (courseId) {
-            window.sessionStorage.courseId = courseId;
-
+        courseAgenda: function () {
             var courseAgendaView = new CourseAgendaView();
 
             $('body').html(courseAgendaView.render().el);
         },
-        courseNotebooks: function (courseId) {
-            window.sessionStorage.courseId = courseId;
-
+        courseNotebooks: function () {
             var courseNotebooksView = new CourseNotebooksView();
 
             $('body').html(courseNotebooksView.render().el);
         },
-        courseDocuments: function (courseId, directoryId) {
-            window.sessionStorage.courseId = courseId;
+        courseDocuments: function (directoryId) {
             window.sessionStorage.directoryId = directoryId;
 
             var courseDocumentsView = new CourseDocumentsView();
 
             $('body').html(courseDocumentsView.render().el);
         },
-        courseForumCategories: function (courseId) {
-            window.sessionStorage.courseId = courseId;
-
+        courseForumCategories: function () {
             var forumCategoriesView = new CourseForumCategoriesView();
 
             $('body').html(forumCategoriesView.render().el);
@@ -233,9 +220,7 @@ define([
 
             $('body').html(forumThreadView.render().$el);
         },
-        courseLpCategories: function (courseId) {
-            window.sessionStorage.courseId = courseId;
-            
+        courseLpCategories: function () {
             var lpCategoriesView = new CourseLpCategoriesView();
 
             $('body').html(lpCategoriesView.render().el);

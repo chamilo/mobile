@@ -4,19 +4,14 @@ define([
 ], function (Backbone, CourseForumCategoryModel) {
     var CourseForumCategoriesCollection = Backbone.Collection.extend({
         model: CourseForumCategoryModel,
-        courseId: 0,
-        initialize: function () {
-            this.courseId = parseInt(window.sessionStorage.courseId);
-        },
         fetch: function () {
             var self = this,
                 deferred = new $.Deferred();
-            
+
             $.ajax({
                 type: 'post',
                 data: {
-                    action: 'course_forumcategories',
-                    course: this.courseId
+                    action: 'course_forumcategories'
                 },
                 success: function (response) {
                     if (response.error) {
@@ -25,8 +20,12 @@ define([
                         return;
                     }
 
-                    response.data.forEach(function (forumcategory) {
-                            self.add(forumcategory);
+                    response.data
+                        .forEach(function (forumCategoryData) {
+                            var forumCategory = new CourseForumCategoryModel(forumCategoryData);
+                            forumCategory.id = forumCategoryData.id;
+
+                            self.add(forumCategory);
                         });
 
                     deferred.resolve();

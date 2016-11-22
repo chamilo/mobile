@@ -13,9 +13,7 @@ define([
             forumId: 0
         },
         forumId: 0,
-        courseId: 0,
         initialize: function () {
-            this.courseId = parseInt(window.sessionStorage.courseId);
             this.forumId = parseInt(window.sessionStorage.forumId);
         },
         save: function (attributes, options) {
@@ -30,8 +28,7 @@ define([
                     thread: attributes.threadId,
                     forum: this.forumId,
                     notify: options.notify ? 1 : 0,
-                    parent: attributes.parentId,
-                    course: this.courseId
+                    parent: attributes.parentId
                 },
                 success: function (response) {
                     if (response.error) {
