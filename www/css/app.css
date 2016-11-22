@@ -44,7 +44,9 @@ hr {
     display: table-cell;
     vertical-align: middle;
 }
-
+.tools{
+    margin-bottom: 5px;
+}
 .my-host legend{
     border: none;
     margin-bottom: 0;
