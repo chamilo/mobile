@@ -43,7 +43,7 @@ define([
             var announcementItemView = new CourseAnnouncementItemView({
                 model: announcement,
                 attributes: {
-                    href: '#announcement/' + window.sessionStorage.courseId + '/' + announcement.get('id')
+                    href: '#announcement/' + announcement.get('id')
                 }
             });
 

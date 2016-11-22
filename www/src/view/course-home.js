@@ -14,7 +14,6 @@ define([
         container: null,
         initialize: function () {
             this.model = new CourseModel();
-            this.model.cid = window.sessionStorage.getItem('courseId');
             this.model.on('change', this.onChange, this);
 
             this.spinner = new SpinnerView();
