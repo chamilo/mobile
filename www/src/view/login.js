@@ -20,9 +20,11 @@ define([
             e.preventDefault();
 
             var self = this,
-                txtHostName = self.$('#txt-hostname'),
-                txtUsername = self.$('#txt-username'),
-                txtPassword = self.$('#txt-password');
+                txtHostName = this.$el.find('#txt-hostname'),
+                txtUsername = this.$el.find('#txt-username'),
+                txtPassword = this.$el.find('#txt-password'),
+                btnSubmit = this.$el.find('#btn-submit')
+                    .prop('disabled', true);
 
             var campusDetails = {
                 url: txtHostName.val(),
@@ -51,8 +53,9 @@ define([
                             success: function () {
                                 window.location.reload();
                             },
-                            error: function () {
+                            error: function (e) {
                                 alert(e);
+                                btnSubmit.prop('disabled', false);
                             }
                         });
                 });
