@@ -45,7 +45,14 @@ hr {
     vertical-align: middle;
 }
 .tools{
-    margin-bottom: 5px;
+    margin-bottom: 15px;
+}
+.tools .title{
+    font-size: 12px;
+}
+.tools .btn{
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+    -webkit-box-shadow: 1px 1px 4px rgba(0,0,0,0.2);
 }
 .my-host legend{
     border: none;
@@ -109,6 +116,7 @@ hr {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+    font-size: 20px;
 }
 .nav-shadow{
     -webkit-box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
