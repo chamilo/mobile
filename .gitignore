@@ -3,3 +3,6 @@ plugins/
 
 # NetBeans project
 /nbproject/
+
+# WebStorm project
+/.idea/
