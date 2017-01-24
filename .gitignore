@@ -3,3 +3,6 @@ plugins/
 
 # NetBeans project
 /nbproject/
+
+# Idea project
+/.idea/
