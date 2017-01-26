@@ -2,9 +2,17 @@ define([
     'backbone',
     'text!template/course-descriptions.html',
     'collection/course-descriptions',
-    'view/course-description',
+    'view/course-description-title',
+    'view/course-description-content',
     'view/spinner'
-], function (Backbone, courseDescriptionsTemplate, CourseDescriptionsCollection, CourseDescriptionView, SpinnerView) {
+], function (
+    Backbone,
+    courseDescriptionsTemplate,
+    CourseDescriptionsCollection,
+    CourseDescriptionTitleView,
+    CourseDescriptionContentView,
+    SpinnerView
+) {
     var CourseDescriptionsView = Backbone.View.extend({
         tagName: 'div',
         className: 'page-inside',
@@ -30,6 +38,12 @@ define([
                     if (!self.collection.length) {
                         self.spinner.stopFailed();
                     }
+
+                    self.container.find('#ls-course-descriptions .nav.nav-tabs a')
+                        .click(function (e) {
+                            e.preventDefault()
+                            $(this).tab('show')
+                        });
                 });
 
             return this;
@@ -39,23 +53,23 @@ define([
                 this.spinner.stop();
             }
 
-            var courseDescriptionView = new CourseDescriptionView({
+            var descriptionTitleView = new CourseDescriptionTitleView({
+                model: description
+            });
+
+            var descriptionContentView = new CourseDescriptionContentView({
                 model: description
             });
 
             this.$el
-                .find('#ls-course-descriptions')
-                .append(courseDescriptionView.render().el);
+                .find('#ls-course-descriptions ul.nav.nav-tabs')
+                .append(descriptionTitleView.render().$el);
+
+            this.$el
+                .find('#ls-course-descriptions div.tab-content')
+                .append(descriptionContentView.render().$el);
 
             return this;
-        },
-        events: {
-            'click #btn-back': 'btnBackOnClick'
-        },
-        btnBackOnClick: function (e) {
-            e.preventDefault();
-
-            window.history.back();
         }
     });
 
