@@ -152,6 +152,12 @@ hr {
     float: left;
     padding-right: 5px;
 }
+
+/* Course description */
+#ls-course-descriptions .nav.nav-tabs li a{
+    padding: 10px 2px;
+}
+
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 }
