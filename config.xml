@@ -20,6 +20,7 @@
     <platform name="android">
         <allow-intent href="market:*"/>
         <preference name="android-targetSdkVersion" value="17"/>
+        <preference name="AndroidPersistentFileLocation" value="Compatibility" />
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*"/>

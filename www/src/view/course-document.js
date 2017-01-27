@@ -2,8 +2,12 @@ define([
     'backbone',
     'text!template/course-document.html'
 ], function (Backbone, viewTemplate) {
+    function onError(error) {
+        console.error(error);
+    }
+
     var CourseDocumentView = Backbone.View.extend({
-        tagName: 'li',
+        tagName: 'div',
         className: 'media',
         template: _.template(viewTemplate),
         render: function () {
@@ -17,15 +21,81 @@ define([
         btnDownloadOnClick: function (e) {
             e.preventDefault();
 
-            if (this.model.get('type') === 'file') {
-                window.open(this.model.get('url'));
+            var filePath = this.model.get('path'),
+                fileURL = this.model.get('url');
+
+            if (this.model.get('type') !== 'file') {
+                Backbone.history.navigate('#documents/' + this.model.get('id'), {
+                    trigger: true
+                });
 
                 return;
             }
 
-            Backbone.history.navigate('#documents/' + this.model.get('id'), {
-                trigger: true
-            });
+            var $pgb = this.$el.find('.progress'),
+                $txtSuccess = this.$el.find('.text-success'),
+                $txtDanger = this.$el.find('.text-danger');
+
+            if (!$pgb.length) {
+                return;
+            }
+
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fs) {
+                fs.root.getFile(filePath, {
+                    create: true,
+                    exclusive: false
+                }, function (fileEntry) {
+                    $txtDanger.addClass('hidden');
+                    $txtSuccess.addClass('hidden');
+
+                    $pgb
+                        .removeClass('hidden')
+                        .removeAttr('aria-hidden')
+                        .find('.progress-bar')
+                        .attr('aria-valuenow', 0)
+                        .css('width', 0 + '%')
+                        .find('.sr-only')
+                        .text(0 + '%');
+
+                    var fileTransfer = new FileTransfer();
+                    fileTransfer.onprogress = function (e) {
+                        if (e.lengthComputable) {
+                            var value = e.loaded / e.total * 100,
+                                percentage = value.toFixed(2);
+
+                            $pgb.find('.progress-bar')
+                                .attr('aria-valuenow', percentage)
+                                .css('width', percentage + '%')
+                                .find('.sr-only')
+                                .text(percentage + '%');
+
+                            return;
+                        }
+
+                        $pgb.find('.progress-bar')
+                            .addClass('progress-bar-striped active')
+                            .attr('aria-valuenow', 100)
+                            .css('width', 100 + '%')
+                            .find('.sr-only')
+                            .text(100 + '%');
+                    };
+                    fileTransfer.download(
+                        encodeURI(fileURL),
+                        fileEntry.toURL(),
+                        function () {
+                            $pgb.addClass('hidden');
+
+                            $txtSuccess.removeClass('hidden');
+                        },
+                        function () {
+                            $pgb.addClass('hidden');
+
+                            $txtDanger.removeClass('hidden');
+                        },
+                        true
+                    );
+                }, onError);
+            }, onError);
         }
     });
 

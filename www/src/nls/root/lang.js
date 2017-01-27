@@ -65,5 +65,7 @@ define({
         }
 
         return "From " + from + " until " + until;
-    }
+    },
+    downloadCompleted: "Download completed",
+    downloadFailed: "Download failed"
 });

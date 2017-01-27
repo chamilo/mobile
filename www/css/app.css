@@ -113,41 +113,7 @@ hr {
     -moz-box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
     box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
 }
-.list-documents{
-    padding: 0;
-    border-left: 1px solid #DDD;
-    border-right: 1px solid #DDD;
-    margin-bottom: 15px;
-}
-.list-documents li{
-    padding: 0;
-    border-top: 1px solid #DDD;
-    border-bottom: 1px solid #DDD;
-    margin-bottom: -1px;
-}
-.list-documents li.media{
-    margin-top: 0;
-}
-.list-documents li .btn-download{
-    display: inline-block;
-    padding: 10px;
-}
-.list-documents li .btn-download .media-heading{
-    color: #212121;
-}
-.list-documents li .btn-download:hover,
-.list-documents li .btn-download:focus
-{
-    background-color: #E5EDF9;
-    text-decoration: none;
-}
-.list-documents li .btn-download .media-body .path-file{
-    color: #212121;
-    margin-bottom: 5px;
-}
-.list-documents li .btn-download .media-body .size-file{
-    color: #757575;
-}
+
 .panel-heading img{
     float: left;
     padding-right: 5px;
@@ -156,6 +122,18 @@ hr {
 /* Course description */
 #ls-course-descriptions .nav.nav-tabs li a{
     padding: 10px 2px;
+}
+
+/* Course documents */
+#ls-course-documents {
+    padding-bottom: 1em;
+}
+#ls-course-documents .media-heading a:active,
+#ls-course-documents .media-heading a:hover {
+    text-decoration: none;
+}
+#ls-course-documents .progress {
+    margin-bottom: 0;
 }
 
 /* Small devices (tablets, 768px and up) */

@@ -53,5 +53,21 @@ define({
     phoneNumber: "Número de teléfono",
     signingOut: "Cerrando sessión",
     loading: "Cargando",
-    noContentAvailable: "Contenido no disponible"
+    noContentAvailable: "Contenido no disponible",
+    downloadComplete: "Download completed",
+    downloadFailed: "Download failed",
+    sessions: "Sessiones de formación",
+    fromDateUntilDate: function (from, until) {
+        if (from && !until) {
+            return "Desde " + from;
+        }
+
+        if (!from && until) {
+            return "Hasta " + until;
+        }
+
+        return "Desde " + from + " hasta " + until;
+    },
+    downloadCompleted: "Descarga completada",
+    downloadFailed: "Descarga fallida"
 });
