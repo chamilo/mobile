@@ -6,8 +6,8 @@ define([
         defaults: {
             name: '',
             id: 0,
-            accessStartDate: '',
-            accessEndDate: '',
+            date: '',
+            duration: '',
             courses: []
         },
         initialize: function (attributes) {

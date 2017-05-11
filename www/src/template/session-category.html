@@ -9,7 +9,7 @@
         <div class="panel-body">
             <p>
                 <span class="fa fa-calendar" aria-hidden="true"></span>
-                <%= lang.fromDateUntilDate(session.get('accessStartDate'), session.get('accessEndDate')) %>
+                <%= session.get('duration') ? session.get('duration') : session.get('date') %>
             </p>
             <div class="row">
                 <% _.each(session.get('courses'), function (course) { %>
