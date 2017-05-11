@@ -16,7 +16,6 @@ define([
                 .html(
                     this.template(this.model.toJSON())
                 )
-                .addClass(id == 1 ? 'in active' : '')
                 .attr('id', 'description-' + id);
 
             return this;

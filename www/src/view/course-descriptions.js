@@ -49,10 +49,6 @@ define([
             return this;
         },
         renderDescription: function (description, descriptions) {
-            if (descriptions.length === 1) {
-                this.spinner.stop();
-            }
-
             var descriptionTitleView = new CourseDescriptionTitleView({
                 model: description
             });
@@ -68,6 +64,13 @@ define([
             this.$el
                 .find('#ls-course-descriptions div.tab-content')
                 .append(descriptionContentView.render().$el);
+
+            if (descriptions.length === 1) {
+                descriptionTitleView.$el.addClass('active');
+                descriptionContentView.$el.addClass('in active');
+
+                this.spinner.stop();
+            }
 
             return this;
         }

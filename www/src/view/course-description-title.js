@@ -12,8 +12,7 @@ define([
             this.$el
                 .html(
                     this.template(this.model.toJSON())
-                )
-                .addClass(this.model.get('id') == 1 ? 'active' : '');
+                );
 
             return this;
         }
