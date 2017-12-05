@@ -40,13 +40,10 @@ define([
                 return;
             }
 
-            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fs) {
-                fs.root.getFile(filePath, {
-                    create: true,
-                    exclusive: false
-                }, function (fileEntry) {
-                    $txtDanger.addClass('hidden');
-                    $txtSuccess.addClass('hidden');
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
+                fileSystem.root.getDirectory('chamilo-lms', {create: true}, function (directory) {
+                    $txtDanger.addClass('hidden')
+                    $txtSuccess.addClass('hidden')
 
                     $pgb
                         .removeClass('hidden')
@@ -55,21 +52,21 @@ define([
                         .attr('aria-valuenow', 0)
                         .css('width', 0 + '%')
                         .find('.sr-only')
-                        .text(0 + '%');
+                        .text(0 + '%')
 
-                    var fileTransfer = new FileTransfer();
+                    var fileTransfer = new FileTransfer()
                     fileTransfer.onprogress = function (e) {
                         if (e.lengthComputable) {
                             var value = e.loaded / e.total * 100,
-                                percentage = value.toFixed(2);
+                                percentage = value.toFixed(2)
 
                             $pgb.find('.progress-bar')
                                 .attr('aria-valuenow', percentage)
                                 .css('width', percentage + '%')
                                 .find('.sr-only')
-                                .text(percentage + '%');
+                                .text(percentage + '%')
 
-                            return;
+                            return
                         }
 
                         $pgb.find('.progress-bar')
@@ -77,23 +74,23 @@ define([
                             .attr('aria-valuenow', 100)
                             .css('width', 100 + '%')
                             .find('.sr-only')
-                            .text(100 + '%');
-                    };
+                            .text(100 + '%')
+                    }
                     fileTransfer.download(
                         encodeURI(fileURL),
-                        fileEntry.toURL(),
+                        directory.toURL() + filePath,
                         function () {
-                            $pgb.addClass('hidden');
+                            $pgb.addClass('hidden')
 
-                            $txtSuccess.removeClass('hidden');
+                            $txtSuccess.removeClass('hidden')
                         },
                         function () {
-                            $pgb.addClass('hidden');
+                            $pgb.addClass('hidden')
 
-                            $txtDanger.removeClass('hidden');
+                            $txtDanger.removeClass('hidden')
                         },
                         true
-                    );
+                    )
                 }, onError);
             }, onError);
         }
