@@ -1,0 +1,19 @@
+.DS_Store
+node_modules/
+/dist/
+/www
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cordova
+/platforms
+/plugins
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
