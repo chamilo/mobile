@@ -1,8 +1,8 @@
 {
   "name": "chamilo-mobile",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "The Messaging app for Chamilo LMS is a multi-mobile-OS application that allows you to get your messages from Chamilo LMS's social network.",
-  "author": "BeezNest info@beeznest.com",
+  "author": "BeezNest <info@beeznest.com>",
   "private": true,
   "scripts": {
     "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
@@ -11,9 +11,15 @@
     "build": "node build/build.js"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.21",
+    "@fortawesome/free-brands-svg-icons": "^5.10.1",
+    "@fortawesome/free-solid-svg-icons": "^5.10.1",
+    "@fortawesome/vue-fontawesome": "^0.1.6",
+    "bootstrap": "^4.3.1",
+    "bootstrap-vue": "^2.0.0-rc.27",
     "cordova-android": "^8.0.0",
-    "vue": "^2.5.2",
-    "vue-router": "^3.0.1"
+    "vue": "^2.6.10",
+    "vue-router": "^3.1.1"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",
