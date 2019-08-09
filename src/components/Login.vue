@@ -82,12 +82,12 @@ export default {
         const store = tx.objectStore('account')
 
         await store.add({
-          url: response.url,
+          url: response.data.url,
           username: this.form.username,
-          apiKey: response.apiKey,
+          apiKey: response.data.apiKey,
           lastMessage: 0,
           lastCheckDate: new Date(),
-          gcmSenderId: response.gcmSenderId
+          gcmSenderId: response.data.gcmSenderId
         })
 
         router.go(0)

@@ -20,7 +20,7 @@ export default {
       needLogin: true
     }
   },
-  async created () {
+  async beforeCreate () {
     await DatabaseManager.init()
 
     const tx = DatabaseManager.db.transaction('account')
