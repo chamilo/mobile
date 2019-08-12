@@ -41,56 +41,67 @@ define([
             }
 
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
-                fileSystem.root.getDirectory('chamilo-lms', {create: true}, function (directory) {
-                    $txtDanger.addClass('hidden')
-                    $txtSuccess.addClass('hidden')
+                fileSystem.root.getDirectory('chamilo-lms', {create: true, exclusive: false}, function (directory) {
+                    $txtDanger.addClass('hidden');
+                    $txtSuccess.addClass('hidden');
 
                     $pgb
                         .removeClass('hidden')
                         .removeAttr('aria-hidden')
                         .find('.progress-bar')
-                        .attr('aria-valuenow', 0)
-                        .css('width', 0 + '%')
+                        .attr('aria-valuenow', 100)
+                        .css('width', '100%')
                         .find('.sr-only')
-                        .text(0 + '%')
+                        .text('Waiting');
 
-                    var fileTransfer = new FileTransfer()
-                    fileTransfer.onprogress = function (e) {
-                        if (e.lengthComputable) {
-                            var value = e.loaded / e.total * 100,
-                                percentage = value.toFixed(2)
+                    var fileNameParts = filePath.split('/').reverse();
 
-                            $pgb.find('.progress-bar')
-                                .attr('aria-valuenow', percentage)
-                                .css('width', percentage + '%')
-                                .find('.sr-only')
-                                .text(percentage + '%')
+                    var xhrRequest = new XMLHttpRequest();
+                    xhrRequest.open('GET', fileURL, true);
+                    xhrRequest.responseType = 'blob';
+                    xhrRequest.onload = function () {
+                        if (this.status != 200) {
+                            alert('Download failed');
 
-                            return
+                            return;
                         }
 
-                        $pgb.find('.progress-bar')
-                            .addClass('progress-bar-striped active')
-                            .attr('aria-valuenow', 100)
-                            .css('width', 100 + '%')
-                            .find('.sr-only')
-                            .text(100 + '%')
-                    }
-                    fileTransfer.download(
-                        encodeURI(fileURL),
-                        directory.toURL() + filePath,
-                        function () {
-                            $pgb.addClass('hidden')
+                        var blob = xhrRequest.response;
 
-                            $txtSuccess.removeClass('hidden')
-                        },
-                        function () {
-                            $pgb.addClass('hidden')
+                        if (!blob) {
+                            alert('Not response');
+                        }
 
-                            $txtDanger.removeClass('hidden')
-                        },
-                        true
-                    )
+                        directory.getFile(fileNameParts[0], { create: true, exclusive: true}, function (fileEntry) {
+                            fileEntry.createWriter(function (fileWriter) {
+                                fileWriter.onwriteend = function () {
+                                    $pgb.find('.progress-bar')
+                                        .addClass('progress-bar-striped active')
+                                        .attr('aria-valuenow', 100)
+                                        .css('width', 100 + '%')
+                                        .find('.sr-only')
+                                        .text(100 + '%');
+
+                                    $pgb.addClass('hidden');
+                                    $txtSuccess.removeClass('hidden');
+                                };
+                                fileWriter.onerror = function () {
+                                    $pgb.addClass('hidden');
+                                    $txtDanger.removeClass('hidden');
+                                };
+
+                                fileWriter.write(blob)
+                            })
+                        }, function (e) {
+                            if (e.code == 12) {
+                                $pgb.addClass('hidden');
+                                $txtSuccess.removeClass('hidden');
+                            }
+
+                            console.log('getFile error', e);
+                        })
+                    };
+                    xhrRequest.send();
                 }, onError);
             }, onError);
         }
