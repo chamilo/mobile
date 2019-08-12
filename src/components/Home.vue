@@ -1,34 +1,58 @@
 <template>
   <div class="home">
-    <section class="mb-4" id="home-sessions" v-if="sessionCategories.length">
-      <b-card :border-variant="sessionCategory.id ? '' : '0'" :header="sessionCategory.id ? sessionCategory.name : ''"
-              :key="sessionCategory.id" :no-body="!sessionCategory.id" class="mb-4"
-              header-tag="header" v-for="sessionCategory of sessionCategories">
-        <b-card :header="session.name" :key="session.id" class="mb-4" header-tag="header"
-                v-for="session of sessionCategory.sessions">
-          <b-card-text>{{ session.duration ? session.duration : session.date }}</b-card-text>
-          <b-row v-if="session.courses.length">
-            <b-col :key="course.id" cols="12" lg="3" md="4" sm="6" v-for="course of session.courses">
-              <b-card :img-alt="course.title"
-                      :img-src="course.pictureUrl ? course.pictureUrl : 'https://picsum.photos/600/300'"
-                      :sub-title="course.code" :title="course.title" class="mb-4" img-top tag="article">
-                <b-card-text v-if="courses.teachers">{{ course.teachers }}</b-card-text>
-              </b-card>
-            </b-col>
-          </b-row>
-        </b-card>
-      </b-card>
-    </section>
+    <b-navbar fixed="top" toggleable="lg" type="dark" variant="info">
+      <b-container>
+        <b-navbar-brand>My courses</b-navbar-brand>
 
-    <b-row id="home-courses" tag="section" v-if="courses.length">
-      <b-col :key="course.id" cols="12" lg="3" md="4" sm="6" v-for="course of courses">
-        <b-card :img-alt="course.title"
-                :img-src="course.urlPicture ? course.urlPicture : 'https://picsum.photos/600/300'"
-                :sub-title="course.code" :title="course.title" class="mb-4" img-top tag="article">
-          <b-card-text>{{ course.teachers }}</b-card-text>
+        <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+
+        <b-collapse id="nav-collapse" is-nav>
+          <b-navbar-nav>
+            <b-nav-item :to="{ name: 'MessagesInbox' }">Messages</b-nav-item>
+            <b-nav-item :to="{ name: 'UserProfile' }">Profile</b-nav-item>
+          </b-navbar-nav>
+        </b-collapse>
+      </b-container>
+    </b-navbar>
+
+    <b-container>
+      <section class="mb-4" id="home-sessions" v-if="sessionCategories.length">
+        <b-card :border-variant="sessionCategory.id ? '' : '0'" :header="sessionCategory.id ? sessionCategory.name : ''"
+                :key="sessionCategory.id" :no-body="!sessionCategory.id" class="mb-4"
+                header-tag="header" v-for="sessionCategory of sessionCategories">
+          <b-card :header="session.name" :key="session.id" class="mb-4" header-tag="header"
+                  v-for="session of sessionCategory.sessions">
+            <b-card-text>{{ session.duration ? session.duration : session.date }}</b-card-text>
+            <b-row v-if="session.courses.length">
+              <b-col :key="course.id" cols="12" lg="3" md="4" sm="6" v-for="course of session.courses">
+                <b-card :img-alt="course.title"
+                        :img-src="course.pictureUrl ? course.pictureUrl : 'https://picsum.photos/600/300'"
+                        :sub-title="course.code" :title="course.title" class="mb-4" img-top tag="article">
+                  <b-card-text v-if="courses.teachers">{{ course.teachers }}</b-card-text>
+                  <b-button :to="{ name: 'CourseHome', params: { course: course.id }, query: {  session: session.id } }"
+                            block variant="warning">
+                    Go to course
+                  </b-button>
+                </b-card>
+              </b-col>
+            </b-row>
+          </b-card>
         </b-card>
-      </b-col>
-    </b-row>
+      </section>
+
+      <b-row id="home-courses" tag="section" v-if="courses.length">
+        <b-col :key="course.id" cols="12" lg="3" md="4" sm="6" v-for="course of courses">
+          <b-card :img-alt="course.title"
+                  :img-src="course.urlPicture ? course.urlPicture : 'https://picsum.photos/600/300'"
+                  :sub-title="course.code" :title="course.title" class="mb-4" img-top tag="article">
+            <b-card-text>{{ course.teachers }}</b-card-text>
+            <b-button :to="{ name: 'CourseHome', params: { course: course.id } }" block variant="warning">
+              Go to course
+            </b-button>
+          </b-card>
+        </b-col>
+      </b-row>
+    </b-container>
   </div>
 </template>
 

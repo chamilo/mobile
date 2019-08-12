@@ -1,10 +1,8 @@
 <template>
-  <div id="app">
-    <b-container>
-      <Login v-if="needLogin"></Login>
+  <div id="app" :style="needLogin ? '' : { paddingTop: '56px' }">
+    <Login v-if="needLogin"></Login>
 
-      <router-view v-if="!needLogin"></router-view>
-    </b-container>
+    <router-view v-if="!needLogin" :class="needLogin ? '' : 'pt-3'"></router-view>
   </div>
 </template>
 
