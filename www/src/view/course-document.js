@@ -56,6 +56,42 @@ define([
 
                     var fileNameParts = filePath.split('/').reverse();
 
+                    function saveFile(blob) {
+                        var fileName = fileNameParts[0];
+
+                        directory.getFile(fileName, {create: true, exclusive: true}, function (fileEntry) {
+                            writeFile(fileEntry, blob)
+                        }, function (e) {
+                            if (e.code == 12) {
+                                $pgb.addClass('hidden');
+                                $txtSuccess.removeClass('hidden');
+                            }
+                        });
+                    }
+
+                    function writeFile(fileEntry, blob) {
+                        fileEntry.createWriter(function (fileWriter) {
+                            fileWriter.onwriteend = function () {
+                                $pgb.find('.progress-bar')
+                                    .addClass('progress-bar-striped active')
+                                    .attr('aria-valuenow', 100)
+                                    .css('width', 100 + '%')
+                                    .find('.sr-only')
+                                    .text(100 + '%');
+
+                                $pgb.addClass('hidden');
+                                $txtSuccess.removeClass('hidden');
+                            };
+
+                            fileWriter.onerror = function () {
+                                $pgb.addClass('hidden');
+                                $txtDanger.removeClass('hidden');
+                            };
+
+                            fileWriter.write(blob)
+                        });
+                    }
+
                     var xhrRequest = new XMLHttpRequest();
                     xhrRequest.open('GET', fileURL, true);
                     xhrRequest.responseType = 'blob';
@@ -72,34 +108,7 @@ define([
                             alert('Not response');
                         }
 
-                        directory.getFile(fileNameParts[0], { create: true, exclusive: true}, function (fileEntry) {
-                            fileEntry.createWriter(function (fileWriter) {
-                                fileWriter.onwriteend = function () {
-                                    $pgb.find('.progress-bar')
-                                        .addClass('progress-bar-striped active')
-                                        .attr('aria-valuenow', 100)
-                                        .css('width', 100 + '%')
-                                        .find('.sr-only')
-                                        .text(100 + '%');
-
-                                    $pgb.addClass('hidden');
-                                    $txtSuccess.removeClass('hidden');
-                                };
-                                fileWriter.onerror = function () {
-                                    $pgb.addClass('hidden');
-                                    $txtDanger.removeClass('hidden');
-                                };
-
-                                fileWriter.write(blob)
-                            })
-                        }, function (e) {
-                            if (e.code == 12) {
-                                $pgb.addClass('hidden');
-                                $txtSuccess.removeClass('hidden');
-                            }
-
-                            console.log('getFile error', e);
-                        })
+                        saveFile(blob);
                     };
                     xhrRequest.send();
                 }, onError);
