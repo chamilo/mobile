@@ -1,0 +1,33 @@
+<%
+    var icon = null;
+
+    switch (id) {
+        case '1':
+            icon = 'info.svg';
+            break;
+        case '2':
+            icon = 'objective.svg';
+            break;
+        case '3':
+            icon = 'topics.svg';
+            break;
+        case '4':
+            icon = 'strategy.svg';
+            break;
+        case '5':
+            icon = 'laptop.svg';
+            break;
+        case '6':
+            icon = 'teacher.svg';
+            break;
+        case '7':
+            icon = 'assessment.svg';
+            break;
+        case '8':
+            icon = 'wizard.svg';
+            break;
+    }
+%>
+<a href="#description-<%= id %>" aria-controls="description-<%= id %>" role="tab" title="<%= title %>">
+    <img src="img/<%= icon %>" alt="<%= title %>" width="32">
+</a>

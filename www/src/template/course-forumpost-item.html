@@ -1,0 +1,77 @@
+<div class="media-body">
+    <header class="media-heading">
+        <h4><%= title %></h4>
+    </header>
+    <div>
+        <ul class="list-unstyled">
+            <li>
+                <span class="fa fa-user"></span> <%= author %>
+            </li>
+            <li>
+                <span class="fa fa-clock-o"></span> <%= date %>
+            </li>
+        </ul>
+        <%= text %>
+    </div>
+    <footer class="text-right">
+        <div class="btn-group">
+            <button class="btn btn-primary" id="btn-reply-<%= id %>" type="button" data-toggle="modal" data-target="#dlg-frmreply-<%= id %>" data-isquote="false">
+                <span class="fa fa-reply" aria-hidden="true"></span> <%= lang.reply %>
+            </button>
+            <button class="btn btn-info" id="btn-quote-<%= id %>" type="button" data-toggle="modal" data-target="#dlg-frmreply-<%= id %>" data-isquote="true">
+                <span class="fa fa-quote-left" aria-hidden="true"></span> <%= lang.quote %>
+            </button>
+        </div>
+    </footer>
+    <hr>
+</div>
+
+<aside class="modal fade" id="dlg-frmreply-<%= id %>" tabindex="-1" role="dialog" aria-labelledby="dlg-frmreply-<%= id %>-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="dlg-frmreply-<%= id %>-label"><%= lang.replyTo(title) %></h4>
+            </div>
+            <div class="modal-body">
+                <form action="#" method="post" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="txt-title-<%= id %>"><%= lang.title %></label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="txt-title-<%= id %>" value="Re: <%= title %>" placeholder="Title">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="txt-text-<%= id %>"><%= lang.text %></label>
+                        <div class="col-sm-10">
+                            <div id="lbl-quote-<%= id %>" class="article-content">
+                                <blockquote>
+                                    <cite><%= author %></cite>
+                                    <%= text %>
+                                </blockquote>
+                            </div>
+                            <textarea class="form-control" id="txt-text-<%= id %>" rows="6"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" id="chk-notify-<%= id %>" value="1"> <%= lang.notifyMeByEmail %>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <button type="submit" class="btn btn-primary btn-block"><%= lang.replyThisPost %></button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="txt-parent-<%= id %>" value="<%= id %>">
+                    <input type="hidden" id="txt-thread-<%= id %>" value="<%= threadId %>">
+                    <input type="hidden" id="txt-forum-<%= id %>" value="<%= forumId %>">
+                </form>
+            </div>
+        </div>
+    </div>
+</aside>

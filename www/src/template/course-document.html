@@ -1,0 +1,26 @@
+<div class="media-left">
+    <img class="media-object center-block" src="img/<%= icon %>" alt="<%= title %>" width="32">
+</div>
+<div class="media-body word-break-all">
+    <h5 class="media-heading">
+        <a href="#" class="btn-download"><%= title %></a>
+    </h5>
+    <% if (type === 'file') { %>
+        <div class="progress hidden">
+            <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                <span class="sr-only">0%</span>
+            </div>
+        </div>
+        <div class="text-success hidden">
+            <span class="fa fa-check" aria-hidden="true"></span> <%= lang.downloadCompleted %>
+        </div>
+        <div class="text-danger hidden">
+            <span class="fa fa-check" aria-hidden="true"></span> <%= lang.downloadFailed %>
+        </div>
+    <% } %>
+</div>
+<% if (type === 'file') { %>
+    <div class="media-right media-bottom">
+        <small class="center-block text-center"><%= size %></small>
+    </div>
+<% } %>

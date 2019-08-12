@@ -1,0 +1,35 @@
+<nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript: history.back();">
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.myProfile %>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<section class="container" id="container">
+    <img src="<%= pictureUri %>" alt="<%= username %>'s picture" class="img-responsive img-circle center-block">
+    <h3 class="page-header">
+        <%= fullName %>
+        <% if (officialCode) { %>
+            <small><%= officialCode %></small>
+        <% } %>
+    </h3>
+    <dl>
+        <dt><%= lang.username %></dt>
+        <dd><%= username %></dd>
+        <% if (phone) { %>
+            <dt><%= lang.phoneNumber %></dt>
+            <dd><%= phone %></dd>
+        <% } %>
+    </dl>
+    <% if (extra) { %>
+        <dl>
+            <% extra.forEach(function (item) { %>
+                <dt><%= item.title %></dt>
+                <dd><%= item.value %></dd>
+            <% }); %>
+        </dl>
+    <% } %>
+</section>

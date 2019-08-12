@@ -1,0 +1,52 @@
+<header class="panel-heading" role="tab" id="heading-<%= id %>">
+    <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#ls-course-forumcategories" href="#collapse-<%= id %>" aria-expanded="true" aria-controls="collapse">
+            <%= title %>
+        </a>
+    </h4>
+</header>
+<div id="collapse-<%= id %>" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading-<%= id %>">
+    <% if (description) { %>
+        <div class="panel-body">
+            <%= description %>
+        </div>
+    <% } %>
+
+    <% if (forums.length) { %>
+        <ul class="list-group">
+            <% forums.forEach(function (forum) { %>
+                <li class="list-group-item" id="forum-<%= forum.id %>">
+                    <h5 class="list-group-item-heading">
+                        <a href="#forum/<%= forum.id %>"><%= forum.title %></a>
+                    </h5>
+                    <div class="list-group-item-text">
+                        <% if (forum.description) { %>
+                            <%= forum.description %>
+                        <% } %>
+
+                        <div class="row">
+                            <div class="col-xs-6">
+                                <%= lang.numberOfThreads %>
+                            </div>
+                            <div class="col-xs-6">
+                                <%= forum.numberOfThreads %>
+                            </div>
+                        </div>
+
+                        <% if (forum.lastPost) { %>
+                            <div class="row">
+                                <div class="col-xs-6">
+                                    <%= lang.lastPost %>
+                                </div>
+                                <div class="col-xs-6">
+                                    <%= forum.lastPost.user %><br>
+                                    <%= forum.lastPost.date %>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
+</div>

@@ -1,0 +1,38 @@
+<header class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <span class="navbar-brand no-event"><% print(lang.myCourses) %></span>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navbar-collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#messages">
+                        <span class="fa fa-inbox" aria-hidden="true"></span> <% print(lang.messages) %>
+                    </a>
+                </li>
+                <li>
+                    <a href="#profile">
+                        <span class="fa fa-user" aria-hidden="true"></span> <% print(lang.profile) %>
+                    </a>
+                </li>
+                <li>
+                    <a href="#logout">
+                        <span class="fa fa-sign-out" aria-hidden="true"></span> <% print(lang.signOut) %>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<section class="container">
+    <div id="lst-courses" class="row"></div>
+    <div id="lst-session-categories"></div>
+</section>

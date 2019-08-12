@@ -1,0 +1,34 @@
+<header class="panel-heading">
+    <img width="20px" height="20px" src="img/calendar.svg" alt="<%= title %>">
+    <h3 class="panel-title">
+        <%= title %>
+    </h3>
+</header>
+<div class="panel-body">
+    <ul class='list-unstyled'>
+        <% if (startDate == endDate) { %>
+            <li>
+                <span class="fa fa-clock-o" aria-hidden="true"></span> <%= startDate %>
+            </li>
+            <% if (isAllDay) { %>
+                <li><%= lang.allDay %></li>
+            <% } %>
+        <% } else { %>
+            <li>
+                <span class="fa fa-clock-o" aria-hidden="true"></span> <%= startDate %>
+            </li>
+            <li>
+                <% if (isAllDay) { %>
+                    <%= lang.allDay %>
+                <% } else { %>
+                    <span class="fa fa-clock-o" aria-hidden="true"></span>
+                    <%= endDate %>
+                <% } %>
+            </li>
+        <% } %>
+    </ul>
+    <hr>
+    <div class="article-content app-text-secundary">
+        <%= content %>
+    </div>
+</div>

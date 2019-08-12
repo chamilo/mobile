@@ -1,0 +1,149 @@
+hr {
+    margin: 10px 0;
+}
+
+.container > .navbar-header,
+.container-fluid .navbar-header,
+.container > .navbar-collapse,
+.container-fluid .navbar-collapse {
+    margin-right: -15px;
+}
+
+.navbar-brand {
+    color: #FFF;
+}
+
+.article-content {
+    overflow-x: auto;
+}
+
+.word-break-all {
+    word-break: break-all;
+}
+/* CSS PAGES */
+.page-inside{
+    padding-top: 80px;
+}
+.splash{
+    padding-top: 150px;
+}
+#page-login, #page-splash{
+    background: #01579b;
+    background: -moz-linear-gradient(top, #01579b 0%, #2196f3 100%);
+    background: -webkit-linear-gradient(top, #01579b 0%,#2196f3 100%);
+    background: linear-gradient(to bottom, #01579b 0%,#2196f3 100%);
+    bottom: 0;
+    display: table;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}
+#page-login .container,
+#page-splash .container {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.my-host legend{
+    border: none;
+    margin-bottom: 0;
+}
+.app-text-normal{
+    color: #FFFFFF;
+}
+.app-text-secundary{
+    color: #757575;
+}
+.app-text-primary{
+    color: #212121;
+}
+.app-color-accentuation{
+    color: #FF5722;
+}
+.app-color-primary{
+    color: #2196f3;
+}
+.app-color-dark{
+    color: #1976D2;
+}
+.app-color-primary-light{
+    color: #BBDEFB;
+}
+.bold{
+    font-weight: bold;
+}
+.description{
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+.description .title{
+    font-size: 18px;
+    margin: 0;
+}
+.description .code{
+    font-size: 12px;
+    padding-bottom: 4px;
+    padding-top: 4px;
+}
+.btn-back{
+    color: #FFFFFF;
+    padding-top: 15px;
+}
+.btn-back a{
+    color: #FFFFFF;
+}
+.btn-back a:hover, .btn-back a:focus{
+    text-decoration: none;
+}
+.bg-white{
+    background-color: white;
+}
+.navbar .title span{
+    margin-right: 10px;
+}
+.navbar .title{
+    width: 320px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.nav-shadow{
+    -webkit-box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
+    -moz-box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
+    box-shadow: 0px 10px 13px -10px rgba(0,0,0,0.43);
+}
+
+.panel-heading img{
+    float: left;
+    padding-right: 5px;
+}
+
+/* Course description */
+#ls-course-descriptions .nav.nav-tabs li a{
+    padding: 10px 2px;
+}
+
+/* Course documents */
+#ls-course-documents {
+    padding-bottom: 1em;
+}
+#ls-course-documents .media-heading a:active,
+#ls-course-documents .media-heading a:hover {
+    text-decoration: none;
+}
+#ls-course-documents .progress {
+    margin-bottom: 0;
+}
+
+/* Small devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+}
+
+/* Medium devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+}
+
+/* Large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+}

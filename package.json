@@ -1,0 +1,24 @@
+{
+  "name": "org.chamilo.mobile",
+  "displayName": "Chamilo Messaging",
+  "version": "1.0.0",
+  "description": "The Messaging app for Chamilo LMS is a multi-mobile-OS application that allows you to get your messages from Chamilo LMS's social network.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "BeezNest <info@beeznest.com>",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "cordova-android": "^6.3.0",
+    "cordova-plugin-whitelist": "^1.3.4"
+  },
+  "cordova": {
+    "plugins": {
+      "cordova-plugin-whitelist": {}
+    },
+    "platforms": [
+      "android"
+    ]
+  }
+}
