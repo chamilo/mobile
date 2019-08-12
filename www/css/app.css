@@ -12,7 +12,25 @@ hr {
 .navbar-brand {
     color: #FFF;
 }
-
+.navbar-inverse .navbar-brand{
+    color: #b2dbfb;
+    display: inline-flex;
+    width: 100%;
+}
+.navbar-inverse .navbar-brand .fa{
+    padding-right: 10px;
+}
+.navbar-inverse #lbl-title{
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0;
+    text-overflow: ellipsis;
+    width: 90%;
+}
+.navbar-inverse .navbar-brand.no-event{
+    display: inherit;
+    width: auto;
+}
 .article-content {
     overflow-x: auto;
 }
@@ -23,6 +41,9 @@ hr {
 /* CSS PAGES */
 .page-inside{
     padding-top: 80px;
+}
+.page-inside .container .btn-block{
+    margin-bottom: 2rem;
 }
 .splash{
     padding-top: 150px;
