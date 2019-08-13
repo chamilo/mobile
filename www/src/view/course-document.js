@@ -49,31 +49,69 @@ define([
                         .removeClass('hidden')
                         .removeAttr('aria-hidden')
                         .find('.progress-bar')
-                        .attr('aria-valuenow', 100)
-                        .css('width', '100%')
+                        .attr('aria-valuenow', 0)
+                        .css('width', 0 + '%')
                         .find('.sr-only')
-                        .text('Waiting');
+                        .text(0 + '%');
 
-                    var fileNameParts = filePath.split('/').reverse();
+                    var xhrRequest = new XMLHttpRequest();
+                    xhrRequest.open('GET', fileURL, true);
+                    xhrRequest.responseType = 'blob';
+                    xhrRequest.onload = function () {
+                        if (this.status != 200) {
+                            $pgb.addClass('hidden');
+                            $txtDanger.removeClass('hidden');
+
+                            return;
+                        }
+
+                        var blob = xhrRequest.response;
+
+                        if (!blob) {
+                            $pgb.addClass('hidden');
+                            $txtDanger.removeClass('hidden');
+                        }
+
+                        saveFile(blob);
+                    };
+                    xhrRequest.onprogress = function (e) {
+                        var value = e.lengthComputable ? (e.loaded / e.total * 100) : 100;
+                        var percentage = value.toFixed(2);
+
+                        $pgb.find('.progress-bar')
+                            .attr('aria-valuenow', percentage)
+                            .css('width', percentage + '%')
+                            .find('.sr-only')
+                            .text(percentage + '%');
+                    };
+                    xhrRequest.onerror = function () {
+                        $pgb.addClass('hidden');
+                        $txtDanger.removeClass('hidden');
+                    };
+                    xhrRequest.send();
 
                     function saveFile(blob) {
-                        var fileName = fileNameParts[0];
+                        var fileNameParts = filePath.split('/').reverse();
 
-                        directory.getFile(fileName, {create: true, exclusive: true}, function (fileEntry) {
-                            writeFile(fileEntry, blob)
-                        }, function (e) {
-                            if (e.code == 12) {
-                                $pgb.addClass('hidden');
-                                $txtSuccess.removeClass('hidden');
+                        directory.getFile(
+                            fileNameParts[0],
+                            {create: true, exclusive: true},
+                            function (fileEntry) {
+                                writeFile(fileEntry, blob)
+                            },
+                            function (e) {
+                                if (e.code == 12) {
+                                    $pgb.addClass('hidden');
+                                    $txtSuccess.removeClass('hidden');
+                                }
                             }
-                        });
+                        );
                     }
 
                     function writeFile(fileEntry, blob) {
                         fileEntry.createWriter(function (fileWriter) {
                             fileWriter.onwriteend = function () {
                                 $pgb.find('.progress-bar')
-                                    .addClass('progress-bar-striped active')
                                     .attr('aria-valuenow', 100)
                                     .css('width', 100 + '%')
                                     .find('.sr-only')
@@ -91,28 +129,8 @@ define([
                             fileWriter.write(blob)
                         });
                     }
-
-                    var xhrRequest = new XMLHttpRequest();
-                    xhrRequest.open('GET', fileURL, true);
-                    xhrRequest.responseType = 'blob';
-                    xhrRequest.onload = function () {
-                        if (this.status != 200) {
-                            alert('Download failed');
-
-                            return;
-                        }
-
-                        var blob = xhrRequest.response;
-
-                        if (!blob) {
-                            alert('Not response');
-                        }
-
-                        saveFile(blob);
-                    };
-                    xhrRequest.send();
-                }, onError);
-            }, onError);
+                });
+            });
         }
     });
 
