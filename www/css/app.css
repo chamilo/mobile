@@ -107,6 +107,17 @@ hr {
     padding-bottom: 4px;
     padding-top: 4px;
 }
+.btn-reply{
+    color: #b2dbfb;
+    font-size: 2rem;
+    width: 32px;
+    position: absolute;
+    right: 0;
+    top: 18px;
+}
+.btn-reply:hover{
+    color: #FFF;
+}
 .btn-back{
     color: #FFFFFF;
     padding-top: 15px;
