@@ -115,6 +115,20 @@ hr {
     right: 0;
     top: 18px;
 }
+.navigation{
+    color: #b2dbfb;
+    font-size: 2rem;
+    width: 70px;
+    position: absolute;
+    right: 0;
+    top: 15px;
+    display: flex;
+    text-align: right;
+}
+.navigation .navbar-brand{
+    padding: 5px;
+    width: 32px;
+}
 .btn-reply:hover{
     color: #FFF;
 }
@@ -170,10 +184,18 @@ hr {
 
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
+    .navigation .navbar-brand {
+        padding: 5px;
+        width: 60px;
+    }
 }
 
 /* Medium devices (desktops, 992px and up) */
 @media (min-width: 992px) {
+    .navigation .navbar-brand {
+        padding: 5px;
+        width: 60px;
+    }
 }
 
 /* Large devices (large desktops, 1200px and up) */
