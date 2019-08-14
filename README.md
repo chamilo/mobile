@@ -1,13 +1,14 @@
 Chamilo LMS mobile app
 ================================
 
-This is a Cordova mobile app to get notifications of new messages from the 
-Chamilo LMS campus of your choice.
+> This is a Cordova mobile app([1]) to get notifications of new messages from the 
+Chamilo LMS campus of your choice and review the content from the main course 
+tools.
 
 The finished application should:
-* allow you to connect to one or more Chamilo LMS campuses
-* notify you when you have a new message on the Chamilo LMS campus(es)
-* store your messages locally (but not allow you to answer just yet)
+* Allow you to connect to one or more Chamilo LMS campuses
+* Notify you when you have a new message on the Chamilo LMS campus(es)
+* Store your messages locally (but not allow you to answer just yet)
 * Review the principal tools for courses and sessions
 
 Spirit of this project
@@ -15,24 +16,20 @@ Spirit of this project
 
 This is developed as a side project and it might require a few updates to
 Chamilo itself for the first version to work (web services in Chamilo will have
-to be extended for it to work).
+to be extended for it to work([2])).
 
-As a consequence, we will try to use PSR-1 and PSR-2 coding conventions as a
-base, but we know they will not be adapted to our development, so we *will* 
-update that in the future.
-
-Installation
+Development environment
 ------------
 
-First, clone this repository
+Clone this repository
 
 
 ```
 git clone git@github.com:chamilo/mobile.git
-cd mobile-messaging
+cd mobile
 ```
 
-Add the Android platform
+Add the platforms
 
 ```
 cordova platform add android
@@ -40,23 +37,27 @@ cordova platform add android
 
 Add the plugins
 ```
-cordova plugin add cordova-plugin-network-information
-cordova plugin add phonegap-plugin-push
 cordova plugin add cordova-plugin-file
-cordova plugin add cordova-plugin-file-transfer
+cordova plugin add cordova-support-google-services
+cordova plugin add cordova-plugin-firebase-messaging
 ```
 
-Build an Android APK
+Build the application for the platforms added
 
 ```
 cordova build android
 ```
 
-Install on an Android device
+Execute on an Android device
 
 ```
 cordova run android
 ```
+
+Additionally, you need configure your project and app in Google's Firebase Console. And download the config files
+according to the platforms (`google-services.json` Android and @GoogleService-Info.plist@ for iOS). See the
+[README](https://github.com/chemerisuk/cordova-support-google-services/blob/master/README.md#installation) file
+for the Google Services plugin
 
 Enable Chamilo notification pushing
 -----------------------------------

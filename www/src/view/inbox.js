@@ -9,12 +9,6 @@ define([
         messages = null;
 
     var loadMessages = function () {
-        if (!window.navigator.onLine) {
-            alert('No online');
-
-            return;
-        }
-
         if (!campus) {
             alert('No campus');
 
@@ -86,12 +80,7 @@ define([
                 .done(function () {
                     loadMessages()
                         .done(function () {
-                            if (self.collection.length) {
-                                self.spinner.stop();
-                                return;
-                            }
-
-                            self.spinner.stopFailed();
+                            self.spinner.stop();
                         });
                 });
 

@@ -19,16 +19,16 @@ define([
         frmLoginOnSubmit: function (e) {
             e.preventDefault();
 
-            var self = this,
+            var frm = this.$el.find('form'),
                 txtHostName = this.$el.find('#txt-hostname'),
                 txtUsername = this.$el.find('#txt-username'),
-                txtPassword = this.$el.find('#txt-password'),
-                btnSubmit = this.$el.find('#btn-submit')
-                    .prop('disabled', true);
+                txtPassword = this.$el.find('#txt-password');
+
+            frm.children().prop('disabled', true);
 
             var campusDetails = {
-                url: txtHostName.val(),
-                username: txtUsername.val()
+                url: txtHostName.val().trim(),
+                username: txtUsername.val().trim()
             };
 
             $
@@ -40,6 +40,8 @@ define([
                 .done(function (response) {
                     if (response.error) {
                         alert(response.message);
+
+                        frm.children().prop('disabled', false);
 
                         return;
                     }
@@ -55,9 +57,13 @@ define([
                             },
                             error: function (e) {
                                 alert(e);
-                                btnSubmit.prop('disabled', false);
+
+                                frm.children().prop('disabled', false);
                             }
                         });
+                })
+                .fail(function () {
+                    frm.children().prop('disabled', false);
                 });
         },
         chkPasswordOnClick: function (e) {
