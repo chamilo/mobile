@@ -87,32 +87,21 @@ define([
                         return;
                     }
 
-                    pushNotification = window.PushNotification.init({
-                        android: {
-                            senderID: gcmSenderId
-                        },
-                        ios: {
-                            alert: 'true',
-                            badge: 'true',
-                            sound: 'true'
-                        },
-                        windows: {}
+                    cordova.plugins.firebase.messaging.requestPermission().then(function () {
+                        getToken();
                     });
-                    pushNotification.on('error', function (e) {
-                        console.log(e);
-                    });
-                    pushNotification.on('registration', function (data) {
-                        $.ajax({
-                            type: 'post',
-                            data: {
-                                action: 'gcm_id',
-                                registration_id: data.registrationId
-                            }
+
+                    function getToken() {
+                        cordova.plugins.firebase.messaging.getToken().then(function (token) {
+                            $.ajax({
+                                type: 'post',
+                                data: {
+                                    action: 'gcm_id',
+                                    registration_id: token
+                                }
+                            });
                         });
-                    });
-                    pushNotification.on('notification', function (data) {
-                        console.log(data);
-                    });
+                    }
                 })
                 .fail(function () {
                     indexView = new LoginView();
