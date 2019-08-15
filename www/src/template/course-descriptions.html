@@ -1,10 +1,10 @@
 <nav class="navbar navbar-inverse navbar-fixed-top nav-shadow" role="navigation">
     <div class="container">
-        <div class="navbar-header">
-            <a class="navbar-brand" href="javascript: history.back();" role="button">
-                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= lang.courseDescriptions %>
-            </a>
-        </div>
+        <button onclick="history.back();">
+            <span class="fa fa-arrow-left" aria-hidden="true"></span>
+            <span class="sr-only">Back</span>
+        </button>
+        <span class="navbar-text"><%= lang.courseDescriptions %></span>
     </div>
 </nav>
 

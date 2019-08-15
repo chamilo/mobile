@@ -2,6 +2,53 @@ hr {
     margin: 10px 0;
 }
 
+.navbar {
+    font-size: 20px;
+}
+.navbar button {
+    background: transparent;
+    border: 0;
+    color: #EEE;
+    float: left;
+    margin-left: -15px;
+    padding: 17px 15px;
+    outline: 0 none;
+}
+.navbar button:hover,
+.navbar button:active {
+    color: #DDD;
+    outline: 0 none;
+}
+.navbar .navbar-text {
+    color: #EEE;
+    display: block;
+    float: left;
+    margin: 17px auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: calc(100% - 42px);
+}
+
+.navbar.navbar-btbb .navbar-text {
+    width: calc(100% - 42px - 87px);
+}
+.navbar.navbar-btbb button:not(:first-child) {
+    margin-left: 0;
+}
+.navbar.navbar-btbb button:last-child {
+
+    margin-right: -15px;
+}
+
+.navbar-header {
+    margin-left: 0 !important;
+    width: 50%;
+}
+.navbar-header button {
+    margin: 0 0 0 -15px;
+}
+
 .container > .navbar-header,
 .container-fluid .navbar-header,
 .container > .navbar-collapse,

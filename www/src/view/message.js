@@ -23,8 +23,8 @@ define([
             this.model.on('change', this.render, this);
         },
         events: {
-            'click a#prev-message': 'btnPrevMessageOnClick',
-            'click a#next-message': 'btnNextMessageOnClick'
+            'click button#prev-message': 'btnPrevMessageOnClick',
+            'click button#next-message': 'btnNextMessageOnClick'
         },
         render: function () {
             if (!this.model.get('messageId')) {
