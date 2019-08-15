@@ -31,7 +31,7 @@ hr {
 }
 
 .navbar.navbar-btbb .navbar-text {
-    width: calc(100% - 42px - 87px);
+    width: calc(100% - 42px - 90px);
 }
 .navbar.navbar-btbb button:not(:first-child) {
     margin-left: 0;
