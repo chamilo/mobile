@@ -1,8 +1,8 @@
 <template>
-  <div id="app" :style="needLogin ? '' : { paddingTop: '56px' }">
+  <div id="app">
     <Login v-if="needLogin"></Login>
 
-    <router-view v-if="!needLogin" :class="needLogin ? '' : 'pt-3'"></router-view>
+    <router-view v-if="!needLogin"></router-view>
   </div>
 </template>
 
@@ -34,5 +34,10 @@ export default {
 #app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin-top: 71px;
 }
+
+  ul#app-navbar li.nav-item:nth-child(2){
+    width: calc(100% - 52px);
+  }
 </style>
