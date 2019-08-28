@@ -18,24 +18,21 @@ This is developed as a side project and it might require a few updates to
 Chamilo itself for the first version to work (web services in Chamilo will have
 to be extended for it to work([2])).
 
-Development environment
-------------
+## Development environment
 
 Clone this repository
-
-
 ```
 git clone git@github.com:chamilo/mobile.git
 cd mobile
 ```
 
 Add the platforms
-
 ```
 cordova platform add android
+cordova platform add ios
 ```
 
-Add the plugins
+Add the plugins (support-google-services and firebase-messaging are optionals)
 ```
 cordova plugin add cordova-plugin-file
 cordova plugin add cordova-support-google-services
@@ -43,9 +40,9 @@ cordova plugin add cordova-plugin-firebase-messaging
 ```
 
 Build the application for the platforms added
-
 ```
 cordova build android
+cordoba build ios
 ```
 
 Execute on an Android device
@@ -54,17 +51,32 @@ Execute on an Android device
 cordova run android
 ```
 
-Additionally, you need configure your project and app in Google's Firebase Console. And download the config files
+### Enable push notification from Chamilo
+
+#### Customizing the app
+
+You need configure your project and app in Google's Firebase Console. And download the config files
 according to the platforms (`google-services.json` Android and @GoogleService-Info.plist@ for iOS). See the
 [README](https://github.com/chemerisuk/cordova-support-google-services/blob/master/README.md#installation) file
-for the Google Services plugin
+for the Google Services plugin.
 
-Enable Chamilo notification pushing
------------------------------------
+Edit the `config.xml` file:
+```xml
+    <platform name="android">
+        <!-- ... -->
+        <resource-file src="google-services.json" target="app/google-services.json" />
+    </platform>
+    <platform name="ios">
+        <!-- ... -->
+        <resource-file src="GoogleService-Info.plist" />
+    </platform>
+```
+
+#### Configuring Chamilo LMS portal
 
 If you'd like to use push notifications (only tested on Android and only available from Chamilo v1.10.4), you will have to enable and set the following parameters in your Chamilo server's:
 
-For Chamilo v1.10.4
+**For Chamilo v1.10.4**
 ```
 //Allow send a push notification when an email are sent
 //$_configuration['messaging_allow_send_push_notification'] = 'true';
@@ -74,7 +86,7 @@ For Chamilo v1.10.4
 //$_configuration['messaging_gdc_api_key'] = '';
 ```
 
-For Chamilo v1.11.x
+**For Chamilo v1.11.x**
 Fill the settings about the Web Services category in Configuration Settings (in administration page)
 
 Contributing
