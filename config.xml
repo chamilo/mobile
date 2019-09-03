@@ -1,5 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="org.chamilo.messaging" version="2.2.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="org.chamilo.messaging" version="2.2.0" xmlns="http://www.w3.org/ns/widgets"
+        xmlns:cdv="http://cordova.apache.org/ns/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android">
     <name>Chamilo Messaging</name>
     <description>
         The Messaging app for Chamilo LMS is a multi-mobile-OS application that allows you to get your messages from Chamilo LMS's social network.
@@ -19,6 +21,15 @@
     <platform name="android">
         <allow-intent href="market:*" />
         <preference name="AndroidPersistentFileLocation" value="Compatibility" />
+        <resource-file src="res/drawable/notification_icon.png"
+                       target="app/src/main/res/drawable/notification_icon.png"/>
+        <resource-file src="res/values/colors.xml" target="app/src/main/res/values/colors.xml"/>
+        <config-file parent="/manifest/application" target="app/src/main/AndroidManifest.xml">
+            <meta-data android:name="com.google.firebase.messaging.default_notification_icon"
+                       android:resource="@drawable/notification_icon"/>
+            <meta-data android:name="com.google.firebase.messaging.default_notification_color"
+                       android:resource="@color/notification_color"/>
+        </config-file>
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*" />
