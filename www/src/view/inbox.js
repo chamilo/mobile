@@ -6,7 +6,8 @@ define([
     'view/spinner'
 ], function (Backbone, inboxTemplate, MessagesCollection, InboxMessageView, SpinnerView) {
     var campus = null,
-        messages = null;
+        messages = null,
+        messagesContainer = null;
 
     var loadMessages = function () {
         if (!campus) {
@@ -54,13 +55,24 @@ define([
         });
     };
 
+    function renderInMessageList(message) {
+        if (!messagesContainer) {
+            return;
+        }
+
+        var messageView = new InboxMessageView({ model: message });
+
+        messagesContainer.prepend(
+            messageView.render().el
+        );
+    }
+
     var InboxView = Backbone.View.extend({
         tagName: 'div',
         className: 'page-inside',
         id: 'inbox',
         initialize: function () {
             this.collection = new MessagesCollection();
-            this.collection.on('add', this.renderMessage, this);
 
             campus = this.model;
             messages = this.collection;
@@ -73,11 +85,16 @@ define([
 
             this.el.innerHTML = this.template();
 
+            messagesContainer = this.$el.find('#lst-messages');
+
             this.container = this.$el.find('#container');
             this.container.prepend(this.spinner.render().$el);
 
             this.collection.fetch()
                 .done(function () {
+                    messages.each(renderInMessageList);
+                    messages.on('add', renderInMessageList);
+
                     loadMessages()
                         .done(function () {
                             self.spinner.stop();
@@ -86,13 +103,15 @@ define([
 
             return this;
         },
-        renderMessage: function (message, messages) {
-            var messageView = new InboxMessageView({
-                model: message
-            });
+        reloadView: function () {
+            var self = this;
 
-            this.$el.find('#lst-messages')
-                .prepend(messageView.render().el);
+            this.container.prepend(this.spinner.render().$el);
+
+            loadMessages()
+                .done(function () {
+                    self.spinner.stop();
+                });
         }
     });
 

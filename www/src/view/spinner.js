@@ -30,7 +30,7 @@ define([
             });
         },
         stop: function () {
-            this.$el.remove();
+            this.$el.detach();
         },
         onChange: function (model, options) {
             this.render();

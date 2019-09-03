@@ -102,6 +102,10 @@ define([
                             });
                         });
                     }
+
+                    cordova.plugins.firebase.messaging.onBackgroundMessage(function(payload) {
+                        window.location.hash = 'messages'
+                    });
                 })
                 .fail(function () {
                     indexView = new LoginView();
@@ -121,7 +125,11 @@ define([
 
             $('body').html(
                 inboxView.render().el
-                );
+            );
+
+            cordova.plugins.firebase.messaging.onMessage(function(payload) {
+                inboxView.reloadView();
+            });
         },
         message: function (messageId) {
             if (!messageId) {
@@ -237,7 +245,7 @@ define([
 
     return {
         init: function () {
-            new Router();
+            var router = new Router();
 
             Backbone.history.start();
         }
