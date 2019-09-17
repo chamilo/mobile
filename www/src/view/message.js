@@ -17,9 +17,16 @@ define([
         btnPrev: null,
         btnNext: null,
         initialize: function (options) {
+            var self = this;
+
             this.model = new MessageModel();
+            this.model.id = options.messageId;
             this.model.cid = options.messageId;
-            this.model.fetch();
+            this.model.fetch({
+                success: function () {
+                    self.model.save({ beenSeen: true });
+                }
+            });
             this.model.on('change', this.render, this);
         },
         events: {
@@ -71,6 +78,7 @@ define([
             }
 
             this.model.set(previousMessage.toJSON());
+            previousMessage.save({ beenSeen: true });
         },
         btnNextMessageOnClick: function (e) {
             e.preventDefault();
@@ -80,6 +88,7 @@ define([
             }
 
             this.model.set(nextMessage.toJSON());
+            nextMessage.save({ beenSeen: true });
         }
     });
 

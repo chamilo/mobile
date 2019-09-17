@@ -10,7 +10,8 @@ define([
             content: '',
             hasAttachment: false,
             sendDate: new Date(),
-            url: ''
+            url: '',
+            beenSeen: false,
         },
         save: function (attributes, options) {
             var self = this,
@@ -89,6 +90,7 @@ define([
 
                 if (cursor) {
                     nextMessage = new MessageModel(cursor.value);
+                    nextMessage.id = cursor.primaryKey;
                     nextMessage.cid = cursor.primaryKey;
                 }
 
@@ -121,6 +123,7 @@ define([
 
                 if (cursor) {
                     previousMessage = new MessageModel(cursor.value);
+                    previousMessage.id = cursor.primaryKey;
                     previousMessage.cid = cursor.primaryKey;
                 }
 
