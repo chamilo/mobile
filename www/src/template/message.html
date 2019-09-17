@@ -21,9 +21,11 @@
         </header>
         <div class="panel-body">
             <span class="fa fa-user" aria-hidden="true"></span> <%= sender %>
-            <a href="<%= url %>" target="_blank" rel="external" class="btn btn-xs btn-warning pull-right">
-                <span class="fa fa-link" aria-hidden="true"></span> View in platform
-            </a>
+            <% if (url) { %>
+                <a href="<%= url %>" target="_blank" rel="external" class="btn btn-xs btn-warning pull-right">
+                    <span class="fa fa-link" aria-hidden="true"></span> View in platform
+                </a>
+            <% } %>
             <br>
             <span class="fa fa-clock-o" aria-hidden="true"></span> <%= sendDate %>
             <% if (hasAttachment) { %>
