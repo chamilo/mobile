@@ -17,6 +17,8 @@ define([
             var self = this,
                 deferred = new $.Deferred();
 
+            var oldBeenSeen = self.get('beenSeen');
+
             self.attributes = $.extend(self.attributes, attributes);
 
             var transaction = DB.conx.transaction([DB.TABLE_MESSAGE], 'readwrite'),
@@ -26,6 +28,16 @@ define([
             request.onsuccess = function (e) {
                 self.id = e.target.result;
                 self.cid = self.id;
+
+                if (!oldBeenSeen && self.get('beenSeen')) {
+                    $.ajax({
+                        type: 'post',
+                        data: {
+                            action: 'user_message_read',
+                            messages: [self.get('messageId')],
+                        }
+                    });
+                }
 
                 deferred.resolve();
             };
