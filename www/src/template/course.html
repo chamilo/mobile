@@ -1,4 +1,7 @@
 <div class="thumbnail">
+    <% if (isSpecial) { %>
+        <img src="img/drawing-pin.svg" class="special-course-pin" width="48">
+    <% } %>
     <img src="<%= urlPicture ? urlPicture : 'img/session_default.png' %>" alt="<%= title %>'s picture" class="img-responsive center-block">
     <div class="caption description">
         <h3 class="title app-text-primary"><%= title %></h3>

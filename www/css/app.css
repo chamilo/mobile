@@ -229,6 +229,16 @@ hr {
     margin-bottom: 0;
 }
 
+
+.thumbnail {
+    position: relative;
+}
+.thumbnail .special-course-pin {
+    position: absolute;
+    right: -2px;
+    top: -4px;
+}
+
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
     .navigation .navbar-brand {

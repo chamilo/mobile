@@ -9,6 +9,7 @@ define([
             directory: '',
             urlPicture: null,
             teachers: '',
+            isSpecial: false,
             tools: [
                 {type: 'description'},
                 {type: 'documents'},
