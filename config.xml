@@ -35,6 +35,10 @@
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
         <preference name="iosPersistentFileLocation" value="Compatibility" />
+        <icon src="res/ios/icon-60.png" width="60" height="60" />
+        <icon src="res/ios/icon-60@2x.png" width="120" height="120" />
+        <icon src="res/ios/icon-76.png" width="76" height="76" />
+        <icon src="res/ios/icon-76@2x.png" width="152" height="152" />
     </platform>
     <plugin name="cordova-plugin-whitelist" spec="1" />
 </widget>
