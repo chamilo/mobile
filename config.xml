@@ -38,6 +38,8 @@
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
         <preference name="iosPersistentFileLocation" value="Compatibility" />
+        <icon src="res/ios/icon-40.png" width="40" height="40" />
+        <icon src="res/ios/icon-40@2x.png" width="80" height="80" />
         <icon src="res/ios/icon-60.png" width="60" height="60" />
         <icon src="res/ios/icon-60@2x.png" width="120" height="120" />
         <icon src="res/ios/icon-76.png" width="76" height="76" />
