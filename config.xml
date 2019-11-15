@@ -38,6 +38,7 @@
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
         <preference name="iosPersistentFileLocation" value="Compatibility" />
+        <preference name="phonegap-version" value="cli-7.1.0" />
         <icon src="res/ios/icon-40.png" width="40" height="40" />
         <icon src="res/ios/icon-40@2x.png" width="80" height="80" />
         <icon src="res/ios/icon-60.png" width="60" height="60" />
@@ -48,5 +49,5 @@
         <icon src="res/ios/icon-83_5@2x.png" width="167" height="167" />
         <icon src="res/ios/icon-1024.png" width="1024" height="1024" />
     </platform>
-    <plugin name="cordova-plugin-whitelist" spec="1" />
+    <plugin name="cordova-plugin-whitelist" />
 </widget>
