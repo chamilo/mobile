@@ -30,6 +30,9 @@
             <meta-data android:name="com.google.firebase.messaging.default_notification_color"
                        android:resource="@color/notification_color"/>
         </config-file>
+        <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
+            <application android:usesCleartextTraffic="true" />
+        </edit-config>
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*" />
