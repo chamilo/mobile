@@ -42,8 +42,11 @@
         <icon src="res/ios/icon-40@2x.png" width="80" height="80" />
         <icon src="res/ios/icon-60.png" width="60" height="60" />
         <icon src="res/ios/icon-60@2x.png" width="120" height="120" />
+        <icon src="res/ios/icon-60@3x.png" width="180" height="180" />
         <icon src="res/ios/icon-76.png" width="76" height="76" />
         <icon src="res/ios/icon-76@2x.png" width="152" height="152" />
+        <icon src="res/ios/icon-83_5@2x.png" width="167" height="167" />
+        <icon src="res/ios/icon-1024.png" width="1024" height="1024" />
     </platform>
     <plugin name="cordova-plugin-whitelist" spec="1" />
 </widget>
