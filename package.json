@@ -1,7 +1,7 @@
 {
   "name": "org.chamilo.messaging",
   "displayName": "Chamilo Messaging",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "The Messaging app for Chamilo LMS is a multi-mobile-OS application that allows you to get your messages from Chamilo LMS's social network.",
   "main": "index.js",
   "scripts": {
