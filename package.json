@@ -10,7 +10,7 @@
   "author": "BeezNest <info@beeznest.com>",
   "license": "AGPL-3.0",
   "dependencies": {
-    "cordova-android": "^8.1.0",
+    "cordova-android": "^15.0.0",
     "cordova-ios": "^5.1.0",
     "cordova-plugin-file": "^6.0.2",
     "cordova-plugin-firebase-messaging": "^4.0.1",
