@@ -28,10 +28,16 @@ const entry: CourseHomeEntry = {
 }
 
 describe("createCourseToolCapabilities", () => {
-  it("exposes only the verified read-only announcements contract", () => {
+  it("exposes the verified course tool contracts", () => {
     const capabilities = createCourseToolCapabilities(entry)
 
-    expect(capabilities).toHaveLength(1)
+    expect(capabilities).toHaveLength(3)
+    expect(capabilities.map(({ toolKey }) => toolKey)).toEqual([
+      "announcements",
+      "course-progress",
+      "notebook",
+    ])
+
     expect(capabilities[0]).toMatchObject({
       toolKey: "announcements",
       available: true,

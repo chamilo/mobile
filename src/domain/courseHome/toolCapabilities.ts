@@ -1,5 +1,9 @@
 import type { CourseHomeEntry, ToolCapability } from "@/domain/courseHome/types"
-import { buildAnnouncementsRoute, buildNotebookRoute } from "@/domain/courses/routeContext"
+import {
+  buildAnnouncementsRoute,
+  buildNotebookRoute,
+  buildCourseProgressRoute,
+} from "@/domain/courses/routeContext"
 
 export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapability[] {
   if (entry.accessState !== "available") {
@@ -21,6 +25,17 @@ export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapabi
         detail: "GET /api/announcement/{id}",
         context: ["cid", "sid", "gid"],
       },
+    },
+    {
+      toolKey: "course-progress",
+      titleKey: "courseHome.tools.courseProgress.title",
+      descriptionKey: "courseHome.tools.courseProgress.description",
+      icon: "pi pi-chart-line",
+      available: true,
+      readOnly: true,
+      reason: null,
+      route: buildCourseProgressRoute(entry.context),
+      apiContract: { list: "GET /api/course-progress/list", context: ["cid", "sid", "gid"] },
     },
     {
       toolKey: "notebook",
