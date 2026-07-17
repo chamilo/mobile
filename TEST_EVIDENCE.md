@@ -203,3 +203,75 @@ The isolated validation used the exact pinned packages from the available npm ca
 - Announcements placeholder keeps `source`, `sid`, `membership` or `sessionCourse` query context.
 - Invalid copied URLs show the missing-context state rather than another course.
 - Mobile viewport has no horizontal overflow.
+
+---
+
+## Chat 06 — Read-only announcements candidate
+
+### Generation-environment checks
+
+| Check                                                               | Result                                                                                                |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| TypeScript/Vue script syntax transpilation                          | PASS                                                                                                  |
+| Strict core TypeScript check for announcement domain, API and cache | PASS                                                                                                  |
+| Dependency manifest comparison                                      | Pending local script; no files intentionally changed                                                  |
+| Full Yarn install/lint/test/build                                   | Pending local environment because package-manager downloads are unavailable in the generation sandbox |
+
+### Added coverage in the ZIP
+
+- announcement list/detail contract normalization;
+- response course/session mismatch rejection;
+- unsafe attachment URL rejection;
+- read-only `isStudentView=true` query;
+- 403 mapping;
+- HTML script/handler/protocol removal;
+- safe link attributes and same-campus image restriction;
+- campus/user/context cache isolation;
+- offline cached list behavior;
+- detail cache behavior;
+- announcement card rendering;
+- detail route context preservation.
+
+### Required local technical evidence
+
+```text
+yarn install --immutable
+yarn format:check
+yarn lint
+yarn typecheck
+yarn test:unit
+yarn build
+```
+
+### Required runtime API evidence
+
+Use `scripts/test-announcements-api.sh` and record:
+
+- valid JWT login HTTP 200;
+- announcement list HTTP 200;
+- returned `courseId` and optional `sessionId` match the requested context;
+- `studentView=true`, `canManage=false`, empty CSRF token;
+- detail HTTP 200 when at least one visible announcement exists;
+- no-token list HTTP 403 PASS; the mobile client treats HTTP 401 and 403 as authentication/access failures.
+
+### Required browser evidence
+
+- direct course list and detail;
+- session course list and detail;
+- empty state;
+- invalid/mixed route context state;
+- sanitized links open safely;
+- scripts/event handlers do not execute;
+- offline cached list/detail and retry;
+- attachment metadata shown without a direct unauthenticated link;
+- mobile viewport without horizontal page overflow.
+
+## Chat 06 runtime verification
+
+- Authentication returned HTTP 200.
+- Announcement list returned HTTP 200.
+- Read-only list contract passed.
+- Announcement detail returned HTTP 200.
+- Read-only detail contract passed.
+- Anonymous announcement access returned HTTP 403.
+- HTTP 401 and 403 are both handled as authentication/access rejection by the mobile client.

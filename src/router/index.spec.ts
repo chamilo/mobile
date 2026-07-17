@@ -30,4 +30,19 @@ describe("mobile router", () => {
       sessionCourse: "17",
     })
   })
+
+  it("keeps context when opening an announcement detail", async () => {
+    const router = createTestRouter()
+
+    await router.push({
+      name: "announcement-detail",
+      params: { courseId: "42", announcementId: "9" },
+      query: { source: "direct", membership: "17" },
+    })
+    await router.isReady()
+
+    expect(router.currentRoute.value.name).toBe("announcement-detail")
+    expect(router.currentRoute.value.params).toEqual({ courseId: "42", announcementId: "9" })
+    expect(router.currentRoute.value.query).toEqual({ source: "direct", membership: "17" })
+  })
 })

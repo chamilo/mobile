@@ -6,27 +6,28 @@ The application is built with Vue 3, TypeScript, Vite and Capacitor. It consumes
 
 ## Current status
 
-Chat 04 courses and sessions:
+Chat 06 read-only announcements:
 
-- Vue 3 mobile scaffold, campus profiles and HTTP transport;
+- Vue 3 mobile scaffold, campus profiles and browser HTTP transport;
 - JWT login and authenticated profile through verified REST contracts;
-- direct course memberships from `GET /api/me/courses`;
-- current, upcoming and past session memberships from the existing session-subscription operations;
-- mobile course cards with progress, role, teachers, requirements and new-content state when supplied by the API;
-- session cards preserving both `courseId` and `sessionId`;
-- Hydra pagination followed through same-campus relative links;
-- loading, error, empty, offline/stale and retry states;
-- last successful course reading cached by campus and authenticated user;
-- logout and session expiration clear course cache and in-memory course state;
-- no composed backend endpoint was added because existing operations are sufficient for the MVP.
+- direct and session courses with preserved enrollment context;
+- mobile-owned course home and explicit ToolCapability registry;
+- announcement list and detail through the existing API Platform Providers;
+- forced read-only student view with no management controls or CSRF tokens;
+- course/session response-context verification;
+- author, dates, content and attachment metadata;
+- audited HTML sanitizer and safe external-link attributes;
+- list/detail loading, error, empty, retry and offline cached states;
+- announcement cache isolated by campus, authenticated user and course/session context;
+- no backend announcement change because existing contracts are sufficient.
 
 Not implemented yet:
 
-- mobile course home capabilities;
-- announcements;
+- authenticated attachment file download;
 - native HTTP or secure native token storage;
 - Android or iOS projects;
-- refresh tokens or external identity-provider flows.
+- refresh tokens or external identity-provider flows;
+- announcement create/edit/delete.
 
 ## Requirements
 
@@ -105,7 +106,7 @@ Views and stores must not import Axios, `fetch`, Capacitor HTTP, `localStorage` 
 
 Campus profile persistence also passes through `CampusProfileRepository`. The browser implementation uses `localStorage`, but components and Pinia stores do not access it directly.
 
-Course data persistence passes through `CampusCacheRepository`. Cache keys include both campus ID and authenticated user ID, and all cached course data is removed on logout.
+Course data persistence passes through `CampusCacheRepository`. Announcement list/detail persistence uses the same campus cache namespace through `AnnouncementsCacheRepository`. Cache keys include campus ID, authenticated user ID and exact course/session context, and all cached data is removed on logout.
 
 ## Security baseline
 
@@ -135,4 +136,4 @@ The browser development build keeps JWTs in memory only. Passwords are never sto
 
 The course home is owned by this application. It resolves the exact direct membership or session-course identity carried from the course list and never loads the LMS web homepage or legacy shortcuts.
 
-Tools are exposed through an explicit `ToolCapability` registry. A tool appears only after its API contract and permission behavior are verified. The first registered capability is read-only Announcements; its content is implemented in the next batch.
+Tools are exposed through an explicit `ToolCapability` registry. A tool appears only after its API contract and permission behavior are verified. The first registered capability is read-only Announcements. List and detail are implemented through verified REST operations, and server HTML is rendered only after the local sanitizer boundary.

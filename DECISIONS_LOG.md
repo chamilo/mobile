@@ -728,3 +728,59 @@ The initial course home intentionally contains only one tool. New tools require 
 #### Revisit when
 
 A stable API Platform course-capability operation exists and can replace or populate the registry without exposing legacy links.
+
+---
+
+### ADR-028 — Read-only announcements use student-view contracts and a sanitizer boundary
+
+```text
+Status: Accepted
+Date: 2026-07-17
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+The LMS already exposes dedicated API Platform Providers for announcement list and detail. They validate course, session, group, permissions, visibility and recipients. The operations can return management flags and CSRF tokens for teachers unless `isStudentView=true` is requested. Announcement detail content is HTML processed for the current reader and must still be treated as untrusted client content.
+
+#### Decision
+
+- Consume only:
+  - `GET /api/announcement/list`;
+  - `GET /api/announcement/{id}`.
+- Always send the preserved `cid` and optional `sid` from the exact mobile course route.
+- Omit `gid` until a verified mobile group-course flow exists.
+- Always send `isStudentView=true` so the MVP receives only visible read-only content and no management capability.
+- Verify that every response returns the same `courseId`, `sessionId` and null `groupId` requested by the mobile context.
+- Cache list and detail by campus, authenticated user and exact enrollment context.
+- Render HTML only after `sanitizeAnnouncementHtml` removes executable/embedded elements, event/style attributes and unsafe URLs.
+- Resolve links against the campus, open them with web safety attributes and allow images only from the selected campus origin.
+- Show attachment metadata from the verified detail contract, but defer authenticated binary download until native/browser file handling is designed.
+
+#### Alternatives
+
+- Copy LMS announcement Vue views: rejected because they include write actions, CSRF handling, desktop components and management state.
+- Render backend HTML directly with `v-html`: rejected because server content remains untrusted.
+- Request teacher view but hide buttons: rejected because unnecessary management metadata and CSRF tokens would still cross the API boundary.
+- Open attachment URLs as normal anchors: rejected because the JWT is memory-only and direct browser navigation would not attach Authorization safely.
+- Add a new mobile announcement endpoint: rejected because the existing Providers already enforce the required context and permissions.
+
+#### Consequences
+
+Teachers using the MVP see the same visible read-only announcement set as a student view. Management and recipient details remain outside the mobile client. Attachment names and sizes are visible, but file download waits for a verified authenticated binary transport/file lifecycle.
+
+#### Evidence
+
+- `AnnouncementList` and `AnnouncementItem` ApiResources.
+- `AnnouncementListProvider` and `AnnouncementItemProvider` context/permission checks.
+- LMS `announcementService.js` list/detail paths.
+- `src/services/announcements/AnnouncementsApiService.ts`.
+- `src/domain/announcements/sanitizeAnnouncementHtml.ts`.
+- `src/stores/announcements.ts`.
+
+#### Revisit when
+
+- group-course navigation is implemented;
+- authenticated attachment downloading is designed for browser and Android;
+- representative runtime data demonstrates a pagination or payload-size gap;
+- announcement management becomes an approved feature.

@@ -6,6 +6,7 @@ import {
   type RouteRecordRaw,
 } from "vue-router"
 
+import AnnouncementDetailView from "@/views/AnnouncementDetailView.vue"
 import AnnouncementsView from "@/views/AnnouncementsView.vue"
 import CampusView from "@/views/CampusView.vue"
 import CourseHomeView from "@/views/CourseHomeView.vue"
@@ -97,6 +98,26 @@ export const routes: RouteRecordRaw[] = [
     }),
     meta: {
       titleKey: "routes.announcements",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/announcements/:announcementId",
+    name: "announcement-detail",
+    component: AnnouncementDetailView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      announcementId: String(route.params.announcementId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.announcementDetail",
       showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,

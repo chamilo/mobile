@@ -1,40 +1,38 @@
-Continuamos Chamilo Mobile 2.x después del inicio móvil del curso.
+Continuamos Chamilo Mobile 2.x después de anuncios read-only.
 
 Estado esperado:
 
 - Mobile repo: /var/www/chamilo-mobile
-- Completed branch: feature/mobile2-course-home
-- Expected commit: Mobile: Add mobile course home
+- Completed branch: feature/mobile2-announcements
+- Expected commit: Mobile: Add read-only announcements
 - Backend repo: /var/www/chamilo2
 - Backend branch: feature/mobile-api-current-user
 - Backend commit: ba1f018207 API: Add authenticated user profile operation
 - Both working trees clean
 
-No reconstruyas scaffold, campus profiles, transport, JWT login, profile, logout, courses/sessions, route context, course header or ToolCapability registry.
+No reconstruyas scaffold, campus profiles, transport, JWT login, profile, logout, courses/sessions, course home, ToolCapability registry or announcements.
 
 Objetivo único:
 
-Chat 06 — Read-only announcements.
+Chat 07 — Capacitor Android and native transport verification.
 
 1. Verify branch, HEAD and clean state.
-2. Re-audit the existing announcement list/detail contracts and current Vue announcement services.
-3. Consume only:
-   - GET /api/announcement/list with cid/sid/gid context;
-   - GET /api/announcement/{id} with the same context.
-4. Preserve the exact direct or session course route context from Chat 05.
-5. Implement list and detail, dates, loading, error, empty, retry and cached-read states.
-6. Sanitize server HTML before rendering; do not use raw v-html without an audited sanitizer strategy.
-7. Open external links safely.
-8. Add attachments only if their download contract is verified.
-9. Validate student visibility and session/course ownership with runtime evidence.
-10. Update all state and handoff files and provide a full ZIP.
+2. Audit Capacitor 8 configuration, installed Java/Gradle/Android tooling and official Capacitor HTTP behavior.
+3. Generate only the Android platform; do not generate iOS.
+4. Decide and document whether `android/` is committed.
+5. Implement or verify `NativeHttpClient` while preserving the existing `HttpClient` contract.
+6. Keep browser transport unchanged.
+7. Configure local-development network security only if required for an explicit HTTP campus.
+8. Validate app launch, back button, foreground/background, relaunch and logout.
+9. Do not add secure token persistence yet unless the scope is explicitly changed; memory-only behavior must remain honest.
+10. Update all handoff files and provide a full ZIP.
 
 Out of scope:
 
-- create/edit/delete announcements;
-- notification writes;
-- other course tools;
-- GraphQL;
-- native HTTP;
-- secure native storage;
-- Android/iOS.
+- iOS;
+- push notifications;
+- full offline;
+- store publication;
+- new course tools;
+- announcement writes;
+- GraphQL.

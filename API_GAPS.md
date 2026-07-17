@@ -248,3 +248,36 @@ Decision:
 - tools are registered only after their independent API contracts are verified;
 - Announcements is the only capability registered in Chat 05;
 - no backend branch or endpoint is authorized for course home at this stage.
+
+---
+
+## Chat 06 API gap update — 2026-07-17
+
+### GAP-005 — No backend change for read-only list/detail
+
+The existing list and detail Providers already:
+
+- require a valid course ID;
+- verify the session belongs to the course;
+- verify group context when supplied;
+- enforce announcement-tool availability;
+- enforce course/session/group read permission;
+- filter announcement visibility and recipients;
+- return normalized list/detail contracts;
+- emit authenticated attachment download URLs.
+
+Mobile decision:
+
+- consume list/detail with `isStudentView=true`;
+- preserve `cid` and optional `sid` from the selected enrollment;
+- verify returned context before accepting data;
+- keep attachment download deferred until authenticated binary/file handling is implemented;
+- do not add pagination until representative volume proves the current all-items list is insufficient.
+
+Status:
+
+```text
+Read-only list/detail: Closed without backend change
+Pagination: Investigation only
+Authenticated attachment download: Deferred client capability, not yet a backend gap
+```
