@@ -8,7 +8,12 @@ import type {
 } from "@/domain/courses/types"
 
 export type CourseHomeAccessState = "available" | "denied" | "closed"
-export type CourseToolKey = "announcements" | "course-description" | "course-progress" | "notebook"
+export type CourseToolKey =
+  | "announcements"
+  | "course-description"
+  | "course-progress"
+  | "documents"
+  | "notebook"
 
 export interface CourseHomeEntry {
   course: CourseSummary

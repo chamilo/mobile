@@ -1,4 +1,5 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+export type HttpResponseType = "json" | "text" | "blob" | "arraybuffer"
 
 export interface HttpRequest<TBody = unknown> {
   method: HttpMethod
@@ -8,6 +9,7 @@ export interface HttpRequest<TBody = unknown> {
   body?: TBody
   timeoutMs?: number
   signal?: AbortSignal
+  responseType?: HttpResponseType
 }
 
 export interface HttpResponse<TData> {

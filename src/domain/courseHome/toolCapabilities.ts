@@ -4,6 +4,7 @@ import {
   buildNotebookRoute,
   buildCourseProgressRoute,
   buildCourseDescriptionRoute,
+  buildDocumentsRoute,
 } from "@/domain/courses/routeContext"
 
 export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapability[] {
@@ -38,6 +39,20 @@ export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapabi
       route: buildCourseDescriptionRoute(entry.context),
       apiContract: {
         list: "GET /api/course-description/list",
+        context: ["cid", "sid", "gid"],
+      },
+    },
+    {
+      toolKey: "documents",
+      titleKey: "courseHome.tools.documents.title",
+      descriptionKey: "courseHome.tools.documents.description",
+      icon: "pi pi-folder-open",
+      available: true,
+      readOnly: true,
+      reason: null,
+      route: buildDocumentsRoute(entry.context),
+      apiContract: {
+        list: "GET /api/documents",
         context: ["cid", "sid", "gid"],
       },
     },

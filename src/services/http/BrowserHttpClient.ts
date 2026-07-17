@@ -78,6 +78,7 @@ export class BrowserHttpClient implements HttpClient {
       timeout: request.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       signal: request.signal,
       validateStatus: (status) => status >= 200 && status < 300,
+      responseType: request.responseType,
     }
 
     try {

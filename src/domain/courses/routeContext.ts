@@ -148,3 +148,11 @@ export function buildCourseDescriptionRoute(context: CourseNavigationContext): R
     query: buildContextQuery(context),
   }
 }
+
+export function buildDocumentsRoute(context: CourseNavigationContext): RouteLocationRaw {
+  return {
+    name: "documents",
+    params: { courseId: String(context.courseId) },
+    query: buildContextQuery(context),
+  }
+}
