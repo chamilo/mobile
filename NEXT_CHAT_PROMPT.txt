@@ -1,40 +1,39 @@
-Continuamos Chamilo Mobile 2.x después del batch de cursos y sesiones.
+Continuamos Chamilo Mobile 2.x después del inicio móvil del curso.
 
 Estado esperado:
 
 - Mobile repo: /var/www/chamilo-mobile
-- Branch completed: feature/mobile2-courses
-- Base commit before Chat 04: 9d9a10e Mobile: Add JWT authentication flow
-- Expected commit: Mobile: Show user courses and sessions
+- Completed branch: feature/mobile2-course-home
+- Expected commit: Mobile: Add mobile course home
 - Backend repo: /var/www/chamilo2
 - Backend branch: feature/mobile-api-current-user
 - Backend commit: ba1f018207 API: Add authenticated user profile operation
 - Both working trees clean
 
-No reconstruyas scaffold, campus profiles, transport, JWT login, profile, logout, courses store, Hydra normalization or course/session cards.
+No reconstruyas scaffold, campus profiles, transport, JWT login, profile, logout, courses/sessions, route context, course header or ToolCapability registry.
 
-Objetivo único del siguiente batch:
+Objetivo único:
 
-Chat 05 — Mobile course home and capability registry.
+Chat 06 — Read-only announcements.
 
 1. Verify branch, HEAD and clean state.
-2. Preserve the route context already provided by Chat 04:
-   - courseId;
-   - nullable sessionId;
-   - direct membershipId or sessionCourseId.
-3. Audit the existing LMS course-home/navigation services and API operations before showing any tool.
-4. Implement a mobile-owned course header and explicit `ToolCapability` registry.
-5. Show only tools with a verified API contract and permission behavior.
-6. Announcements may appear as an available read-only capability only after confirming its existing list/detail contracts; do not implement announcement content until Chat 06.
-7. Do not open legacy pages or the remote SPA.
-8. Include loading, denied, closed and missing-context states.
-9. Keep direct and session course context distinct.
-10. Update all handoff files and provide a full ZIP.
+2. Re-audit the existing announcement list/detail contracts and current Vue announcement services.
+3. Consume only:
+   - GET /api/announcement/list with cid/sid/gid context;
+   - GET /api/announcement/{id} with the same context.
+4. Preserve the exact direct or session course route context from Chat 05.
+5. Implement list and detail, dates, loading, error, empty, retry and cached-read states.
+6. Sanitize server HTML before rendering; do not use raw v-html without an audited sanitizer strategy.
+7. Open external links safely.
+8. Add attachments only if their download contract is verified.
+9. Validate student visibility and session/course ownership with runtime evidence.
+10. Update all state and handoff files and provide a full ZIP.
 
 Out of scope:
 
-- announcement list/detail implementation;
-- course writes;
+- create/edit/delete announcements;
+- notification writes;
+- other course tools;
 - GraphQL;
 - native HTTP;
 - secure native storage;

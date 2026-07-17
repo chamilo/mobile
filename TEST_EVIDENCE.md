@@ -165,3 +165,41 @@ The isolated validation used the exact pinned packages from the available npm ca
 - Offline mode shows cached course data and retry state.
 - Logout removes `campusId/cache/*` entries and in-memory overview.
 - Mobile viewport has no horizontal overflow.
+
+---
+
+## Chat 05 — Mobile course home candidate
+
+### Static and build validation
+
+| Command                                    | Result                                          |
+| ------------------------------------------ | ----------------------------------------------- |
+| `prettier --write/check .`                 | PASS                                            |
+| `eslint . --max-warnings=0`                | PASS                                            |
+| `vue-tsc --noEmit -p tsconfig.app.json`    | PASS                                            |
+| `tsc --noEmit -p tsconfig.node.json`       | PASS                                            |
+| `vitest run --pool=vmForks --maxWorkers=2` | PASS — 28 files, 80 tests                       |
+| `vite build`                               | PASS — Vite 8.1.4, 212 modules                  |
+| dependency comparison                      | PASS — `package.json` and `yarn.lock` unchanged |
+| native directory check                     | PASS — no `android/` or `ios/`                  |
+
+### Added coverage
+
+- strict parsing of direct and session route context;
+- rejection of mixed or incomplete enrollment identifiers;
+- exact direct membership and session-course resolution;
+- denied and unavailable direct-course states;
+- explicit announcement capability and preserved route context;
+- course header rendering for session/progress context;
+- tool card read-only labeling;
+- announcement route context preservation.
+
+### Pending local browser evidence
+
+- Direct course header matches the selected membership.
+- Session course header shows the correct session.
+- Back navigation returns to Courses.
+- Only Announcements appears in the tool list.
+- Announcements placeholder keeps `source`, `sid`, `membership` or `sessionCourse` query context.
+- Invalid copied URLs show the missing-context state rather than another course.
+- Mobile viewport has no horizontal overflow.

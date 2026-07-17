@@ -219,3 +219,32 @@ Decision:
 - revisit only with production performance evidence.
 
 No new backend gap was introduced by the Chat 04 implementation.
+
+---
+
+## Chat 05 API gap update — 2026-07-17
+
+No new backend gap was opened.
+
+The existing LMS endpoint:
+
+```text
+GET /course/{cid}/home.json?sid={sid}
+```
+
+was audited and deliberately not adopted as a mobile contract because it:
+
+- depends on web course/session context;
+- clears and writes PHP session values;
+- registers web tracking state;
+- resolves plugin and shortcut behavior;
+- can return legacy or remote-web destinations;
+- is not an explicit mobile-safe capability contract.
+
+Decision:
+
+- course home is owned by the mobile client;
+- exact enrollment context comes from Chat 04;
+- tools are registered only after their independent API contracts are verified;
+- Announcements is the only capability registered in Chat 05;
+- no backend branch or endpoint is authorized for course home at this stage.

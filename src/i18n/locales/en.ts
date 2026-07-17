@@ -144,6 +144,43 @@ export default {
       server: "The campus returned an unexpected courses error.",
     },
   },
+  courseHome: {
+    loading: "Loading course context...",
+    errorTitle: "Course could not be opened",
+    backToCourses: "Back to courses",
+    toolsEyebrow: "Course tools",
+    toolsTitle: "Available tools",
+    toolCount: "{count} verified tool | {count} verified tools",
+    readOnly: "Read only",
+    verifiedToolsNotice:
+      "Only tools with a verified API contract and permission behavior are shown in this mobile app.",
+    sessionPeriods: {
+      current: "Current session",
+      upcoming: "Upcoming session",
+      past: "Past session",
+    },
+    states: {
+      missing: {
+        title: "Course context not found",
+        description:
+          "Open this course again from your courses list to preserve its enrollment context.",
+      },
+      denied: {
+        title: "Course access denied",
+        description: "Complete the required access conditions before opening this course.",
+      },
+      closed: {
+        title: "Course unavailable",
+        description: "This course is not currently available for your enrollment.",
+      },
+    },
+    tools: {
+      announcements: {
+        title: "Announcements",
+        description: "Read course and session announcements.",
+      },
+    },
+  },
   placeholders: {
     courses: {
       title: "Your courses will appear here",

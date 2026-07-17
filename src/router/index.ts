@@ -74,6 +74,7 @@ export const routes: RouteRecordRaw[] = [
       membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
       sessionCourseId:
         typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
     }),
     meta: {
       titleKey: "routes.courseHome",
@@ -86,7 +87,14 @@ export const routes: RouteRecordRaw[] = [
     path: "/courses/:courseId/announcements",
     name: "announcements",
     component: AnnouncementsView,
-    props: true,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
     meta: {
       titleKey: "routes.announcements",
       showBottomNavigation: false,

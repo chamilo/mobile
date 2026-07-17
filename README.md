@@ -130,3 +130,9 @@ GET /api/me
 ```
 
 The browser development build keeps JWTs in memory only. Passwords are never stored. Reloading the page clears the development session by design. Native secure storage remains intentionally unavailable until its dedicated security batch.
+
+## Mobile course home
+
+The course home is owned by this application. It resolves the exact direct membership or session-course identity carried from the course list and never loads the LMS web homepage or legacy shortcuts.
+
+Tools are exposed through an explicit `ToolCapability` registry. A tool appears only after its API contract and permission behavior are verified. The first registered capability is read-only Announcements; its content is implemented in the next batch.

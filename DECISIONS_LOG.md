@@ -674,3 +674,57 @@ The MVP makes four authenticated collection requests on first load and normalize
 #### Revisit when
 
 A representative production dataset demonstrates unacceptable request count, payload size or latency.
+
+---
+
+### ADR-027 — Mobile-owned course home and explicit capabilities
+
+```text
+Status: Accepted
+Date: 2026-07-17
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+The LMS SPA loads course-home shortcuts through `/course/{cid}/home.json`. The controller uses the web course/session context, clears and writes PHP session values, registers web tracking events, resolves plugins and emits shortcuts that can point to legacy tools or remote web routes. Copying that response into the mobile application would reintroduce hidden coupling and silent legacy navigation.
+
+The mobile app already has a verified enrollment context from Chat 04 and verified announcement list/detail contracts from Chat 00.
+
+#### Decision
+
+- Build the course home entirely inside `chamilo/mobile`.
+- Resolve the selected course only from the exact direct membership or session-course identity carried by the route.
+- Reject mixed, incomplete or mismatched route context.
+- Define an explicit typed `ToolCapability` registry with:
+  - `toolKey`;
+  - availability;
+  - read-only flag;
+  - reason;
+  - mobile route;
+  - verified API contract.
+- Expose only Announcements in Chat 05 because its list/detail operations and permission behavior are verified.
+- Keep announcement content as a placeholder until Chat 06.
+- Do not call `/course/{cid}/home.json`, open the remote SPA or follow legacy shortcuts.
+
+#### Alternatives
+
+- Reuse the LMS shortcut payload directly: rejected because it mutates web session state and mixes plugins, legacy URLs and desktop behavior.
+- Show all familiar tools as disabled placeholders: rejected because visibility would imply unsupported capabilities.
+- Hardcode mobile routes in the view: rejected in favor of a registry that keeps route and API evidence together.
+
+#### Consequences
+
+The initial course home intentionally contains only one tool. New tools require a verified contract and permission behavior before registration. Direct and session contexts remain distinct through course home and announcement navigation.
+
+#### Evidence
+
+- `assets/vue/services/courseService.js::loadTools()`.
+- `CourseController::indexJson()` for `/course/{cid}/home.json`.
+- verified announcement list/detail contracts and context validation.
+- `src/domain/courseHome/toolCapabilities.ts`.
+- `src/domain/courseHome/resolveCourseHome.ts`.
+
+#### Revisit when
+
+A stable API Platform course-capability operation exists and can replace or populate the registry without exposing legacy links.
