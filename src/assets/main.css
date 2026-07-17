@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    min-width: 320px;
+    min-height: 100%;
+    background: theme("colors.slate.100");
+  }
+
+  body,
+  #app {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 3px solid theme("colors.chamilo.500");
+    outline-offset: 2px;
+  }
+}

@@ -1,0 +1,42 @@
+Continuamos Chamilo Mobile 2.x en el mismo Chat 01.
+
+Estado esperado:
+
+- Repositorio: /var/www/chamilo-mobile
+- Branch: feature/mobile2-scaffold
+- Base HEAD antes del commit: 3b06a5e
+- ZIP aplicado: chamilo-mobile-chat01-scaffold-20260716.zip
+- Backend sin cambios
+
+Objetivo único:
+
+1. Confirmar que el ZIP se aplicó sobre una rama limpia.
+2. Revisar la salida de:
+   - yarn install --immutable
+   - yarn format:check
+   - yarn lint
+   - yarn typecheck
+   - yarn test:unit
+   - yarn build
+   - yarn cap --version
+   - git diff --check
+3. Confirmar manualmente el viewport Chrome 390x844:
+   - encabezado visible;
+   - placeholder de cursos visible;
+   - tabs Courses/Profile visibles y tocables;
+   - sin scroll horizontal.
+4. Corregir solo defectos del scaffold si aparecen.
+5. Actualizar PROJECT_STATE.md y TEST_EVIDENCE.md con evidencia local.
+6. Commit sugerido: Mobile: Add Vue and Capacitor scaffold
+7. No iniciar Chat 02 hasta que Chat 01 quede Done y el working tree esté limpio.
+
+Fuera de alcance:
+
+- campus profiles;
+- HTTP transport;
+- JWT;
+- current-user backend operation;
+- courses/sessions API;
+- announcements;
+- Android/iOS platform generation;
+- changes in chamilo-lms.

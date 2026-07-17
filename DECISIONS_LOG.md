@@ -1,0 +1,392 @@
+# DECISIONS_LOG
+
+## Foundational decisions confirmed
+
+### ADR-001 — Independent mobile client
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+`mobile/master` is an empty application baseline. The 1.x app is Cordova/Backbone and the LMS SPA is server-coupled.
+
+#### Decision
+
+Build a local Vue application packaged by Capacitor. Do not load the remote Chamilo SPA in a WebView and do not open legacy pages with silent autologin.
+
+#### Consequences
+
+The mobile app owns its router, UI, stores, API clients and local assets.
+
+#### Evidence
+
+- `mobile-master/README.md`
+- `mobile-1x-reference/www/src/app.js`
+- `lms-master/assets/vue/App.vue`
+
+---
+
+### ADR-002 — Separate repositories and PRs
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Decision
+
+Mobile implementation stays in `chamilo/mobile`. Confirmed API gaps stay in `chamilo/chamilo-lms`, using separate branches, commits and PRs.
+
+---
+
+### ADR-003 — REST/API Platform first
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+API Platform REST operations exist for the MVP. GraphQL configuration exists, but no resource operations were captured and `webonyx/graphql-php` is not installed.
+
+#### Decision
+
+Use REST/API Platform for the MVP. Do not add or consume GraphQL in Chat 01-09.
+
+#### Revisit when
+
+A later audit proves runtime coverage, authorization correctness and measurable benefit.
+
+---
+
+### ADR-013 — TypeScript for the new application
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+The project starts from no source code. API response shapes, campus namespacing, course/session context and transport/storage boundaries benefit from compile-time contracts. Existing LMS services are JavaScript and are coupled to browser globals/Axios singletons.
+
+#### Decision
+
+Use TypeScript with Vue 3 Composition API and `<script setup>`. Adapt reusable concepts from LMS JavaScript rather than copying files unchanged.
+
+#### Alternatives
+
+- JavaScript: rejected because it saves little migration work in an empty repository and weakens contract validation.
+
+#### Consequences
+
+API DTOs, context objects, stores and adapters are typed. Strictness is introduced incrementally; unsafe blanket casts are not accepted.
+
+#### Evidence
+
+- LMS locks TypeScript `5.9.3`.
+- The repository has no existing JavaScript source to preserve.
+
+---
+
+### ADR-014 — Yarn 4.17.1 through Corepack
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+The LMS declares `packageManager: yarn@4.17.1` and includes a Yarn lockfile. Mobile `master` has no package manager.
+
+#### Decision
+
+Use Yarn `4.17.1`, activated by Corepack, and commit a single `yarn.lock`. Do not add npm or pnpm lockfiles.
+
+#### Consequences
+
+The mobile and backend frontend toolchains share the package-manager family and exact Yarn version. Local Corepack/Yarn availability must pass before scaffolding.
+
+---
+
+### ADR-015 — Chat 01 version baseline
+
+```text
+Status: Superseded
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Decision
+
+Use this baseline:
+
+| Dependency/tool    | Version policy                                      |
+| ------------------ | --------------------------------------------------- |
+| Node               | `>=22.12.0 <23`                                     |
+| Yarn               | `4.17.1` exact                                      |
+| Vue                | `3.5.35`                                            |
+| Vue Router         | `5.1.0`                                             |
+| Pinia              | `3.0.4`                                             |
+| vue-i18n           | `11.4.4`                                            |
+| Tailwind CSS       | `3.4.19`                                            |
+| PrimeVue           | `4.5.5`                                             |
+| TypeScript         | `5.9.3`                                             |
+| Axios              | `1.16.1`                                            |
+| ESLint             | `10.4.1`                                            |
+| Prettier           | `3.8.3`                                             |
+| Vite               | `8.x`; resolve and lock exact patch once in Chat 01 |
+| Vitest             | `5.x`; resolve and lock exact patch once in Chat 01 |
+| Capacitor core/CLI | `8.x`; resolve and lock exact patch once in Chat 01 |
+
+#### Context
+
+The application should align with dependencies already proven in `chamilo-lms` where practical. Newly introduced Vite/Vitest/Capacitor majors require Node 22.12+ as the common supported floor.
+
+#### Consequences
+
+No dependency upgrades are mixed into later feature batches. The lockfile produced in Chat 01 becomes the source of truth.
+
+#### Revisit when
+
+A security fix, incompatibility or upstream maintenance requirement is demonstrated.
+
+---
+
+### ADR-016 — Selective PrimeVue
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Decision
+
+Install PrimeVue `4.5.5`, but use it only when it reduces implementation/accessibility work for a non-trivial component. Use Vue/Tailwind for simple cards, headers, buttons and states.
+
+#### Consequences
+
+No desktop PrimeVue layout is copied. Bundle impact and touch behavior remain reviewable.
+
+---
+
+### ADR-017 — Capacitor 8 configuration without native platforms
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+Capacitor 8 is the current official major and requires Node 22+. Android is the first native target, but native generation belongs to Chat 07.
+
+#### Decision
+
+Chat 01 installs and configures `@capacitor/core` and `@capacitor/cli` major 8 only. It does not install `@capacitor/android`, does not create `android/`, and does not add iOS.
+
+#### Consequences
+
+The web scaffold remains small and reviewable. Native project ownership, generated files and CI are decided later.
+
+---
+
+### ADR-018 — Testing baseline
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Decision
+
+Use:
+
+```text
+Vitest 5
+Vue Test Utils
+jsdom
+ESLint
+Prettier
+```
+
+Chat 01 includes smoke tests for application mount, router placeholders and i18n. Playwright/E2E is deferred to Chat 09. Android manual testing begins when the Android project exists.
+
+#### Consequences
+
+Every batch can add unit/component coverage without introducing E2E infrastructure prematurely.
+
+---
+
+### ADR-019 — Browser/native transport boundary
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+The LMS uses Axios and JSON-LD negotiation. The mobile app must support browser development and native requests without coupling screens to a concrete library.
+
+#### Decision
+
+```text
+HttpClient
+├── BrowserHttpClient → Axios
+└── NativeHttpClient → CapacitorHttp
+```
+
+The interface owns base URL, headers, timeout, cancellation, response parsing and normalized errors. Screens and stores never import Axios, `fetch` or CapacitorHttp directly.
+
+Chat 01 records the boundary only. Browser implementation belongs to Chat 02. Native implementation is audited in Chat 02/07 and must not weaken TLS verification.
+
+#### Consequences
+
+Existing LMS request/Hydra concepts are adapted behind a typed boundary. Course/session context is passed explicitly, not read globally from `window.location`.
+
+---
+
+## Chat 00 gate verification — 2026-07-16
+
+This is evidence for accepted ADRs, not a new architecture decision.
+
+### Repository verification
+
+```text
+Mobile: /var/www/chamilo-mobile, master, 3b06a5e3d0c712e8bcb52f2ff10485da57553ca7, clean
+LMS: /var/www/chamilo2, master, 984b7fc7fcd8c382b61a6399904b373787b83aa8, clean
+```
+
+### Toolchain verification
+
+```text
+Node: 18.19.1 — does not satisfy ADR-015
+Corepack: not found — does not satisfy ADR-014
+Yarn: 1.22.22 — does not satisfy ADR-014
+```
+
+### Consequence
+
+ADR-014 and ADR-015 remain Accepted. The local environment must be corrected before Chat 01; the project must not lower its version baseline merely to match the currently installed legacy toolchain.
+
+### Runtime contract verification
+
+The collector was executed without `CAMPUS_URL` and `TEST_USERNAME`, so no runtime JWT, CORS or authenticated API evidence was produced. Static contracts remain valid but runtime status remains pending.
+
+---
+
+## Chat 00 closure evidence — 2026-07-16
+
+This section records verification evidence and does not introduce a new architecture decision.
+
+### Toolchain
+
+```text
+Node: 22.23.1 — PASS
+Corepack: 0.34.6 — PASS
+Yarn: 4.17.1 — PASS
+```
+
+### JWT authentication contract
+
+```text
+Method: POST
+Path: /api/authentication_token
+Request JSON fields: username, password
+Valid credentials: HTTP 200
+Success response: JSON object containing token
+Invalid credentials: HTTP 401 with code/message JSON
+JWT refresh: not available
+```
+
+The token value and password were not stored in the project evidence.
+
+### CORS
+
+A preflight request from `http://localhost:5173` returned HTTP 200 with:
+
+```text
+Access-Control-Allow-Origin: http://localhost:5173
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: content-type, authorization, preload, fields, x-prefer-html-errors
+```
+
+### Backend defect discovered during verification
+
+An empty `var/log/ids/ids.log` can make `LoginAttemptLoggerHelper` calculate a negative line index and throw `SplFileObject::seek()` during login. The local empty file was moved to `/tmp` to unblock verification. No source-code change was made in Chat 00. The defect is recorded separately and does not block the mobile scaffold.
+
+---
+
+### ADR-020 — Exact Chat 01 dependency baseline
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+Chat 01 had to resolve exact patches and produce an immutable Yarn lockfile. The previous proposal named Vitest `5.x`, but no stable Vitest 5 release exists. Yarn 4.17.1 also quarantined packages published too recently, including Vite 8.1.5 and Capacitor 8.4.2. Disabling that supply-chain protection was rejected.
+
+#### Decision
+
+Use the exact dependency versions committed in `package.json` and `yarn.lock`, including:
+
+| Package/tool         | Exact version |
+| -------------------- | ------------: |
+| Node local reference |     `22.23.1` |
+| Yarn                 |      `4.17.1` |
+| Vue                  |      `3.5.35` |
+| Vue Router           |       `5.1.0` |
+| Pinia                |       `3.0.4` |
+| vue-i18n             |      `11.4.4` |
+| Tailwind CSS         |      `3.4.19` |
+| PrimeVue             |       `4.5.5` |
+| PrimeIcons           |       `7.0.0` |
+| Axios                |      `1.16.1` |
+| TypeScript           |       `5.9.3` |
+| Vite                 |       `8.1.4` |
+| Vitest               |      `4.1.10` |
+| Capacitor core/CLI   |       `8.4.1` |
+| ESLint               |      `10.4.1` |
+| Prettier             |       `3.8.3` |
+
+PrimeVue remains selective and is configured without introducing a global visual theme. Yarn `packageExtensions` only repairs missing peer metadata for PrimeVue packages; it does not patch runtime source code.
+
+#### Alternatives
+
+- Vitest `5.x`: rejected because no stable release exists.
+- Vite `8.1.5`, Capacitor `8.4.2`, `@vitejs/plugin-vue` `6.0.8`: rejected for this lockfile because Yarn's minimum-age protection quarantined the newly published releases.
+- Disable Yarn's age gate: rejected because it weakens the default supply-chain protection without a project need.
+
+#### Consequences
+
+- `yarn install --immutable` is reproducible.
+- Feature batches must not update these versions incidentally.
+- Security or compatibility upgrades require a separate dependency decision and validation batch.
+
+#### Evidence
+
+- `package.json`
+- `yarn.lock`
+- `reports/VALIDATION.txt`
+
+#### Revisit when
+
+A demonstrated security fix, compatibility issue or upstream maintenance requirement justifies an upgrade.
