@@ -784,3 +784,59 @@ Teachers using the MVP see the same visible read-only announcement set as a stud
 - authenticated attachment downloading is designed for browser and Android;
 - representative runtime data demonstrates a pagination or payload-size gap;
 - announcement management becomes an approved feature.
+
+---
+
+## ADR-029 — Commit Android platform and use explicit CapacitorHttp transport
+
+```text
+Status: Accepted
+Date: 2026-07-17
+Owners: Chamilo Mobile maintainers
+```
+
+### Context
+
+Capacitor 8 requires the Android platform package and a generated Android Studio project. The browser client already depends on a transport interface, while the native adapter was intentionally unsupported.
+
+### Decision
+
+- Add `@capacitor/android` 8.4.1 and `@capacitor/app` 8.1.0.
+- Generate and commit first-party `android/` source and configuration.
+- Ignore generated/local Android outputs, copied web assets, SDK paths and signing material.
+- Implement `NativeHttpClient` with direct `CapacitorHttp.request` calls behind `HttpClient`.
+- Keep global `fetch`/`XMLHttpRequest` patching disabled.
+- Disable redirects and reject response URLs on another origin.
+- Register the Android back button through the official App plugin.
+- Require valid HTTPS in production and never bypass certificate validation.
+
+### Consequences
+
+Android builds are reproducible from version control. Native requests avoid browser CORS while preserving campus-origin, authorization and error boundaries.
+
+### Revisit when
+
+Secure native token storage and authenticated file downloads are implemented.
+
+---
+
+## ADR-030 — Keep a reproducible dependency-license gate
+
+```text
+Status: Accepted
+Date: 2026-07-17
+Owners: Chamilo Mobile maintainers
+```
+
+### Decision
+
+- Keep Chamilo Mobile under AGPL-3.0.
+- Record direct Android additions and required MIT notices in `THIRD_PARTY_NOTICES.md`.
+- Generate `reports/LICENSE_AUDIT.md` from the exact Yarn `node_modules` installation.
+- Include `package.json` and `yarn.lock` hashes in the report.
+- Fail the engineering gate for missing metadata and known restricted terms such as BUSL, SSPL, Commons Clause, PolyForm, non-commercial and proprietary licenses.
+- Do not add a third-party license-audit dependency.
+
+### Limitation
+
+The automated inventory covers JavaScript package metadata. Android/Gradle dependencies still need a dedicated release review before store distribution. The gate does not replace legal advice.

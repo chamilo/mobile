@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chamilo Mobile</string>
+    <string name="title_activity_main">Chamilo Mobile</string>
+    <string name="package_name">org.chamilo.mobile</string>
+    <string name="custom_url_scheme">org.chamilo.mobile</string>
+</resources>

@@ -281,3 +281,19 @@ Read-only list/detail: Closed without backend change
 Pagination: Investigation only
 Authenticated attachment download: Deferred client capability, not yet a backend gap
 ```
+
+## GAP-003 — Android/native transport
+
+```text
+Status: No backend gap demonstrated
+Date: 2026-07-17
+Repository changed: chamilo/mobile only
+```
+
+The native client reuses the verified REST contracts for authentication, current user, courses, sessions and read-only announcements. No new Provider, Processor, DTO or controller is required for Chat 07.
+
+Deferred native capabilities are not backend gaps yet:
+
+- secure native token storage;
+- authenticated attachment/file downloads;
+- public-device end-to-end testing against a reachable HTTPS campus.

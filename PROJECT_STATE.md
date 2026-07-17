@@ -12,10 +12,9 @@ Chamilo Mobile 2.x
 
 ```text
 Path: /var/www/chamilo-mobile
-Completed branch: feature/mobile2-course-home
-Expected completed commit: Mobile: Add mobile course home
-Target branch: feature/mobile2-announcements
-Working tree before apply: clean
+Branch: feature/mobile2-android
+Base HEAD: f3defd1048d8b9b453f85128dc231b6029987b20
+Expected commit: Mobile: Add Android Capacitor platform
 ```
 
 ## Backend repository
@@ -24,82 +23,67 @@ Working tree before apply: clean
 Path: /var/www/chamilo2
 Branch: feature/mobile-api-current-user
 HEAD: ba1f018207 API: Add authenticated user profile operation
-Working tree: clean
-Backend changes required by Chat 06: none
+Chat 07 backend changes: none
 ```
 
 ## Current phase
 
 ```text
-Chat: 06
-Batch: Read-only announcements list and detail
-Status: Candidate prepared; pending local Yarn validation, runtime API evidence, browser verification and commit
+Chat: 07
+Batch: Capacitor Android platform, native transport and license gate
+Status: Implemented and validated; pending final apply verification and commit
 ```
 
-## Done
+## Completed capabilities
 
-- [x] Scaffold, campus profiles, transport, JWT authentication and current-user profile.
+- [x] Independent Vue 3/TypeScript/Vite application.
+- [x] Campus profiles and browser/native `HttpClient` boundary.
+- [x] JWT login, current-user profile and logout.
 - [x] Direct courses and session courses with context-preserving navigation.
-- [x] Mobile-owned course home and explicit ToolCapability registry.
-- [x] Announcement list and detail clients use only verified REST operations.
-- [x] Read-only student view is forced through `isStudentView=true`.
-- [x] Course and session IDs are checked against every list/detail response.
-- [x] Announcement list, detail, author, dates and attachment metadata normalized into TypeScript models.
-- [x] HTML sanitizer removes executable/embedded content, inline handlers and unsafe URL protocols.
-- [x] Safe links receive `_blank`, `noopener`, `noreferrer` and `nofollow`.
-- [x] Images are restricted to the selected campus origin.
-- [x] Loading, error, empty, retry, stale/offline list and stale/offline detail states implemented.
-- [x] Announcement cache isolated by campus, user and exact course/session enrollment context.
-- [x] Logout/session cleanup clears persistent announcement cache through the existing campus cache namespace and resets the Pinia store.
-- [x] Attachment metadata shown; authenticated file download intentionally deferred.
-- [x] No dependencies, backend files or native projects added.
+- [x] Mobile-owned course home with explicit `ToolCapability` registry.
+- [x] Read-only announcement list and detail with sanitizer and offline cache.
+- [x] Capacitor Android platform committed as first-party source.
+- [x] `NativeHttpClient` implemented with `CapacitorHttp`.
+- [x] Cross-origin redirect rejection and no certificate bypass.
+- [x] Android back-button integration through `@capacitor/app`.
+- [x] Android debug APK built and installed on an LG K42.
+- [x] JavaScript license inventory and direct MIT notices.
 
-## Pending locally
+## Confirmed validation
 
-- [ ] Apply Chat 06 ZIP from a clean committed `feature/mobile2-course-home` branch.
-- [ ] Run Yarn 4 immutable install, format, lint, TypeScript, tests and build.
-- [ ] Run the included runtime announcement contract script against a representative course.
-- [ ] Verify direct-course and session-course lists show only visible announcements.
-- [ ] Verify announcement detail renders sanitized content and safe links.
-- [ ] Verify empty, invalid context, access denied and offline cached states.
-- [ ] Verify attachment metadata does not expose unauthenticated download links.
-- [ ] Commit the batch.
+```text
+Formatting: PASS
+ESLint: PASS
+TypeScript: PASS
+Unit tests: 35 files / 103 tests PASS
+Vite build: PASS
+Capacitor sync: PASS
+Gradle assembleDebug: PASS
+Physical APK installation: PASS
+```
 
-## Confirmed API contracts
+## Honest limitations
 
-| Feature             | Method | Path                                                   | Status                      |
-| ------------------- | ------ | ------------------------------------------------------ | --------------------------- |
-| JWT login           | POST   | `/api/authentication_token`                            | Runtime PASS                |
-| Current user        | GET    | `/api/me`                                              | Runtime PASS                |
-| Direct courses      | GET    | `/api/me/courses`                                      | Runtime PASS                |
-| Sessions            | GET    | `/api/users/{id}/session_subscriptions/{period}`       | Runtime PASS                |
-| Announcement list   | GET    | `/api/announcement/list?cid={cid}&sid={sid}&gid={gid}` | Static/provider verified    |
-| Announcement detail | GET    | `/api/announcement/{id}?cid={cid}&sid={sid}&gid={gid}` | Static/provider verified    |
-| Attachment download | GET    | `/api/announcement/{id}/attachment/{id}/download`      | Contract found; UI deferred |
-
-## Accepted ADRs
-
-- ADR-001 independent client.
-- ADR-003 REST first.
-- ADR-019 browser/native transport boundary.
-- ADR-024 JWT authentication bootstrap.
-- ADR-025 token storage lifecycle.
-- ADR-026 compose course memberships in the mobile client.
-- ADR-027 mobile-owned course home and explicit capabilities.
-- ADR-028 read-only announcements, student-view contract and sanitization boundary.
+- JWT remains memory-only; force-close or process death requires a new login.
+- Secure native token storage is not implemented.
+- Announcement attachment download is not implemented.
+- `chamilo2.local` is not a phone-reachable public campus.
+- Full Android API flow awaits a reachable HTTPS test server.
+- iOS, push, biometrics, background sync and store publication remain out of scope.
+- JavaScript license metadata is audited; Android/Gradle release notices require a later release gate.
 
 ## Next batch
 
 ```text
-Chat 07 — Capacitor Android platform and verified native transport boundary.
+Chat 08 — Audit course-tool capabilities against real Chamilo LMS code, OpenAPI and role/session/group behavior.
 ```
+
+The audit selects one mobile-ready tool for the following implementation branch. It does not implement every tool in one batch and does not invent missing contracts.
 
 ## Do not redo
 
-- Do not recreate scaffold, campus, transport, authentication, courses, course home or ToolCapability registry.
-- Do not add announcement create/edit/delete, recipients or visibility controls.
-- Do not render server HTML without `sanitizeAnnouncementHtml`.
-- Do not open attachment URLs directly without an authenticated binary/file-handling design.
-- Do not add GraphQL.
-- Do not modify `chamilo-lms` for announcements unless runtime evidence proves a new gap.
-- Do not generate iOS.
+- Do not recreate scaffold, campus, authentication, courses, course home, announcements or Android platform.
+- Do not replace `HttpClient` with direct Axios, fetch or Capacitor imports in views.
+- Do not add iOS yet.
+- Do not add a monolithic `/mobile` backend API.
+- Do not bypass TLS to reach a local campus from Android.

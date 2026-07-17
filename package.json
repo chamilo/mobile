@@ -18,9 +18,16 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "cap": "cap",
-    "cap:sync": "cap sync"
+    "cap:sync": "cap sync",
+    "android:add": "cap add android",
+    "android:sync": "yarn build && cap sync android",
+    "android:open": "cap open android",
+    "android:run": "yarn build && cap run android",
+    "android:build:debug": "yarn android:sync && cd android && ./gradlew assembleDebug",
+    "licenses:audit": "node scripts/audit-licenses.mjs"
   },
   "dependencies": {
+    "@capacitor/app": "8.1.0",
     "@capacitor/core": "8.4.1",
     "@primevue/core": "4.5.5",
     "@primevue/icons": "4.5.5",
@@ -33,6 +40,7 @@
     "vue-router": "5.1.0"
   },
   "devDependencies": {
+    "@capacitor/android": "8.4.1",
     "@capacitor/cli": "8.4.1",
     "@eslint/js": "10.0.1",
     "@stylistic/eslint-plugin": "5.6.1",

@@ -1,38 +1,37 @@
-Continuamos Chamilo Mobile 2.x después de anuncios read-only.
+Continue Chamilo Mobile 2.x after committing Chat 07.
 
-Estado esperado:
+Expected state:
 
 - Mobile repo: /var/www/chamilo-mobile
-- Completed branch: feature/mobile2-announcements
-- Expected commit: Mobile: Add read-only announcements
+- Completed branch: feature/mobile2-android
+- Expected commit: Mobile: Add Android Capacitor platform
 - Backend repo: /var/www/chamilo2
 - Backend branch: feature/mobile-api-current-user
-- Backend commit: ba1f018207 API: Add authenticated user profile operation
+- Backend HEAD: ba1f018207
 - Both working trees clean
 
-No reconstruyas scaffold, campus profiles, transport, JWT login, profile, logout, courses/sessions, course home, ToolCapability registry or announcements.
+Read PROJECT_STATE.md, DECISIONS_LOG.md, API_GAPS.md and TEST_EVIDENCE.md first. Verify branch, HEAD and working tree. Do not recreate completed layers.
 
-Objetivo único:
+Objective only:
 
-Chat 07 — Capacitor Android and native transport verification.
+Chat 08 — Course-tool capability audit.
 
-1. Verify branch, HEAD and clean state.
-2. Audit Capacitor 8 configuration, installed Java/Gradle/Android tooling and official Capacitor HTTP behavior.
-3. Generate only the Android platform; do not generate iOS.
-4. Decide and document whether `android/` is committed.
-5. Implement or verify `NativeHttpClient` while preserving the existing `HttpClient` contract.
-6. Keep browser transport unchanged.
-7. Configure local-development network security only if required for an explicit HTTP campus.
-8. Validate app launch, back button, foreground/background, relaunch and logout.
-9. Do not add secure token persistence yet unless the scope is explicitly changed; memory-only behavior must remain honest.
-10. Update all handoff files and provide a full ZIP.
+1. Audit real Chamilo LMS master code and OpenAPI for course tools.
+2. Check read/write operations, Providers, Processors, DTOs, security expressions and runtime routes.
+3. Evaluate direct course, session, group, ownership and AccessUrl behavior.
+4. Classify each tool as mobile-ready, read-only, write-ready, API gap, legacy-only or deferred.
+5. Cover at least documents, learning paths, exercises, agenda, links, forums, surveys, wiki, notebook, portfolio and course progress when present in the supplied code.
+6. Do not invent endpoints or implement UI during the audit.
+7. Select exactly one next implementation batch based on verified value and coverage.
+8. Keep mobile and backend changes in separate branches/PRs.
+9. Deliver context analysis and a complete final ZIP with updated handoff files.
 
 Out of scope:
 
 - iOS;
+- public-store release;
 - push notifications;
+- secure token storage;
 - full offline;
-- store publication;
-- new course tools;
-- announcement writes;
-- GraphQL.
+- implementing multiple tools in one branch;
+- GraphQL without demonstrated coverage and benefit.

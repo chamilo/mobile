@@ -147,6 +147,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@capacitor/android@npm:8.4.1":
+  version: 8.4.1
+  resolution: "@capacitor/android@npm:8.4.1"
+  peerDependencies:
+    "@capacitor/core": ^8.4.0
+  checksum: 10c0/84df2b3e50e6735ad8a1f8899593df7e420d3e7894c02fd57416dba8da928d67fcee650ae365275548e261ff125e89418153d7baa0a73981116227420aa26444
+  languageName: node
+  linkType: hard
+
+"@capacitor/app@npm:8.1.0":
+  version: 8.1.0
+  resolution: "@capacitor/app@npm:8.1.0"
+  peerDependencies:
+    "@capacitor/core": ">=8.0.0"
+  checksum: 10c0/670a5bc3f0c1706f9d09ad03873836ac9b56e1ca6c9853e283d43b4ff04c7295b30801d49f563206aadcf882245025be1ecdc12c22c7d479c636b34123e9a0d3
+  languageName: node
+  linkType: hard
+
 "@capacitor/cli@npm:8.4.1":
   version: 8.4.1
   resolution: "@capacitor/cli@npm:8.4.1"
@@ -188,6 +206,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@chamilo/mobile@workspace:."
   dependencies:
+    "@capacitor/android": "npm:8.4.1"
+    "@capacitor/app": "npm:8.1.0"
     "@capacitor/cli": "npm:8.4.1"
     "@capacitor/core": "npm:8.4.1"
     "@eslint/js": "npm:10.0.1"

@@ -252,7 +252,7 @@ Use `scripts/test-announcements-api.sh` and record:
 - returned `courseId` and optional `sessionId` match the requested context;
 - `studentView=true`, `canManage=false`, empty CSRF token;
 - detail HTTP 200 when at least one visible announcement exists;
-- no-token list HTTP 403 PASS; the mobile client treats HTTP 401 and 403 as authentication/access failures.
+- no-token list HTTP 401.
 
 ### Required browser evidence
 
@@ -266,12 +266,52 @@ Use `scripts/test-announcements-api.sh` and record:
 - attachment metadata shown without a direct unauthenticated link;
 - mobile viewport without horizontal page overflow.
 
-## Chat 06 runtime verification
+---
 
-- Authentication returned HTTP 200.
-- Announcement list returned HTTP 200.
-- Read-only list contract passed.
-- Announcement detail returned HTTP 200.
-- Read-only detail contract passed.
-- Anonymous announcement access returned HTTP 403.
-- HTTP 401 and 403 are both handled as authentication/access rejection by the mobile client.
+## Chat 06 — Runtime closure
+
+| Check                      | Result                                           |
+| -------------------------- | ------------------------------------------------ |
+| JWT authentication         | PASS — HTTP 200                                  |
+| Announcement list          | PASS — HTTP 200, read-only contract              |
+| Announcement detail        | PASS — HTTP 200, read-only contract              |
+| Anonymous access rejection | PASS — HTTP 403; mobile handles HTTP 401 and 403 |
+| Commit                     | PASS — base for Chat 07 is `f3defd1`             |
+
+---
+
+## Chat 07 — Android platform and native transport
+
+| Check                               | Result                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Branch/base                         | PASS — `feature/mobile2-android`, base `f3defd1`                          |
+| Formatting                          | PASS                                                                      |
+| ESLint                              | PASS                                                                      |
+| TypeScript                          | PASS                                                                      |
+| Unit tests                          | PASS — 35 files, 103 tests                                                |
+| Vite production build               | PASS — 234 modules                                                        |
+| Capacitor Android generation        | PASS                                                                      |
+| Capacitor sync                      | PASS — `@capacitor/app@8.1.0` detected                                    |
+| Native HTTP unit coverage           | PASS — relative URL, errors, redirect rejection                           |
+| Android back-button unit coverage   | PASS                                                                      |
+| ADB                                 | PASS — platform-tools 37.0.0                                              |
+| Android SDK                         | PASS — Platform 36 and Build Tools 35 installed                           |
+| Gradle debug build                  | PASS — 123 actionable tasks                                               |
+| APK                                 | PASS — 4.6 MB debug APK                                                   |
+| APK SHA-256                         | PASS — `0f202bbdfea114d02cde51d4605bab87a85cc4a28eb900c747cc346bdc37ab8e` |
+| Physical device detection           | PASS — LG K42 recognized as `device`                                      |
+| Physical installation               | PASS — user confirmed APK installed                                       |
+| Cleartext override scan             | PASS — absent                                                             |
+| Certificate bypass scan             | PASS — absent                                                             |
+| Local/signing files tracked         | PASS — absent                                                             |
+| Commercial/community plugin scan    | PASS — absent                                                             |
+| JavaScript license inventory        | PASS — 480 packages, 0 blocked/unknown metadata in captured install       |
+| Public HTTPS campus end-to-end flow | Deferred until a reachable test campus is available                       |
+
+### Non-blocking Android warnings
+
+- Capacitor-generated Gradle files use a `flatDir` repository for Cordova compatibility.
+- The local command-line tools emitted an SDK XML generation warning during initial setup.
+- Upstream Capacitor Android sources emitted unchecked-operation compiler notes.
+
+None prevented `assembleDebug` from succeeding.

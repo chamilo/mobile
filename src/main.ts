@@ -11,6 +11,7 @@ import { router } from "@/router"
 import { registerAuthGuards } from "@/router/authGuards"
 import { registerCampusSessionDataCleaner } from "@/services/auth/CampusSessionDataCleaner"
 import { browserCampusCacheRepository } from "@/services/cache/BrowserCampusCacheRepository"
+import { registerNativeAppListeners } from "@/services/native/registerNativeAppListeners"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
 
@@ -25,3 +26,5 @@ registerAuthGuards(router, pinia)
 
 app.use(pinia).use(router).use(i18n).use(primeVue)
 app.mount("#app")
+
+void registerNativeAppListeners(router)

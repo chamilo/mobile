@@ -12,7 +12,7 @@ const sanitizedHtml = computed(() => sanitizeAnnouncementHtml(props.html, props.
 </script>
 
 <template>
-  <!-- eslint-disable-next-line vue/no-v-html -->
+  <!-- eslint-disable vue/no-v-html -->
   <div
     v-if="sanitizedHtml"
     class="announcement-content text-sm leading-7 text-slate-700"
