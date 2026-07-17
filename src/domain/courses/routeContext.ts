@@ -101,6 +101,28 @@ export function buildCourseRoute(context: CourseNavigationContext): RouteLocatio
   }
 }
 
+export function buildNotebookRoute(context: CourseNavigationContext): RouteLocationRaw {
+  return {
+    name: "notebook",
+    params: { courseId: String(context.courseId) },
+    query: buildContextQuery(context),
+  }
+}
+
+export function buildNotebookFormRoute(
+  context: CourseNavigationContext,
+  notebookId?: number,
+): RouteLocationRaw {
+  return {
+    name: "notebook-form",
+    params: {
+      courseId: String(context.courseId),
+      ...(notebookId ? { notebookId: String(notebookId) } : {}),
+    },
+    query: buildContextQuery(context),
+  }
+}
+
 export function buildAnnouncementsRoute(context: CourseNavigationContext): RouteLocationRaw {
   return {
     name: "announcements",

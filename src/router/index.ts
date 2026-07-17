@@ -12,6 +12,8 @@ import CampusView from "@/views/CampusView.vue"
 import CourseHomeView from "@/views/CourseHomeView.vue"
 import CoursesView from "@/views/CoursesView.vue"
 import LoginView from "@/views/LoginView.vue"
+import NotebookFormView from "@/views/NotebookFormView.vue"
+import NotebookView from "@/views/NotebookView.vue"
 import NotFoundView from "@/views/NotFoundView.vue"
 import ProfileView from "@/views/ProfileView.vue"
 
@@ -79,6 +81,45 @@ export const routes: RouteRecordRaw[] = [
     }),
     meta: {
       titleKey: "routes.courseHome",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/notebook",
+    name: "notebook",
+    component: NotebookView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.notebook",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/notebook/edit/:notebookId?",
+    name: "notebook-form",
+    component: NotebookFormView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      notebookId: typeof route.params.notebookId === "string" ? route.params.notebookId : null,
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.notebookForm",
       showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,
