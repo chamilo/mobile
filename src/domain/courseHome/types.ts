@@ -8,7 +8,7 @@ import type {
 } from "@/domain/courses/types"
 
 export type CourseHomeAccessState = "available" | "denied" | "closed"
-export type CourseToolKey = "announcements" | "notebook"
+export type CourseToolKey = "announcements" | "course-description" | "course-progress" | "notebook"
 
 export interface CourseHomeEntry {
   course: CourseSummary
@@ -22,7 +22,7 @@ export interface CourseHomeEntry {
 
 export interface ToolCapabilityContract {
   list: string
-  detail: string
+  detail?: string
   context: readonly string[]
 }
 

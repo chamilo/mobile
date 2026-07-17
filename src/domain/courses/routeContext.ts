@@ -140,3 +140,11 @@ export function buildCourseProgressRoute(context: CourseNavigationContext): Rout
     query: buildContextQuery(context),
   }
 }
+
+export function buildCourseDescriptionRoute(context: CourseNavigationContext): RouteLocationRaw {
+  return {
+    name: "course-description",
+    params: { courseId: String(context.courseId) },
+    query: buildContextQuery(context),
+  }
+}

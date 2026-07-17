@@ -3,6 +3,7 @@ import {
   buildAnnouncementsRoute,
   buildNotebookRoute,
   buildCourseProgressRoute,
+  buildCourseDescriptionRoute,
 } from "@/domain/courses/routeContext"
 
 export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapability[] {
@@ -23,6 +24,20 @@ export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapabi
       apiContract: {
         list: "GET /api/announcement/list",
         detail: "GET /api/announcement/{id}",
+        context: ["cid", "sid", "gid"],
+      },
+    },
+    {
+      toolKey: "course-description",
+      titleKey: "courseHome.tools.courseDescription.title",
+      descriptionKey: "courseHome.tools.courseDescription.description",
+      icon: "pi pi-align-left",
+      available: true,
+      readOnly: true,
+      reason: null,
+      route: buildCourseDescriptionRoute(entry.context),
+      apiContract: {
+        list: "GET /api/course-description/list",
         context: ["cid", "sid", "gid"],
       },
     },
