@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest"
 import { createTestRouter } from "@/router"
 
 describe("mobile router", () => {
-  it("redirects the root route to courses", async () => {
+  it("redirects the root route to campus setup", async () => {
     const router = createTestRouter()
 
     await router.push("/")
     await router.isReady()
 
-    expect(router.currentRoute.value.name).toBe("courses")
+    expect(router.currentRoute.value.name).toBe("campuses")
   })
 
   it("keeps course ids in local mobile routes", async () => {

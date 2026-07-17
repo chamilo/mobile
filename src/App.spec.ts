@@ -1,14 +1,18 @@
 import { mount } from "@vue/test-utils"
 import { createPinia } from "pinia"
 import PrimeVue from "primevue/config"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 
 import App from "@/App.vue"
 import { i18n } from "@/i18n"
 import { createTestRouter } from "@/router"
 
+beforeEach(() => {
+  window.localStorage.clear()
+})
+
 describe("App", () => {
-  it("renders the courses scaffold at the default route", async () => {
+  it("renders campus setup at the default route", async () => {
     const router = createTestRouter()
     await router.push("/")
     await router.isReady()
@@ -19,8 +23,8 @@ describe("App", () => {
       },
     })
 
-    expect(wrapper.text()).toContain("Your courses will appear here")
-    expect(wrapper.text()).toContain("Courses")
-    expect(wrapper.text()).toContain("Profile")
+    expect(wrapper.text()).toContain("Connect to a campus")
+    expect(wrapper.text()).toContain("Add a campus")
+    expect(wrapper.text()).toContain("No campuses saved")
   })
 })

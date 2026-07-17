@@ -6,15 +6,17 @@ Chamilo Mobile 2.x
 
 ## Updated
 
-2026-07-16 19:05 America/Lima
+2026-07-16 America/Lima
 
 ## Mobile repository
 
 ```text
 Path: /var/www/chamilo-mobile
-Target branch: feature/mobile2-scaffold
-Base HEAD: 3b06a5e3d0c712e8bcb52f2ff10485da57553ca7
-Expected working tree after applying ZIP: scaffold files added/updated, pending local verification and commit
+Branch: feature/mobile2-campus-transport
+HEAD before applying Chat 02: 050588c
+Previous completed branch: feature/mobile2-scaffold
+Previous completed commit: 050588c Mobile: Add Vue and Capacitor scaffold
+Expected working tree after applying ZIP: Chat 02 files modified/added, pending local verification and commit
 Remote: origin
 ```
 
@@ -24,49 +26,57 @@ Remote: origin
 Path: /var/www/chamilo2
 Branch: master
 HEAD: 984b7fc7fcd8c382b61a6399904b373787b83aa8
-Working tree at Chat 00 close: clean
+Working tree at last verification: clean
 Backend changes in this batch: none
 ```
 
 ## Current phase
 
 ```text
-Chat: 01
-Batch: Vue/TypeScript scaffold and standards
+Chat: 02
+Batch: Campus profiles and HTTP transport
 Status: Ready for local application and verification
 ```
 
-## Done in the generated candidate
+## Done
 
-- [x] Vue 3 + Vite + TypeScript scaffold.
-- [x] Vue Router with MVP placeholder routes.
-- [x] Pinia bootstrap.
-- [x] vue-i18n with English visible text.
-- [x] Tailwind CSS mobile-first shell.
-- [x] Selective PrimeVue integration and PrimeIcons.
-- [x] Capacitor core/CLI configuration without Android or iOS projects.
-- [x] ESLint and Prettier configuration.
-- [x] Vitest + Vue Test Utils smoke tests.
-- [x] Mobile app header and bottom navigation with 44px+ targets.
-- [x] Immutable Yarn 4.17.1 lockfile.
-- [x] Isolated validation: install, format, lint, typecheck, 4 tests, build and Capacitor version PASS.
+- [x] Chat 00 discovery, runtime JWT and CORS verification.
+- [x] Chat 01 Vue/TypeScript scaffold.
+- [x] Chat 01 local commit `050588c` on `feature/mobile2-scaffold`.
+- [x] Chat 02 candidate implements add/edit/select/remove campus profiles.
+- [x] Campus URLs normalize to HTTPS by default and preserve subdirectory installations.
+- [x] HTTP opt-in is restricted to explicit local development hosts.
+- [x] Campus persistence is hidden behind `CampusProfileRepository`.
+- [x] Campus namespace helper covers token/profile/cache/settings keys.
+- [x] Pinia campus and connectivity stores.
+- [x] Empty, storage-error/retry and offline UI states.
+- [x] Typed `HttpClient` interface.
+- [x] Axios-based `BrowserHttpClient` with timeout, cancellation and normalized errors.
+- [x] Cross-host request/redirect protections.
+- [x] Explicit unsupported `NativeHttpClient` pending Android audit.
+- [x] Optional single-campus Vite development proxy.
+- [x] Isolated lint, typecheck, 26 tests and production build PASS.
 
 ## Pending locally
 
-- [ ] Apply ZIP on `feature/mobile2-scaffold`.
-- [ ] Run the immutable install and complete validation commands on `/var/www/chamilo-mobile`.
-- [ ] Open `http://localhost:5173` in a 390x844 mobile viewport and confirm layout/navigation.
+- [ ] Apply the Chat 02 ZIP on `feature/mobile2-campus-transport` at HEAD `050588c`.
+- [ ] Run `yarn install --immutable`, format, lint, typecheck, tests and build.
+- [ ] Test add/edit/select/remove with `https://chamilo2.local`.
+- [ ] Reload the page and verify the selected campus persists.
+- [ ] Test offline banner through Chrome DevTools.
+- [ ] Confirm no horizontal overflow at 390x844.
 - [ ] Commit only after all local checks pass.
 
-## Out of scope for Chat 01
+## Out of scope for Chat 02
 
-- Campus persistence or compatibility checks.
-- Browser/native HTTP adapters.
-- JWT login or token storage.
-- Current-user backend gap implementation.
+- Calling `/api/authentication_token` from the UI.
+- Password or JWT storage.
+- Authenticated current-user operation.
 - Courses, sessions, course home or announcements.
+- Anonymous server compatibility endpoint.
+- Capacitor native HTTP implementation.
 - Android or iOS platform generation.
-- Backend source changes.
+- Changes in `chamilo-lms`.
 
 ## Confirmed API contracts
 
@@ -75,28 +85,27 @@ Status: Ready for local application and verification
 | JWT login            | POST   | `/api/authentication_token` | Runtime verified in Chat 00                   |
 | Direct courses       | GET    | `/api/me/courses`           | Static verified; unauthenticated 401 verified |
 | Current user/profile | —      | —                           | GAP-001 confirmed                             |
+| Campus compatibility | —      | —                           | GAP-003 remains investigation                 |
 
 ## Accepted ADRs relevant to this batch
 
-- TypeScript.
-- Yarn `4.17.1` via Corepack.
-- Node `>=22.12.0 <23`; `.nvmrc` uses `22.23.1`.
-- REST/API Platform first.
-- PrimeVue selective.
-- Capacitor `8.4.1` configuration without native platforms.
-- Vitest `4.1.10`; the earlier Vitest `5.x` proposal is superseded.
-- Browser/native transport boundary remains deferred to Chat 02 implementation.
+- ADR-019 browser/native transport boundary.
+- ADR-020 exact dependency baseline.
+- ADR-021 campus profile persistence boundary.
+- ADR-022 campus URL security policy.
+- ADR-023 browser transport and native boundary implementation.
 
 ## Next batch
 
 ```text
-Finish Chat 01 locally: apply the ZIP, run all quality gates, verify the mobile viewport and commit. Only after Chat 01 is marked Done, start Chat 02 for campus profiles and the HttpClient abstraction.
+Finish Chat 02 locally: apply the ZIP, run all gates, verify campus persistence and mobile states, then commit `Mobile: Add campus profiles and HTTP transport`. Do not start JWT UI work until Chat 02 is clean and committed.
 ```
 
 ## Do not redo
 
-- Do not re-audit Chat 00 contracts.
-- Do not add authentication or API calls to the scaffold branch.
+- Do not recreate or reconfigure the scaffold.
+- Do not update dependency versions or regenerate `yarn.lock`.
+- Do not import Axios, `fetch` or `localStorage` from views/stores.
+- Do not add token persistence.
+- Do not invent a campus compatibility endpoint.
 - Do not generate `android/` or `ios/`.
-- Do not add a second package-manager lockfile.
-- Do not disable Yarn supply-chain age protection.

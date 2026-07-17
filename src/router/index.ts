@@ -17,7 +17,7 @@ import ProfileView from "@/views/ProfileView.vue"
 export const routes: RouteRecordRaw[] = [
   {
     path: "/",
-    redirect: "/courses",
+    redirect: "/campuses",
   },
   {
     path: "/campuses",

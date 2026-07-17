@@ -153,3 +153,14 @@
 - GAP-001 remains the only confirmed missing API contract required for profile/auth bootstrap.
 - GAP-006 records a separate backend defect found during runtime verification; it does not block Chat 01.
 - GAP-002, GAP-003 and GAP-005 remain investigations; no backend feature branch is authorized yet.
+
+---
+
+## Chat 02 gap handling update — 2026-07-16
+
+- GAP-003 was not converted into backend work.
+- Campus profiles store `compatibilityStatus: unknown` and do not claim server compatibility.
+- Chat 02 performs no anonymous compatibility request and invents no endpoint.
+- The selected campus URL can be stored and used by the transport boundary, but the compatibility signal remains an investigation for a later contract-validation step.
+- GAP-001 remains required before completing the authenticated profile bootstrap.
+- No `chamilo-lms` source files are changed by this batch.

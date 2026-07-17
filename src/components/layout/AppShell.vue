@@ -5,6 +5,7 @@ import { useRoute } from "vue-router"
 
 import AppHeader from "@/components/layout/AppHeader.vue"
 import BottomNavigation from "@/components/layout/BottomNavigation.vue"
+import OfflineBanner from "@/components/states/OfflineBanner.vue"
 
 const route = useRoute()
 const { t } = useI18n()
@@ -16,6 +17,7 @@ const showBottomNavigation = computed(() => route.meta.showBottomNavigation)
 <template>
   <div class="min-h-dvh bg-slate-100">
     <AppHeader :title="pageTitle" />
+    <OfflineBanner />
 
     <main
       id="main-content"

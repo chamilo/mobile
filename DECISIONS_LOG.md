@@ -390,3 +390,141 @@ PrimeVue remains selective and is configured without introducing a global visual
 #### Revisit when
 
 A demonstrated security fix, compatibility issue or upstream maintenance requirement justifies an upgrade.
+
+---
+
+### ADR-021 — Campus profile persistence boundary
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+Campus profiles are non-secret configuration, but views and stores must not depend directly on browser-only persistence APIs. A native implementation will be needed later without rewriting the UI.
+
+#### Decision
+
+Persist the global campus index through:
+
+```text
+CampusProfileRepository
+└── BrowserCampusProfileRepository → localStorage
+```
+
+`CampusView` and the Pinia store do not import `localStorage`. The repository stores only campus profile metadata and the selected campus ID. Passwords and JWTs are never part of this snapshot.
+
+Future sensitive and cached data uses explicit campus namespaces:
+
+```text
+campusId/token
+campusId/profile
+campusId/cache
+campusId/settings
+```
+
+#### Alternatives
+
+- Direct `localStorage` access from components/store: rejected because it couples the application layer to the browser and makes native migration unsafe.
+- A secure-storage plugin in Chat 02: rejected because campus profiles are not secrets and the plugin decision belongs to the security/native batch.
+- Database abstraction: rejected as unnecessary for the MVP campus index.
+
+#### Consequences
+
+- Campus profile persistence can be replaced for native platforms.
+- Corrupted storage is surfaced as an error instead of being silently overwritten.
+- Token storage remains a separate contract and is not implemented in Chat 02.
+
+#### Evidence
+
+- `src/services/campus/CampusProfileRepository.ts`
+- `src/services/campus/BrowserCampusProfileRepository.ts`
+- repository/store unit tests
+
+#### Revisit when
+
+The Android persistence and secure-token-storage implementations are selected.
+
+---
+
+### ADR-022 — Campus URL security policy
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+The mobile application accepts user-provided campus addresses. Unsafe normalization could leak credentials, permit unsupported protocols or silently connect to a different host.
+
+#### Decision
+
+- Add HTTPS when the user omits a protocol.
+- Allow only HTTP and HTTPS.
+- Reject embedded username/password, query strings and fragments.
+- Preserve valid subdirectory installations.
+- Remove trailing slashes.
+- Require HTTPS by default.
+- Permit HTTP only through an explicit development opt-in and only for localhost, `.local`, loopback or private-network hosts.
+- Revalidate the URL when creating an HTTP client; production builds reject previously saved HTTP profiles.
+
+#### Alternatives
+
+- Accept any URL and let Axios fail: rejected because validation would happen too late and error messages would be ambiguous.
+- Allow arbitrary HTTP with a checkbox: rejected because a persistent opt-in must not weaken production transport.
+- Force origin-only URLs: rejected because Chamilo may be installed under a subdirectory.
+
+#### Consequences
+
+Campus profiles are deterministic and safer to compare. Redirects to another origin are rejected when the browser exposes the final response URL.
+
+#### Evidence
+
+- `src/domain/campus/normalizeCampusUrl.ts`
+- `src/services/http/createHttpClient.ts`
+- URL and HTTP-client unit tests
+
+---
+
+### ADR-023 — Browser transport and native boundary
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+ADR-019 established the transport interface. Chat 02 must implement browser transport without pretending that the Android/native contract has already been audited.
+
+#### Decision
+
+- Implement `BrowserHttpClient` with Axios behind `HttpClient`.
+- Support relative campus paths, query parameters, body, headers, timeout and `AbortSignal`.
+- Normalize configuration, timeout, cancellation, network and HTTP errors.
+- Reject absolute request paths that could replace the selected campus.
+- Keep `NativeHttpClient` as an explicit unsupported implementation until the Android batch.
+- Use direct CORS by default.
+- Provide an optional single-campus Vite proxy only when the selected campus matches the configured proxy target.
+
+#### Alternatives
+
+- Import Axios in each service/store: rejected because transport must remain replaceable.
+- Implement Capacitor HTTP before generating/auditing Android: rejected because behavior and plugin compatibility are not yet verified.
+- Always proxy browser requests: rejected because a static proxy target conflicts with the multi-campus model.
+
+#### Consequences
+
+No screen imports Axios or `fetch`. Native use fails clearly rather than silently falling back to an unverified browser transport.
+
+#### Evidence
+
+- `src/services/http/HttpClient.ts`
+- `src/services/http/BrowserHttpClient.ts`
+- `src/services/http/NativeHttpClient.ts`
+- `vite.config.ts`
