@@ -13,6 +13,7 @@ export type CourseToolKey =
   | "course-description"
   | "course-progress"
   | "documents"
+  | "links"
   | "notebook"
 
 export interface CourseHomeEntry {

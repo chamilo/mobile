@@ -32,6 +32,7 @@ describe("createCourseToolCapabilities", () => {
       "announcements",
       "course-description",
       "documents",
+      "links",
       "course-progress",
       "notebook",
     ])

@@ -156,3 +156,11 @@ export function buildDocumentsRoute(context: CourseNavigationContext): RouteLoca
     query: buildContextQuery(context),
   }
 }
+
+export function buildCourseLinksRoute(context: CourseNavigationContext): RouteLocationRaw {
+  return {
+    name: "course-links",
+    params: { courseId: String(context.courseId) },
+    query: buildContextQuery(context),
+  }
+}

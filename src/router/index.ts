@@ -11,6 +11,7 @@ import AnnouncementsView from "@/views/AnnouncementsView.vue"
 import CampusView from "@/views/CampusView.vue"
 import CourseDescriptionView from "@/views/CourseDescriptionView.vue"
 import CourseHomeView from "@/views/CourseHomeView.vue"
+import CourseLinksView from "@/views/CourseLinksView.vue"
 import DocumentsView from "@/views/DocumentsView.vue"
 import CourseProgressView from "@/views/CourseProgressView.vue"
 import CoursesView from "@/views/CoursesView.vue"
@@ -122,6 +123,25 @@ export const routes: RouteRecordRaw[] = [
     }),
     meta: {
       titleKey: "routes.documents",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/links",
+    name: "course-links",
+    component: CourseLinksView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.courseLinks",
       showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,

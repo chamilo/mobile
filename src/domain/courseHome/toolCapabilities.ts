@@ -5,6 +5,7 @@ import {
   buildCourseProgressRoute,
   buildCourseDescriptionRoute,
   buildDocumentsRoute,
+  buildCourseLinksRoute,
 } from "@/domain/courses/routeContext"
 
 export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapability[] {
@@ -53,6 +54,21 @@ export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapabi
       route: buildDocumentsRoute(entry.context),
       apiContract: {
         list: "GET /api/documents",
+        context: ["cid", "sid", "gid"],
+      },
+    },
+    {
+      toolKey: "links",
+      titleKey: "courseHome.tools.links.title",
+      descriptionKey: "courseHome.tools.links.description",
+      icon: "pi pi-link",
+      available: true,
+      readOnly: true,
+      reason: null,
+      route: buildCourseLinksRoute(entry.context),
+      apiContract: {
+        list: "GET /api/links",
+        detail: "GET /api/links/{iid}/details",
         context: ["cid", "sid", "gid"],
       },
     },
