@@ -11,6 +11,7 @@ import type {
 import type { CampusProfile } from "@/domain/campus/types"
 import { AuthApiService, AuthServiceError } from "@/services/auth/AuthApiService"
 import { createTokenStorage } from "@/services/auth/createTokenStorage"
+import { clearCampusSessionData } from "@/services/auth/CampusSessionDataCleaner"
 import type { TokenStorage } from "@/services/auth/TokenStorage"
 import { TokenStorageError } from "@/services/auth/TokenStorage"
 import { createHttpClient } from "@/services/http/createHttpClient"
@@ -144,6 +145,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       if (isTokenExpired(storedToken.expiresAt)) {
         await tokenStorage.remove(campus.id)
+        await clearCampusSessionData(campus.id).catch(() => undefined)
         status.value = "error"
         errorCode.value = "session_expired"
         currentCampusId.value = campus.id
@@ -163,6 +165,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       if (mappedError === "session_expired" || mappedError === "access_denied") {
         await tokenStorage.remove(campus.id).catch(() => undefined)
+        await clearCampusSessionData(campus.id).catch(() => undefined)
       }
 
       profile.value = null
@@ -180,6 +183,7 @@ export const useAuthStore = defineStore("auth", () => {
     if (campusId) {
       try {
         await tokenStorage.remove(campusId)
+        await clearCampusSessionData(campusId)
       } catch (error) {
         storageError = error
       }
@@ -196,6 +200,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function clearCampusSession(campusId: string): Promise<boolean> {
     try {
       await tokenStorage.remove(campusId)
+      await clearCampusSessionData(campusId)
 
       if (currentCampusId.value === campusId) {
         clearActiveState()

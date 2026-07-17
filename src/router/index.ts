@@ -68,7 +68,13 @@ export const routes: RouteRecordRaw[] = [
     path: "/courses/:courseId",
     name: "course-home",
     component: CourseHomeView,
-    props: true,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+    }),
     meta: {
       titleKey: "routes.courseHome",
       showBottomNavigation: false,

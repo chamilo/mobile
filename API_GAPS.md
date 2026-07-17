@@ -2,14 +2,14 @@
 
 ## Summary
 
-| ID      | Screen                          | Need                                                        | Existing contract                                                                              | Gap                                                                       | Security                                                               | Backend branch                    | Status                                    |
-| ------- | ------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------- | ----------------------------------------- |
-| GAP-001 | Profile/auth bootstrap          | Minimal current authenticated user under Bearer JWT         | `GET /api/users/{id}`, server-injected `window.user`, `/check-session`                         | Client has no trusted ID and no minimal self-profile operation            | Return only authenticated user's permitted fields; AccessUrl-aware     | `feature/mobile-api-current-user` | Confirmed; not implemented                |
-| GAP-002 | Courses/sessions                | One mobile list preserving enrollment and session identity  | `/api/me/courses` plus three session-subscription collections                                  | Not proven; existing operations may be sufficient after GAP-001           | Never trust arbitrary user ID; preserve AccessUrl and self-only checks | None until measured               | Investigation                             |
-| GAP-003 | Campus compatibility            | Verify server compatibility before storing/using campus     | API docs/entrypoint may exist depending environment                                            | No dedicated compatibility operation found; existing metadata may suffice | Public response must disclose minimal version/capabilities only        | None until Chat 02 audit          | Investigation                             |
-| GAP-004 | Authentication compatibility    | JWT login for LDAP/OAuth/SSO accounts                       | `/api/authentication_token` uses entity provider; external authenticators are on main firewall | Support not established                                                   | Avoid converting external login into insecure password flow            | None in MVP                       | Deferred                                  |
-| GAP-005 | Announcements scale/attachments | Large lists and authenticated attachment downloads          | Read-only list/detail exist; list has no pagination                                            | Not proven as a gap without runtime volume/attachment tests               | Context and AccessUrl isolation must be tested                         | None until measured               | Investigation                             |
-| GAP-006 | Login reliability               | JWT endpoint must not fail when IDS log exists but is empty | `/api/authentication_token`                                                                    | Empty IDS log triggers negative seek and HTTP 500                         | Never log password/JWT; preserve throttling and audit behavior         | Separate fix branch if authorized | Confirmed backend defect; workaround only |
+| ID      | Screen                          | Need                                                        | Existing contract                                                                              | Gap                                                                       | Security                                                        | Backend branch                    | Status                                    |
+| ------- | ------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------- | ----------------------------------------- |
+| GAP-001 | Profile/auth bootstrap          | Minimal current authenticated user under Bearer JWT         | `GET /api/me` at backend commit `ba1f018207`                                                   | Resolved                                                                  | Minimal self-profile; AccessUrl-aware                           | `feature/mobile-api-current-user` | Resolved; pending review/merge            |
+| GAP-002 | Courses/sessions                | Mobile list preserving enrollment and session identity      | `/api/me/courses` plus three session-subscription collections                                  | No gap: existing contracts are sufficient for MVP                         | Authenticated self only; AccessUrl preserved                    | None                              | Closed without backend change             |
+| GAP-003 | Campus compatibility            | Verify server compatibility before storing/using campus     | API docs/entrypoint may exist depending environment                                            | No dedicated compatibility operation found; existing metadata may suffice | Public response must disclose minimal version/capabilities only | None until Chat 02 audit          | Investigation                             |
+| GAP-004 | Authentication compatibility    | JWT login for LDAP/OAuth/SSO accounts                       | `/api/authentication_token` uses entity provider; external authenticators are on main firewall | Support not established                                                   | Avoid converting external login into insecure password flow     | None in MVP                       | Deferred                                  |
+| GAP-005 | Announcements scale/attachments | Large lists and authenticated attachment downloads          | Read-only list/detail exist; list has no pagination                                            | Not proven as a gap without runtime volume/attachment tests               | Context and AccessUrl isolation must be tested                  | None until measured               | Investigation                             |
+| GAP-006 | Login reliability               | JWT endpoint must not fail when IDS log exists but is empty | `/api/authentication_token`                                                                    | Empty IDS log triggers negative seek and HTTP 500                         | Never log password/JWT; preserve throttling and audit behavior  | Separate fix branch if authorized | Confirmed backend defect; workaround only |
 
 ## GAP-001 — JWT current user profile
 
@@ -191,3 +191,31 @@ Chat 04 must collect authenticated runtime payloads for direct courses and past/
 ### New gaps
 
 No new backend gap was introduced by Chat 03. Browser JWT persistence, refresh tokens and external identity-provider login remain explicitly out of scope rather than being treated as implicit missing endpoints.
+
+---
+
+## Chat 04 API gap update — 2026-07-17
+
+### GAP-002 — Closed without backend implementation
+
+Runtime verification confirmed:
+
+```text
+GET /api/me/courses                                             HTTP 200 with JWT
+GET /api/me/courses                                             HTTP 401 without JWT
+GET /api/users/{id}/session_subscriptions/past                 HTTP 200
+GET /api/users/{id}/session_subscriptions/current              HTTP 200
+GET /api/users/{id}/session_subscriptions/upcoming             HTTP 200
+```
+
+The direct collection preserves `CourseRelUser` identity and course role/progress fields. Session collections preserve session identity and each `SessionRelCourse` identity. The current-user ID comes only from the verified `/api/me` operation, and the backend Providers enforce self/admin and AccessUrl rules.
+
+Decision:
+
+- no composed mobile backend Provider;
+- normalize the four collections in `chamilo/mobile`;
+- preserve direct membership and session context separately;
+- follow Hydra pagination safely;
+- revisit only with production performance evidence.
+
+No new backend gap was introduced by the Chat 04 implementation.

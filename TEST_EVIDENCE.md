@@ -119,3 +119,49 @@ The isolated validation used the exact pinned packages from the available npm ca
 - Reload clears the in-memory development token and redirects to login.
 - Browser storage contains campus profiles only; no password or JWT.
 - Browser console and network logs do not expose credentials or bearer tokens beyond the standard protected request header inspector.
+
+---
+
+## Chat 04 — Courses and sessions candidate
+
+### Runtime API contracts
+
+| Date       | Role                     | Method/path                                          | Expected                     | Actual        |
+| ---------- | ------------------------ | ---------------------------------------------------- | ---------------------------- | ------------- |
+| 2026-07-17 | Authenticated local user | `GET /api/me/courses`                                | Hydra direct memberships     | HTTP 200 PASS |
+| 2026-07-17 | Anonymous                | `GET /api/me/courses`                                | Reject missing JWT           | HTTP 401 PASS |
+| 2026-07-17 | Authenticated local user | `GET /api/users/{id}/session_subscriptions/past`     | Past sessions                | HTTP 200 PASS |
+| 2026-07-17 | Authenticated local user | `GET /api/users/{id}/session_subscriptions/current`  | Current sessions and courses | HTTP 200 PASS |
+| 2026-07-17 | Authenticated local user | `GET /api/users/{id}/session_subscriptions/upcoming` | Upcoming sessions            | HTTP 200 PASS |
+
+### Isolated mobile candidate
+
+| Command                                 | Result                                          |
+| --------------------------------------- | ----------------------------------------------- |
+| `prettier --check .`                    | PASS                                            |
+| `eslint . --max-warnings=0`             | PASS                                            |
+| `vue-tsc --noEmit -p tsconfig.app.json` | PASS                                            |
+| `tsc --noEmit -p tsconfig.node.json`    | PASS                                            |
+| `vitest run --maxWorkers=2`             | PASS — 24 files, 68 tests                       |
+| `vite build`                            | PASS — Vite 8.1.4, 204 modules                  |
+| dependency comparison                   | PASS — `package.json` and `yarn.lock` unchanged |
+| native directory check                  | PASS — no `android/` or `ios/`                  |
+
+### Added coverage
+
+- direct membership and session-context normalization;
+- Hydra pagination and unsafe-next-link rejection;
+- campus-and-user cache isolation;
+- offline cached data and network fallback;
+- direct membership route identity;
+- requirements-locked course card;
+- asset URL protocol and credential validation.
+
+### Pending local browser evidence
+
+- Direct courses match the selected authenticated user.
+- Current session courses display under the correct session.
+- Course navigation carries direct membership or session query context.
+- Offline mode shows cached course data and retry state.
+- Logout removes `campusId/cache/*` entries and in-memory overview.
+- Mobile viewport has no horizontal overflow.

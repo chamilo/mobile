@@ -1,42 +1,41 @@
-Continuamos Chamilo Mobile 2.x después del batch de autenticación.
+Continuamos Chamilo Mobile 2.x después del batch de cursos y sesiones.
 
 Estado esperado:
 
 - Mobile repo: /var/www/chamilo-mobile
-- Branch completed: feature/mobile2-auth
-- Commit expected: Mobile: Add JWT authentication flow
+- Branch completed: feature/mobile2-courses
+- Base commit before Chat 04: 9d9a10e Mobile: Add JWT authentication flow
+- Expected commit: Mobile: Show user courses and sessions
 - Backend repo: /var/www/chamilo2
 - Backend branch: feature/mobile-api-current-user
 - Backend commit: ba1f018207 API: Add authenticated user profile operation
 - Both working trees clean
 
-No reconstruyas scaffold, campus profiles, transport, JWT login, token storage, guards, profile ni logout.
+No reconstruyas scaffold, campus profiles, transport, JWT login, profile, logout, courses store, Hydra normalization or course/session cards.
 
 Objetivo único del siguiente batch:
 
-Chat 04 — audit and implement My courses and sessions.
+Chat 05 — Mobile course home and capability registry.
 
-1. Capture current mobile branch/HEAD/status.
-2. Capture backend branch/HEAD/status.
-3. With a valid JWT and the authenticated `/api/me` ID, collect sanitized runtime payloads for:
-   - GET /api/me/courses
-   - GET /api/users/{id}/session_subscriptions/past
-   - GET /api/users/{id}/session_subscriptions/current
-   - GET /api/users/{id}/session_subscriptions/upcoming
-4. Record content type, Hydra pagination, direct membership identity, session/course fields, AccessUrl and role behavior.
-5. Audit existing `chamilo-lms/assets/vue` course/session services before creating mobile services.
-6. Measure whether existing operations are sufficient. Do not implement GAP-002 backend work unless insufficiency is demonstrated.
-7. Implement only the mobile courses/sessions list using `AuthenticatedHttpClient`.
-8. Include loading, empty, error, retry and last-read cache states.
-9. Preserve nullable `sessionId` and do not merge direct/session memberships incorrectly.
-10. Do not start course home or announcements.
+1. Verify branch, HEAD and clean state.
+2. Preserve the route context already provided by Chat 04:
+   - courseId;
+   - nullable sessionId;
+   - direct membershipId or sessionCourseId.
+3. Audit the existing LMS course-home/navigation services and API operations before showing any tool.
+4. Implement a mobile-owned course header and explicit `ToolCapability` registry.
+5. Show only tools with a verified API contract and permission behavior.
+6. Announcements may appear as an available read-only capability only after confirming its existing list/detail contracts; do not implement announcement content until Chat 06.
+7. Do not open legacy pages or the remote SPA.
+8. Include loading, denied, closed and missing-context states.
+9. Keep direct and session course context distinct.
+10. Update all handoff files and provide a full ZIP.
 
 Out of scope:
 
-- backend composed endpoint without evidence;
-- course tools;
-- announcements;
+- announcement list/detail implementation;
+- course writes;
+- GraphQL;
 - native HTTP;
 - secure native storage;
-- refresh token;
 - Android/iOS.

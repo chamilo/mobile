@@ -6,18 +6,18 @@ Chamilo Mobile 2.x
 
 ## Updated
 
-2026-07-16 America/Lima
+2026-07-17 America/Lima
 
 ## Mobile repository
 
 ```text
 Path: /var/www/chamilo-mobile
-Completed branch: feature/mobile2-campus-transport
-Completed Chat 01 commit: 050588c Mobile: Add Vue and Capacitor scaffold
-Chat 02 commit: completed locally before the backend GAP-001 context was generated; hash must be captured from the local repository
-Target branch for this batch: feature/mobile2-auth
-Expected working tree before apply: clean
-Remote: origin
+Branch: feature/mobile2-courses
+Base HEAD: 9d9a10e Mobile: Add JWT authentication flow
+Working tree before apply: clean
+Previous commits:
+- 9161132 Mobile: Add campus profiles and HTTP transport
+- 050588c Mobile: Add Vue and Capacitor scaffold
 ```
 
 ## Backend repository
@@ -25,84 +25,78 @@ Remote: origin
 ```text
 Path: /var/www/chamilo2
 Branch: feature/mobile-api-current-user
-Commit: ba1f018207 API: Add authenticated user profile operation
+HEAD: ba1f018207 API: Add authenticated user profile operation
 Working tree: clean
-Runtime contract verification: PASS
+Backend changes required by Chat 04: none
 ```
 
 ## Current phase
 
 ```text
-Chat: 03
-Batch: JWT authentication and authenticated profile bootstrap
-Status: Candidate validated; pending local application, browser verification and commit
+Chat: 04
+Batch: Real courses and sessions
+Status: Candidate validated; pending local apply, browser verification and commit
 ```
 
 ## Done
 
-- [x] Chat 00 discovery and runtime JWT/CORS verification.
-- [x] Chat 01 Vue/TypeScript scaffold committed.
-- [x] Chat 02 campus profiles and browser transport committed locally.
-- [x] GAP-001 backend operation `GET /api/me` implemented and committed as `ba1f018207`.
-- [x] `POST /api/authentication_token` runtime contract verified.
-- [x] `GET /api/me` runtime contract verified with valid, missing and invalid JWT cases.
-- [x] Login form with stable input names and accessible errors.
-- [x] Typed JWT parsing and expiration handling.
-- [x] `TokenStorage` boundary with browser development memory storage.
-- [x] Explicit unsupported secure-native storage pending the security batch.
-- [x] Auth API service for token creation and current-user loading.
-- [x] Token isolated by campus namespace.
-- [x] Authenticated HTTP decorator for later protected API services.
-- [x] Pinia auth state, profile bootstrap and logout cleanup.
-- [x] Router guards for campus and authentication requirements.
-- [x] Authenticated profile screen.
-- [x] 17 test files and 47 tests PASS in the isolated candidate.
-- [x] ESLint, TypeScript and Vite production build PASS.
+- [x] Scaffold, campus profiles, transport and JWT authentication.
+- [x] Current-user backend contract `GET /api/me`.
+- [x] Runtime `GET /api/me/courses` HTTP 200 with JWT and HTTP 401 without JWT.
+- [x] Runtime past/current/upcoming session-subscription contracts HTTP 200.
+- [x] Existing LMS Vue `courseService`, `sessionService`, Hydra handling and session cards audited.
+- [x] Existing operations classified as sufficient for the MVP; GAP-002 closed without backend code.
+- [x] Typed direct-course and session-course normalization.
+- [x] Hydra pagination with same-campus relative-link validation.
+- [x] Mobile course/session cards and context-preserving navigation.
+- [x] Loading, error, empty, retry and stale/offline cache states.
+- [x] Cache isolated by campus and authenticated user.
+- [x] Logout/session expiration cache cleanup.
+- [x] 24 test files and 68 tests PASS in the isolated candidate.
+- [x] Prettier, ESLint, TypeScript and Vite build PASS.
 - [x] No dependency or lockfile changes.
 
 ## Pending locally
 
-- [ ] Create `feature/mobile2-auth` from the clean committed campus/transport branch.
-- [ ] Apply the Chat 03 ZIP.
-- [ ] Run Yarn 4 immutable install and all quality gates.
-- [ ] Sign in through the mobile UI against `https://chamilo2.local`.
-- [ ] Verify invalid credentials, valid credentials, profile bootstrap and logout.
-- [ ] Verify route guards and page reload behavior.
-- [ ] Confirm no password or JWT appears in browser storage or console logs.
-- [ ] Commit the mobile auth batch.
+- [ ] Apply Chat 04 ZIP on `feature/mobile2-courses` at base `9d9a10e`.
+- [ ] Run Yarn 4 immutable install and quality gates.
+- [ ] Sign in against `https://chamilo2.local` and verify direct/session lists.
+- [ ] Verify course navigation preserves direct membership or session context.
+- [ ] Verify offline cached data and retry.
+- [ ] Verify logout clears cached course data.
+- [ ] Commit the batch.
 
 ## Confirmed API contracts
 
-| Feature               | Method | Path                                                            | Status                                                         |
-| --------------------- | ------ | --------------------------------------------------------------- | -------------------------------------------------------------- |
-| JWT login             | POST   | `/api/authentication_token`                                     | Runtime PASS                                                   |
-| Current user          | GET    | `/api/me`                                                       | Backend commit `ba1f018207`; runtime PASS                      |
-| Direct courses        | GET    | `/api/me/courses`                                               | Static verified; runtime authenticated payload pending Chat 04 |
-| Session subscriptions | GET    | `/api/users/{id}/session_subscriptions/{past,current,upcoming}` | Static verified; runtime payload pending Chat 04               |
+| Feature           | Method | Path                                             | Runtime                       |
+| ----------------- | ------ | ------------------------------------------------ | ----------------------------- |
+| JWT login         | POST   | `/api/authentication_token`                      | PASS                          |
+| Current user      | GET    | `/api/me`                                        | PASS                          |
+| Direct courses    | GET    | `/api/me/courses`                                | 200 with JWT; 401 without JWT |
+| Past sessions     | GET    | `/api/users/{id}/session_subscriptions/past`     | 200                           |
+| Current sessions  | GET    | `/api/users/{id}/session_subscriptions/current`  | 200                           |
+| Upcoming sessions | GET    | `/api/users/{id}/session_subscriptions/upcoming` | 200                           |
 
-## Accepted ADRs relevant to this batch
+## Accepted ADRs
 
+- ADR-001 independent client.
+- ADR-003 REST first.
 - ADR-019 browser/native transport boundary.
-- ADR-020 exact dependency baseline.
-- ADR-021 campus profile persistence boundary.
-- ADR-022 campus URL security policy.
-- ADR-023 browser transport implementation.
 - ADR-024 JWT authentication bootstrap.
-- ADR-025 token storage and lifecycle boundary.
+- ADR-025 token storage lifecycle.
+- ADR-026 compose course memberships in the mobile client.
 
 ## Next batch
 
 ```text
-Chat 04 — audit and implement My courses and sessions using the authenticated profile ID and existing verified operations. Measure the existing multi-call contract before authorizing GAP-002 backend work.
+Chat 05 — mobile course home and explicit tool capability registry. Use preserved course/session context; do not open legacy pages.
 ```
 
 ## Do not redo
 
-- Do not recreate the scaffold, campus profiles or HTTP transport.
-- Do not reimplement `/api/me` in the mobile repository.
-- Do not store passwords.
-- Do not persist JWTs in browser localStorage/sessionStorage.
-- Do not add refresh tokens.
-- Do not implement LDAP/OAuth/SSO mobile flows in the MVP.
-- Do not start courses, sessions or announcements in this batch.
-- Do not generate `android/` or `ios/`.
+- Do not recreate scaffold, campus, transport, authentication or course list.
+- Do not add a composed courses backend endpoint without new evidence.
+- Do not merge direct and session enrollments by course ID.
+- Do not persist JWTs in browser storage.
+- Do not start announcements in Chat 05.
+- Do not generate Android or iOS projects yet.

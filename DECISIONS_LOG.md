@@ -622,3 +622,55 @@ A browser reload intentionally requires a new login during development. Native a
 - `src/services/auth/DevelopmentTokenStorage.ts`.
 - `src/services/auth/SecureNativeTokenStorage.ts`.
 - token namespace and auth store tests.
+
+---
+
+### ADR-026 — Compose direct courses and sessions in the mobile client
+
+```text
+Status: Accepted
+Date: 2026-07-17
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+Runtime evidence confirmed four existing authenticated REST collections:
+
+- `/api/me/courses` for direct `CourseRelUser` memberships;
+- past, current and upcoming session subscriptions for the authenticated `/api/me` ID.
+
+The direct collection preserves the membership IRI and role/progress fields. Session collections preserve session identity and include their `SessionRelCourse` identities and course data. Their pagination policies differ, but all use Hydra collections.
+
+#### Decision
+
+- Do not add a composed backend endpoint for the MVP.
+- Fetch the four existing collections in parallel through `AuthenticatedHttpClient`.
+- Follow Hydra pagination only through relative same-campus links.
+- Keep direct and session enrollments as separate typed models.
+- Preserve direct `membershipId`, session `sessionId` and `sessionCourseId` in mobile navigation.
+- Cache the normalized overview by both campus ID and authenticated user ID.
+- Clear cached and in-memory course data on logout, expiration or access denial.
+
+#### Alternatives
+
+- Add one backend mobile endpoint: rejected because the existing operations are secure and sufficient, and measured runtime evidence did not demonstrate a blocking cost.
+- Deduplicate by course ID: rejected because the same course can be a direct enrollment and appear in one or more sessions with different context.
+- Copy LMS desktop course/session views: rejected because they depend on web security state, desktop components and legacy navigation.
+
+#### Consequences
+
+The MVP makes four authenticated collection requests on first load and normalizes them in the client. Course context remains explicit and reversible. A future composed Provider requires new performance evidence rather than convenience alone.
+
+#### Evidence
+
+- Chat 04 sanitized runtime payloads and HTTP status report.
+- `UserCourseSubscriptionsStateProvider` and `UserSessionSubscriptionsStateProvider`.
+- LMS `courseService.js`, `sessionService.js`, `SessionCardSimple.vue` and Hydra collection handling.
+- `src/services/courses/CoursesApiService.ts`.
+- `src/domain/courses/types.ts`.
+- `src/stores/courses.ts`.
+
+#### Revisit when
+
+A representative production dataset demonstrates unacceptable request count, payload size or latency.
