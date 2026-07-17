@@ -122,3 +122,14 @@ Campus profile persistence also passes through `CampusProfileRepository`. The br
 - Keep future profile, token, cache and settings data namespaced by campus.
 - Do not pass tokens in query strings.
 - Do not open legacy tools with silent autologin.
+
+## Authentication status
+
+The mobile app uses the verified Chamilo contracts:
+
+```text
+POST /api/authentication_token
+GET /api/me
+```
+
+The browser development build keeps JWTs in memory only. Passwords are never stored. Reloading the page clears the development session by design. Native secure storage remains intentionally unavailable until its dedicated security batch.

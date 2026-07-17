@@ -1,49 +1,42 @@
-Continuamos Chamilo Mobile 2.x en el mismo Chat 02.
+Continuamos Chamilo Mobile 2.x después del batch de autenticación.
 
 Estado esperado:
 
-- Repositorio: /var/www/chamilo-mobile
-- Branch: feature/mobile2-campus-transport
-- HEAD antes de aplicar: 050588c
-- Chat 01 completado y comiteado
-- ZIP: chamilo-mobile-chat02-campus-transport-20260716.zip
-- Backend sin cambios
+- Mobile repo: /var/www/chamilo-mobile
+- Branch completed: feature/mobile2-auth
+- Commit expected: Mobile: Add JWT authentication flow
+- Backend repo: /var/www/chamilo2
+- Backend branch: feature/mobile-api-current-user
+- Backend commit: ba1f018207 API: Add authenticated user profile operation
+- Both working trees clean
 
-Objetivo único:
+No reconstruyas scaffold, campus profiles, transport, JWT login, token storage, guards, profile ni logout.
 
-1. Confirmar branch, HEAD y working tree antes de aplicar.
-2. Aplicar archivos completos del ZIP.
-3. Ejecutar:
-   - yarn install --immutable
-   - yarn format:check
-   - yarn lint
-   - yarn typecheck
-   - yarn test:unit
-   - yarn build
-   - git diff --check
-4. Ejecutar `yarn dev` y probar en Chrome 390x844:
-   - estado vacío;
-   - agregar `https://chamilo2.local`;
-   - URL normalizada y campus seleccionado;
-   - editar;
-   - recargar y confirmar persistencia;
-   - agregar un segundo campus y cambiar selección;
-   - eliminar con confirmación;
-   - offline banner mediante DevTools;
-   - Continue abre el placeholder de login sin llamada API;
-   - sin errores de consola ni scroll horizontal.
-5. Corregir únicamente defectos del Chat 02.
-6. Actualizar PROJECT_STATE.md y TEST_EVIDENCE.md con evidencia local.
-7. Commit sugerido: Mobile: Add campus profiles and HTTP transport
-8. No iniciar JWT/login hasta que Chat 02 esté Done y limpio.
+Objetivo único del siguiente batch:
 
-Fuera de alcance:
+Chat 04 — audit and implement My courses and sessions.
 
-- petición real a `/api/authentication_token`;
-- contraseña/JWT/token storage;
-- endpoint current user;
-- cursos/sesiones/anuncios;
-- endpoint de compatibilidad;
-- Native HTTP real;
-- Android/iOS;
-- cambios en chamilo-lms.
+1. Capture current mobile branch/HEAD/status.
+2. Capture backend branch/HEAD/status.
+3. With a valid JWT and the authenticated `/api/me` ID, collect sanitized runtime payloads for:
+   - GET /api/me/courses
+   - GET /api/users/{id}/session_subscriptions/past
+   - GET /api/users/{id}/session_subscriptions/current
+   - GET /api/users/{id}/session_subscriptions/upcoming
+4. Record content type, Hydra pagination, direct membership identity, session/course fields, AccessUrl and role behavior.
+5. Audit existing `chamilo-lms/assets/vue` course/session services before creating mobile services.
+6. Measure whether existing operations are sufficient. Do not implement GAP-002 backend work unless insufficiency is demonstrated.
+7. Implement only the mobile courses/sessions list using `AuthenticatedHttpClient`.
+8. Include loading, empty, error, retry and last-read cache states.
+9. Preserve nullable `sessionId` and do not merge direct/session memberships incorrectly.
+10. Do not start course home or announcements.
+
+Out of scope:
+
+- backend composed endpoint without evidence;
+- course tools;
+- announcements;
+- native HTTP;
+- secure native storage;
+- refresh token;
+- Android/iOS.

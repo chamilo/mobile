@@ -1,5 +1,6 @@
 export type HttpClientErrorKind =
   | "configuration"
+  | "authentication"
   | "network"
   | "timeout"
   | "aborted"

@@ -164,3 +164,30 @@
 - The selected campus URL can be stored and used by the transport boundary, but the compatibility signal remains an investigation for a later contract-validation step.
 - GAP-001 remains required before completing the authenticated profile bootstrap.
 - No `chamilo-lms` source files are changed by this batch.
+
+---
+
+## Chat 03 API gap update — 2026-07-16
+
+### GAP-001 — Resolved in backend branch
+
+```text
+Operation: GET /api/me
+Backend branch: feature/mobile-api-current-user
+Backend commit: ba1f018207
+Runtime valid JWT: HTTP 200 PASS
+Runtime missing JWT: HTTP 401 PASS
+Runtime invalid JWT: HTTP 401 PASS
+AccessUrl enforcement: implemented in CurrentUserProfileStateProvider
+Status: Resolved; pending review/merge in chamilo-lms
+```
+
+The mobile auth batch consumes this exact contract. It does not use generic user serialization or invent profile fields.
+
+### GAP-002 — Next investigation, still not authorized
+
+Chat 04 must collect authenticated runtime payloads for direct courses and past/current/upcoming session subscriptions, preserve membership identity and measure round trips before proposing a composed backend Provider.
+
+### New gaps
+
+No new backend gap was introduced by Chat 03. Browser JWT persistence, refresh tokens and external identity-provider login remain explicitly out of scope rather than being treated as implicit missing endpoints.

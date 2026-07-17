@@ -6,11 +6,14 @@ import { useI18n } from "vue-i18n"
 import CampusCard from "@/components/campus/CampusCard.vue"
 import CampusForm from "@/components/campus/CampusForm.vue"
 import type { CampusProfile, CampusProfileInput } from "@/domain/campus/types"
+import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 
 const { t } = useI18n()
 const campusStore = useCampusStore()
+const authStore = useAuthStore()
 const { profiles, selectedCampusId, errorCode } = storeToRefs(campusStore)
+const { errorCode: authErrorCode } = storeToRefs(authStore)
 
 const editingCampus = ref<CampusProfile | null>(null)
 const pendingRemovalId = ref<string | null>(null)
@@ -19,16 +22,33 @@ const busy = ref(false)
 const storeErrorMessage = computed(() =>
   errorCode.value ? t(`campus.storeErrors.${errorCode.value}`) : null,
 )
+const authErrorMessage = computed(() =>
+  authErrorCode.value ? t(`auth.errors.${authErrorCode.value}`) : null,
+)
 
-function addOrUpdateCampus(input: CampusProfileInput): void {
+async function addOrUpdateCampus(input: CampusProfileInput): Promise<void> {
   busy.value = true
 
   try {
     if (editingCampus.value) {
-      campusStore.updateCampus(editingCampus.value.id, input)
+      const campusId = editingCampus.value.id
+      const changesConnection =
+        editingCampus.value.baseUrl !== input.baseUrl ||
+        editingCampus.value.allowInsecureHttp !== Boolean(input.allowInsecureHttp)
+
+      if (changesConnection) {
+        const cleared = await authStore.clearCampusSession(campusId)
+
+        if (!cleared) {
+          return
+        }
+      }
+
+      campusStore.updateCampus(campusId, input)
       editingCampus.value = null
     } else {
       campusStore.addCampus(input)
+      authStore.resetActiveSession()
     }
   } finally {
     busy.value = false
@@ -41,7 +61,24 @@ function editCampus(campus: CampusProfile): void {
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
-function confirmRemoval(id: string): void {
+async function selectCampus(id: string): Promise<void> {
+  if (campusStore.selectCampus(id)) {
+    authStore.resetActiveSession()
+  }
+}
+
+function retryErrors(): void {
+  campusStore.initialize()
+  authStore.clearError()
+}
+
+async function confirmRemoval(id: string): Promise<void> {
+  const cleared = await authStore.clearCampusSession(id)
+
+  if (!cleared) {
+    return
+  }
+
   campusStore.removeCampus(id)
   pendingRemovalId.value = null
 
@@ -60,16 +97,16 @@ function confirmRemoval(id: string): void {
     </section>
 
     <div
-      v-if="storeErrorMessage"
+      v-if="storeErrorMessage || authErrorMessage"
       class="rounded-2xl border border-red-200 bg-red-50 p-4"
       role="alert"
       aria-live="assertive"
     >
-      <p class="text-sm text-red-900">{{ storeErrorMessage }}</p>
+      <p class="text-sm text-red-900">{{ storeErrorMessage ?? authErrorMessage }}</p>
       <button
         type="button"
         class="mt-3 min-h-touch rounded-xl border border-red-300 bg-white px-4 py-2 font-medium text-red-800"
-        @click="campusStore.initialize()"
+        @click="retryErrors"
       >
         {{ t("actions.retry") }}
       </button>
@@ -108,7 +145,7 @@ function confirmRemoval(id: string): void {
           :campus="campus"
           :selected="campus.id === selectedCampusId"
           :confirm-removal="campus.id === pendingRemovalId"
-          @select="campusStore.selectCampus"
+          @select="selectCampus"
           @edit="editCampus"
           @request-removal="pendingRemovalId = $event"
           @confirm-removal="confirmRemoval"

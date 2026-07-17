@@ -67,3 +67,55 @@ The isolated generator could not download Yarn through Corepack from `repo.yarnp
 - Record `git diff --check` and staged diff statistics.
 - Complete the local web checks.
 - Record the resulting commit hash.
+
+---
+
+## Chat 03 — JWT authentication candidate
+
+### Backend prerequisite
+
+| Date       | Repo        | Branch/commit                                    | Verification              | Result                        |
+| ---------- | ----------- | ------------------------------------------------ | ------------------------- | ----------------------------- |
+| 2026-07-16 | chamilo-lms | `feature/mobile-api-current-user` / `ba1f018207` | Targeted PHPUnit          | PASS — 3 tests, 15 assertions |
+| 2026-07-16 | chamilo-lms | `ba1f018207`                                     | Valid JWT → `GET /api/me` | PASS — HTTP 200               |
+| 2026-07-16 | chamilo-lms | `ba1f018207`                                     | Missing/invalid JWT       | PASS — HTTP 401               |
+
+### Isolated mobile candidate
+
+| Date       | Command                                            | Result                         |
+| ---------- | -------------------------------------------------- | ------------------------------ |
+| 2026-07-16 | `npx prettier --write .` followed by format review | PASS                           |
+| 2026-07-16 | `npx eslint . --max-warnings=0`                    | PASS — zero warnings           |
+| 2026-07-16 | `npx vue-tsc --noEmit -p tsconfig.app.json`        | PASS                           |
+| 2026-07-16 | `npx tsc --noEmit -p tsconfig.node.json`           | PASS                           |
+| 2026-07-16 | `npx vitest run`                                   | PASS — 17 files, 47 tests      |
+| 2026-07-16 | `npx vite build`                                   | PASS — Vite 8.1.4, 182 modules |
+| 2026-07-16 | package/lock comparison                            | PASS — unchanged               |
+| 2026-07-16 | native directory check                             | PASS — no `android/` or `ios/` |
+| 2026-07-16 | views/stores direct Axios/fetch/localStorage scan  | PASS                           |
+| 2026-07-16 | credential logging scan                            | PASS                           |
+
+The isolated validation used the exact pinned packages from the available npm cache. The authoritative local package-manager gate remains `yarn install --immutable` with Yarn 4.17.1.
+
+### Added coverage
+
+| Test file                                           | Coverage                                                      | Result |
+| --------------------------------------------------- | ------------------------------------------------------------- | ------ |
+| `src/domain/auth/jwt.spec.ts`                       | JWT payload, expiration, malformed token                      | PASS   |
+| `src/services/auth/DevelopmentTokenStorage.spec.ts` | campus isolation and removal                                  | PASS   |
+| `src/services/auth/AuthApiService.spec.ts`          | JWT login, 401 mapping, `/api/me`, invalid response           | PASS   |
+| `src/services/auth/AuthenticatedHttpClient.spec.ts` | Bearer injection and missing-session failure                  | PASS   |
+| `src/stores/auth.spec.ts`                           | sign-in, invalid credentials, logout, expiration              | PASS   |
+| `src/router/authGuards.spec.ts`                     | campus/auth redirects and session restoration                 | PASS   |
+| `src/components/auth/LoginForm.spec.ts`             | accessible validation, credential emission, password clearing | PASS   |
+
+### Pending local browser evidence
+
+- Invalid credentials show the specific error and remain on login.
+- Valid credentials open Courses and display the authenticated full name.
+- Profile displays the `/api/me` fields.
+- Direct navigation to `/profile` without a session redirects to login.
+- Logout removes the session and protects `/courses` and `/profile`.
+- Reload clears the in-memory development token and redirects to login.
+- Browser storage contains campus profiles only; no password or JWT.
+- Browser console and network logs do not expose credentials or bearer tokens beyond the standard protected request header inspector.

@@ -528,3 +528,97 @@ No screen imports Axios or `fetch`. Native use fails clearly rather than silentl
 - `src/services/http/BrowserHttpClient.ts`
 - `src/services/http/NativeHttpClient.ts`
 - `vite.config.ts`
+
+---
+
+### ADR-024 — JWT authentication bootstrap
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+The browser runtime verified `POST /api/authentication_token`, and backend commit `ba1f018207` added the minimum authenticated profile contract at `GET /api/me` with AccessUrl enforcement.
+
+#### Decision
+
+- Authenticate with `username` and `password` only against the selected campus.
+- Treat the returned JWT as an opaque credential except for client-side expiration parsing.
+- Load the current profile immediately through `GET /api/me` before accepting the session.
+- Store the JWT only after both operations succeed.
+- Protect authenticated routes through a Pinia auth store and Vue Router guards.
+- Use the dedicated minimal profile contract instead of generic `/api/users/{id}`.
+- Implement logout as local token/profile cleanup because no server-side JWT logout operation exists.
+
+#### Alternatives
+
+- Use the web login session and cookies: rejected because the app is an independent API client.
+- Decode the JWT to build the profile: rejected because claims are not the verified profile contract.
+- Call `/api/users/{id}`: rejected because the client does not know a trusted ID before profile bootstrap and the resource is broader than required.
+- Add refresh tokens: rejected because no verified refresh contract exists.
+
+#### Consequences
+
+The mobile session is accepted only after the JWT and AccessUrl-scoped profile both succeed. Invalid or expired sessions are removed without retrying an invented refresh flow.
+
+#### Evidence
+
+- Runtime JWT HTTP 200/401 checks.
+- Backend commit `ba1f018207`.
+- `src/services/auth/AuthApiService.ts`.
+- `src/stores/auth.ts`.
+- `src/router/authGuards.ts`.
+
+#### Revisit when
+
+A verified refresh-token or external identity-provider contract is proposed.
+
+---
+
+### ADR-025 — Token storage and lifecycle boundary
+
+```text
+Status: Accepted
+Date: 2026-07-16
+Owners: Chamilo Mobile maintainers
+```
+
+#### Context
+
+JWTs are sensitive and must remain isolated by campus. The browser scaffold is for development, while native secure storage has not yet been audited or selected.
+
+#### Decision
+
+```text
+TokenStorage
+├── DevelopmentTokenStorage → memory only
+└── SecureNativeTokenStorage → explicit unsupported boundary until Chat 08
+```
+
+- Namespace every token by `campusId/token`.
+- Never store passwords.
+- Do not persist JWTs in browser localStorage or sessionStorage.
+- Parse `exp` when present and reject expired tokens before protected requests.
+- Keep tokens without `exp` usable because the backend contract does not require the claim, but still validate them through `/api/me`.
+- Remove the campus token on logout, session expiration, AccessUrl denial, campus removal or campus connection-address change.
+- Provide `AuthenticatedHttpClient` so later API services receive Authorization without importing token storage.
+
+#### Alternatives
+
+- Browser localStorage: rejected because it unnecessarily persists a bearer token.
+- Choose a native plugin now: rejected until maintenance, license, Capacitor 8 and keystore behavior are audited.
+- Put token handling inside views: rejected because it breaks the transport/storage boundaries.
+
+#### Consequences
+
+A browser reload intentionally requires a new login during development. Native authentication fails explicitly until secure storage is implemented, rather than silently using unsafe persistence.
+
+#### Evidence
+
+- `src/services/auth/TokenStorage.ts`.
+- `src/services/auth/DevelopmentTokenStorage.ts`.
+- `src/services/auth/SecureNativeTokenStorage.ts`.
+- token namespace and auth store tests.

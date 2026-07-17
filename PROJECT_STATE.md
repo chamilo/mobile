@@ -12,11 +12,11 @@ Chamilo Mobile 2.x
 
 ```text
 Path: /var/www/chamilo-mobile
-Branch: feature/mobile2-campus-transport
-HEAD before applying Chat 02: 050588c
-Previous completed branch: feature/mobile2-scaffold
-Previous completed commit: 050588c Mobile: Add Vue and Capacitor scaffold
-Expected working tree after applying ZIP: Chat 02 files modified/added, pending local verification and commit
+Completed branch: feature/mobile2-campus-transport
+Completed Chat 01 commit: 050588c Mobile: Add Vue and Capacitor scaffold
+Chat 02 commit: completed locally before the backend GAP-001 context was generated; hash must be captured from the local repository
+Target branch for this batch: feature/mobile2-auth
+Expected working tree before apply: clean
 Remote: origin
 ```
 
@@ -24,68 +24,61 @@ Remote: origin
 
 ```text
 Path: /var/www/chamilo2
-Branch: master
-HEAD: 984b7fc7fcd8c382b61a6399904b373787b83aa8
-Working tree at last verification: clean
-Backend changes in this batch: none
+Branch: feature/mobile-api-current-user
+Commit: ba1f018207 API: Add authenticated user profile operation
+Working tree: clean
+Runtime contract verification: PASS
 ```
 
 ## Current phase
 
 ```text
-Chat: 02
-Batch: Campus profiles and HTTP transport
-Status: Ready for local application and verification
+Chat: 03
+Batch: JWT authentication and authenticated profile bootstrap
+Status: Candidate validated; pending local application, browser verification and commit
 ```
 
 ## Done
 
-- [x] Chat 00 discovery, runtime JWT and CORS verification.
-- [x] Chat 01 Vue/TypeScript scaffold.
-- [x] Chat 01 local commit `050588c` on `feature/mobile2-scaffold`.
-- [x] Chat 02 candidate implements add/edit/select/remove campus profiles.
-- [x] Campus URLs normalize to HTTPS by default and preserve subdirectory installations.
-- [x] HTTP opt-in is restricted to explicit local development hosts.
-- [x] Campus persistence is hidden behind `CampusProfileRepository`.
-- [x] Campus namespace helper covers token/profile/cache/settings keys.
-- [x] Pinia campus and connectivity stores.
-- [x] Empty, storage-error/retry and offline UI states.
-- [x] Typed `HttpClient` interface.
-- [x] Axios-based `BrowserHttpClient` with timeout, cancellation and normalized errors.
-- [x] Cross-host request/redirect protections.
-- [x] Explicit unsupported `NativeHttpClient` pending Android audit.
-- [x] Optional single-campus Vite development proxy.
-- [x] Isolated lint, typecheck, 26 tests and production build PASS.
+- [x] Chat 00 discovery and runtime JWT/CORS verification.
+- [x] Chat 01 Vue/TypeScript scaffold committed.
+- [x] Chat 02 campus profiles and browser transport committed locally.
+- [x] GAP-001 backend operation `GET /api/me` implemented and committed as `ba1f018207`.
+- [x] `POST /api/authentication_token` runtime contract verified.
+- [x] `GET /api/me` runtime contract verified with valid, missing and invalid JWT cases.
+- [x] Login form with stable input names and accessible errors.
+- [x] Typed JWT parsing and expiration handling.
+- [x] `TokenStorage` boundary with browser development memory storage.
+- [x] Explicit unsupported secure-native storage pending the security batch.
+- [x] Auth API service for token creation and current-user loading.
+- [x] Token isolated by campus namespace.
+- [x] Authenticated HTTP decorator for later protected API services.
+- [x] Pinia auth state, profile bootstrap and logout cleanup.
+- [x] Router guards for campus and authentication requirements.
+- [x] Authenticated profile screen.
+- [x] 17 test files and 47 tests PASS in the isolated candidate.
+- [x] ESLint, TypeScript and Vite production build PASS.
+- [x] No dependency or lockfile changes.
 
 ## Pending locally
 
-- [ ] Apply the Chat 02 ZIP on `feature/mobile2-campus-transport` at HEAD `050588c`.
-- [ ] Run `yarn install --immutable`, format, lint, typecheck, tests and build.
-- [ ] Test add/edit/select/remove with `https://chamilo2.local`.
-- [ ] Reload the page and verify the selected campus persists.
-- [ ] Test offline banner through Chrome DevTools.
-- [ ] Confirm no horizontal overflow at 390x844.
-- [ ] Commit only after all local checks pass.
-
-## Out of scope for Chat 02
-
-- Calling `/api/authentication_token` from the UI.
-- Password or JWT storage.
-- Authenticated current-user operation.
-- Courses, sessions, course home or announcements.
-- Anonymous server compatibility endpoint.
-- Capacitor native HTTP implementation.
-- Android or iOS platform generation.
-- Changes in `chamilo-lms`.
+- [ ] Create `feature/mobile2-auth` from the clean committed campus/transport branch.
+- [ ] Apply the Chat 03 ZIP.
+- [ ] Run Yarn 4 immutable install and all quality gates.
+- [ ] Sign in through the mobile UI against `https://chamilo2.local`.
+- [ ] Verify invalid credentials, valid credentials, profile bootstrap and logout.
+- [ ] Verify route guards and page reload behavior.
+- [ ] Confirm no password or JWT appears in browser storage or console logs.
+- [ ] Commit the mobile auth batch.
 
 ## Confirmed API contracts
 
-| Feature              | Method | Path                        | Status                                        |
-| -------------------- | ------ | --------------------------- | --------------------------------------------- |
-| JWT login            | POST   | `/api/authentication_token` | Runtime verified in Chat 00                   |
-| Direct courses       | GET    | `/api/me/courses`           | Static verified; unauthenticated 401 verified |
-| Current user/profile | —      | —                           | GAP-001 confirmed                             |
-| Campus compatibility | —      | —                           | GAP-003 remains investigation                 |
+| Feature               | Method | Path                                                            | Status                                                         |
+| --------------------- | ------ | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| JWT login             | POST   | `/api/authentication_token`                                     | Runtime PASS                                                   |
+| Current user          | GET    | `/api/me`                                                       | Backend commit `ba1f018207`; runtime PASS                      |
+| Direct courses        | GET    | `/api/me/courses`                                               | Static verified; runtime authenticated payload pending Chat 04 |
+| Session subscriptions | GET    | `/api/users/{id}/session_subscriptions/{past,current,upcoming}` | Static verified; runtime payload pending Chat 04               |
 
 ## Accepted ADRs relevant to this batch
 
@@ -93,19 +86,23 @@ Status: Ready for local application and verification
 - ADR-020 exact dependency baseline.
 - ADR-021 campus profile persistence boundary.
 - ADR-022 campus URL security policy.
-- ADR-023 browser transport and native boundary implementation.
+- ADR-023 browser transport implementation.
+- ADR-024 JWT authentication bootstrap.
+- ADR-025 token storage and lifecycle boundary.
 
 ## Next batch
 
 ```text
-Finish Chat 02 locally: apply the ZIP, run all gates, verify campus persistence and mobile states, then commit `Mobile: Add campus profiles and HTTP transport`. Do not start JWT UI work until Chat 02 is clean and committed.
+Chat 04 — audit and implement My courses and sessions using the authenticated profile ID and existing verified operations. Measure the existing multi-call contract before authorizing GAP-002 backend work.
 ```
 
 ## Do not redo
 
-- Do not recreate or reconfigure the scaffold.
-- Do not update dependency versions or regenerate `yarn.lock`.
-- Do not import Axios, `fetch` or `localStorage` from views/stores.
-- Do not add token persistence.
-- Do not invent a campus compatibility endpoint.
+- Do not recreate the scaffold, campus profiles or HTTP transport.
+- Do not reimplement `/api/me` in the mobile repository.
+- Do not store passwords.
+- Do not persist JWTs in browser localStorage/sessionStorage.
+- Do not add refresh tokens.
+- Do not implement LDAP/OAuth/SSO mobile flows in the MVP.
+- Do not start courses, sessions or announcements in this batch.
 - Do not generate `android/` or `ios/`.

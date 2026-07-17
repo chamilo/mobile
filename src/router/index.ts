@@ -26,6 +26,8 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       titleKey: "routes.campuses",
       showBottomNavigation: false,
+      requiresCampus: false,
+      requiresAuth: false,
     },
   },
   {
@@ -35,6 +37,9 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       titleKey: "routes.login",
       showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: false,
+      guestOnly: true,
     },
   },
   {
@@ -44,6 +49,8 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       titleKey: "routes.courses",
       showBottomNavigation: true,
+      requiresCampus: true,
+      requiresAuth: true,
     },
   },
   {
@@ -53,6 +60,8 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       titleKey: "routes.profile",
       showBottomNavigation: true,
+      requiresCampus: true,
+      requiresAuth: true,
     },
   },
   {
@@ -63,6 +72,8 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       titleKey: "routes.courseHome",
       showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
     },
   },
   {
@@ -73,6 +84,8 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       titleKey: "routes.announcements",
       showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
     },
   },
   {
@@ -82,6 +95,8 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       titleKey: "routes.notFound",
       showBottomNavigation: false,
+      requiresCampus: false,
+      requiresAuth: false,
     },
   },
 ]

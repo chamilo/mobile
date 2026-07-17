@@ -23,7 +23,7 @@ export default {
     eyebrow: "First step",
     title: "Connect to a campus",
     description:
-      "Save the address of a Chamilo campus. Authentication and server compatibility checks are implemented in later batches.",
+      "Save the address of a Chamilo campus. Server compatibility checks remain a separate verified contract.",
     savedTitle: "Saved campuses",
     count: "{count} saved",
     emptyTitle: "No campuses saved",
@@ -62,18 +62,53 @@ export default {
       save_failed: "Campus changes could not be saved on this device.",
     },
   },
-  placeholders: {
-    login: {
-      title: "Sign in",
-      description: "JWT authentication will be implemented after the campus transport layer.",
+  auth: {
+    eyebrow: "Secure campus access",
+    title: "Sign in",
+    description: "Use your Chamilo username and password for the selected campus.",
+    campusLabel: "Selected campus",
+    chooseAnotherCampus: "Choose another campus",
+    passwordNotice:
+      "Your password is sent only to the selected campus and is never stored by this app.",
+    form: {
+      username: "Username",
+      password: "Password",
+      submit: "Sign in",
+      signingIn: "Signing in...",
     },
+    validation: {
+      usernameRequired: "Enter your username.",
+      passwordRequired: "Enter your password.",
+    },
+    errors: {
+      campus_required: "Select a campus before signing in.",
+      invalid_credentials: "The username or password is incorrect.",
+      access_denied: "Your account is not allowed to use this campus.",
+      session_expired: "Your session expired. Sign in again.",
+      network: "The campus could not be reached. Check your connection and campus address.",
+      timeout: "The campus took too long to respond. Try again.",
+      server: "The campus returned an unexpected authentication error.",
+      invalid_response: "The campus returned an invalid authentication response.",
+      storage_failed: "The session could not be stored securely on this device.",
+      unsupported: "Secure authentication is not available on this platform yet.",
+    },
+  },
+  profile: {
+    accountTitle: "Account details",
+    email: "Email",
+    locale: "Language",
+    timezone: "Time zone",
+    switchCampus: "Switch campus",
+    signOut: "Sign out",
+    signingOut: "Signing out...",
+  },
+  courses: {
+    signedInAs: "Signed in as",
+  },
+  placeholders: {
     courses: {
       title: "Your courses will appear here",
       description: "Course and session data are not connected yet.",
-    },
-    profile: {
-      title: "Your profile will appear here",
-      description: "The authenticated user contract is tracked as a backend API gap.",
     },
     courseHome: {
       title: "Course home",
