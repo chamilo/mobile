@@ -6,7 +6,13 @@ dist/
 dist-ssr/
 *.local
 
-# Capacitor native build outputs (added once Capacitor is initialized)
+# Capacitor native build outputs
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/build/
 
 # Env / secrets
 .env
@@ -26,3 +32,23 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# Yarn generated state/cache
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# Tests
+coverage/
+
+# Signing and private material
+*.jks
+*.keystore
+*.p12
+*.pem
+android/key.properties
+android/app/google-services.json
