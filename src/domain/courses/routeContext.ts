@@ -1,6 +1,7 @@
 import type { RouteLocationRaw } from "vue-router"
 
 import type { CourseNavigationContext, CourseSource } from "@/domain/courses/types"
+import type { SurveyOpenMode } from "@/domain/surveys/types"
 
 export class CourseRouteContextError extends Error {
   constructor(message: string) {
@@ -164,3 +165,120 @@ export function buildCourseLinksRoute(context: CourseNavigationContext): RouteLo
     query: buildContextQuery(context),
   }
 }
+
+export function buildAgendaRoute(context: CourseNavigationContext): RouteLocationRaw {
+  return {
+    name: "agenda",
+    params: { courseId: String(context.courseId) },
+    query: buildContextQuery(context),
+  }
+}
+
+function buildAcceleratedToolRoute(
+  name: string,
+  context: CourseNavigationContext,
+): RouteLocationRaw {
+  return {
+    name,
+    params: { courseId: String(context.courseId) },
+    query: buildContextQuery(context),
+  }
+}
+
+export const buildLearningPathsRoute = (context: CourseNavigationContext) =>
+  buildAcceleratedToolRoute("learning-paths", context)
+
+export const buildExercisesRoute = (context: CourseNavigationContext) =>
+  buildAcceleratedToolRoute("exercises", context)
+
+export const buildForumsRoute = (context: CourseNavigationContext) =>
+  buildAcceleratedToolRoute("forums", context)
+
+export function buildForumThreadsRoute(
+  context: CourseNavigationContext,
+  forumId: number,
+  forumTitle?: string,
+): RouteLocationRaw {
+  return {
+    name: "forum-threads",
+    params: {
+      courseId: String(context.courseId),
+      forumId: String(forumId),
+    },
+    query: {
+      ...buildContextQuery(context),
+      ...(forumTitle ? { forumTitle } : {}),
+    },
+  }
+}
+
+export function buildForumThreadRoute(
+  context: CourseNavigationContext,
+  forumId: number,
+  threadId: number,
+  forumTitle?: string,
+  threadTitle?: string,
+): RouteLocationRaw {
+  return {
+    name: "forum-thread",
+    params: {
+      courseId: String(context.courseId),
+      forumId: String(forumId),
+      threadId: String(threadId),
+    },
+    query: {
+      ...buildContextQuery(context),
+      ...(forumTitle ? { forumTitle } : {}),
+      ...(threadTitle ? { threadTitle } : {}),
+    },
+  }
+}
+
+export const buildAssignmentsRoute = (context: CourseNavigationContext) =>
+  buildAcceleratedToolRoute("assignments", context)
+
+export function buildAssignmentDetailRoute(
+  context: CourseNavigationContext,
+  assignmentId: number,
+  assignmentTitle?: string,
+): RouteLocationRaw {
+  return {
+    name: "assignment-detail",
+    params: {
+      courseId: String(context.courseId),
+      assignmentId: String(assignmentId),
+    },
+    query: {
+      ...buildContextQuery(context),
+      ...(assignmentTitle ? { assignmentTitle } : {}),
+    },
+  }
+}
+
+export const buildSurveysRoute = (context: CourseNavigationContext) =>
+  buildAcceleratedToolRoute("surveys", context)
+
+export function buildSurveyDetailRoute(
+  context: CourseNavigationContext,
+  surveyId: number,
+  mode: SurveyOpenMode,
+  surveyTitle?: string,
+  invitationLpItemId = 0,
+): RouteLocationRaw {
+  return {
+    name: "survey-detail",
+    params: {
+      courseId: String(context.courseId),
+      surveyId: String(surveyId),
+    },
+    query: {
+      ...buildContextQuery(context),
+      mode,
+      ...(surveyTitle ? { surveyTitle } : {}),
+      ...(invitationLpItemId > 0 ? { lpItemId: String(invitationLpItemId) } : {}),
+    },
+  }
+}
+
+export const buildGradebookRoute = (context: CourseNavigationContext) =>
+  buildAcceleratedToolRoute("gradebook", context)

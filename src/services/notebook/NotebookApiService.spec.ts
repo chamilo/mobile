@@ -12,22 +12,20 @@ const context = {
 
 describe("NotebookApiService", () => {
   it("uses the verified list endpoint", async () => {
-    const request = vi
-      .fn()
-      .mockResolvedValue({
-        status: 200,
-        headers: {},
-        data: {
-          courseId: 1,
-          sessionId: null,
-          canWrite: false,
-          studentView: true,
-          sort: "creation_date",
-          direction: "ASC",
-          totalItems: 0,
-          items: [],
-        },
-      })
+    const request = vi.fn().mockResolvedValue({
+      status: 200,
+      headers: {},
+      data: {
+        courseId: 1,
+        sessionId: null,
+        canWrite: false,
+        studentView: true,
+        sort: "creation_date",
+        direction: "ASC",
+        totalItems: 0,
+        items: [],
+      },
+    })
     await new NotebookApiService({ request } as HttpClient).getList(context)
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({

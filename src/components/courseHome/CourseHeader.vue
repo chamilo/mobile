@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { useI18n } from "vue-i18n"
+import { useRouter } from "vue-router"
 
 import type { CourseHomeEntry } from "@/domain/courseHome/types"
 import { resolveCampusAssetUrl } from "@/domain/courses/resolveCampusAssetUrl"
@@ -11,9 +12,14 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const router = useRouter()
 const imageUrl = computed(() =>
   resolveCampusAssetUrl(props.entry.course.illustrationUrl, props.campusBaseUrl),
 )
+
+async function goBackToCourses(): Promise<void> {
+  await router.push({ name: "courses" })
+}
 </script>
 
 <template>
@@ -31,13 +37,14 @@ const imageUrl = computed(() =>
         class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent"
       />
 
-      <RouterLink
-        :to="{ name: 'courses' }"
-        class="absolute left-3 top-3 flex size-11 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
+      <button
+        type="button"
+        class="absolute left-3 top-3 z-20 flex size-11 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
         :aria-label="t('courseHome.backToCourses')"
+        @click.stop="goBackToCourses"
       >
         <i class="pi pi-arrow-left" aria-hidden="true" />
-      </RouterLink>
+      </button>
 
       <div class="relative flex min-h-36 flex-col justify-end p-5 text-white">
         <div class="mb-2 flex flex-wrap gap-2 text-xs font-semibold">
@@ -48,7 +55,9 @@ const imageUrl = computed(() =>
             {{ t(`courses.roles.${entry.role}`) }}
           </span>
         </div>
-        <h1 class="text-xl font-semibold leading-7">{{ entry.course.title }}</h1>
+        <h1 class="text-xl font-semibold leading-7">
+          {{ entry.course.title }}
+        </h1>
       </div>
     </div>
 

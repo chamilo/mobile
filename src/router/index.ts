@@ -10,6 +10,17 @@ import AnnouncementDetailView from "@/views/AnnouncementDetailView.vue"
 import AnnouncementsView from "@/views/AnnouncementsView.vue"
 import CampusView from "@/views/CampusView.vue"
 import CourseDescriptionView from "@/views/CourseDescriptionView.vue"
+import AgendaView from "@/views/AgendaView.vue"
+import AssignmentsView from "@/views/AssignmentsView.vue"
+import AssignmentDetailView from "@/views/AssignmentDetailView.vue"
+import ExercisesView from "@/views/ExercisesView.vue"
+import ForumsView from "@/views/ForumsView.vue"
+import ForumThreadsView from "@/views/ForumThreadsView.vue"
+import ForumThreadView from "@/views/ForumThreadView.vue"
+import GradebookView from "@/views/GradebookView.vue"
+import LearningPathsView from "@/views/LearningPathsView.vue"
+import SurveysView from "@/views/SurveysView.vue"
+import SurveyDetailView from "@/views/SurveyDetailView.vue"
 import CourseHomeView from "@/views/CourseHomeView.vue"
 import CourseLinksView from "@/views/CourseLinksView.vue"
 import DocumentsView from "@/views/DocumentsView.vue"
@@ -167,6 +178,209 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/courses/:courseId/learning-paths",
+    name: "learning-paths",
+    component: LearningPathsView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.learningPaths",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/exercises",
+    name: "exercises",
+    component: ExercisesView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.exercises",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/forums",
+    name: "forums",
+    component: ForumsView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.forums",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/forums/:forumId",
+    name: "forum-threads",
+    component: ForumThreadsView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      forumId: String(route.params.forumId),
+      forumTitle: typeof route.query.forumTitle === "string" ? route.query.forumTitle : null,
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.forumThreads",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/forums/:forumId/threads/:threadId",
+    name: "forum-thread",
+    component: ForumThreadView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      forumId: String(route.params.forumId),
+      threadId: String(route.params.threadId),
+      forumTitle: typeof route.query.forumTitle === "string" ? route.query.forumTitle : null,
+      threadTitle: typeof route.query.threadTitle === "string" ? route.query.threadTitle : null,
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.forumThread",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/assignments",
+    name: "assignments",
+    component: AssignmentsView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.assignments",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/assignments/:assignmentId",
+    name: "assignment-detail",
+    component: AssignmentDetailView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      assignmentId: String(route.params.assignmentId),
+      assignmentTitle:
+        typeof route.query.assignmentTitle === "string" ? route.query.assignmentTitle : null,
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.assignmentDetail",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/surveys",
+    name: "surveys",
+    component: SurveysView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.surveys",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/surveys/:surveyId",
+    name: "survey-detail",
+    component: SurveyDetailView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      surveyId: String(route.params.surveyId),
+      surveyTitle: typeof route.query.surveyTitle === "string" ? route.query.surveyTitle : null,
+      mode: typeof route.query.mode === "string" ? route.query.mode : null,
+      invitationLpItemId: typeof route.query.lpItemId === "string" ? route.query.lpItemId : null,
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.surveyDetail",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/gradebook",
+    name: "gradebook",
+    component: GradebookView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.gradebook",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
     path: "/courses/:courseId/notebook",
     name: "notebook",
     component: NotebookView,
@@ -200,6 +414,25 @@ export const routes: RouteRecordRaw[] = [
     }),
     meta: {
       titleKey: "routes.notebookForm",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/agenda",
+    name: "agenda",
+    component: AgendaView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.agenda",
       showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,

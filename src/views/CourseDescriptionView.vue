@@ -139,11 +139,14 @@ onMounted(load)
           </span>
         </div>
 
+        <!-- Content is sanitized by sanitizeAnnouncementHtml before rendering. -->
+        <!-- eslint-disable vue/no-v-html -->
         <div
           v-if="item.content"
           class="course-description-content mt-4 break-words text-sm leading-6 text-slate-700"
           v-html="sanitizedContent(item.content)"
         />
+        <!-- eslint-enable vue/no-v-html -->
 
         <p v-else class="mt-4 text-sm text-slate-500">
           {{ t("courseDescription.noContent") }}

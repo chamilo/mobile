@@ -1,4 +1,5 @@
-import { mount, RouterLinkStub } from "@vue/test-utils"
+import { flushPromises, mount } from "@vue/test-utils"
+import { createMemoryHistory, createRouter } from "vue-router"
 import { describe, expect, it } from "vitest"
 
 import CourseHeader from "@/components/courseHome/CourseHeader.vue"
@@ -29,21 +30,43 @@ const entry = {
 }
 
 describe("CourseHeader", () => {
-  it("renders course, session and progress context", () => {
+  it("renders context and returns to courses", async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: "/course",
+          name: "course",
+          component: { template: "<div />" },
+        },
+        {
+          path: "/courses",
+          name: "courses",
+          component: { template: "<div />" },
+        },
+      ],
+    })
+
+    await router.push({ name: "course" })
+    await router.isReady()
+
     const wrapper = mount(CourseHeader, {
       props: {
         entry,
         campusBaseUrl: "https://campus.example.org",
       },
       global: {
-        plugins: [i18n],
-        stubs: { RouterLink: RouterLinkStub },
+        plugins: [i18n, router],
       },
     })
 
     expect(wrapper.text()).toContain("Mobile course home")
     expect(wrapper.text()).toContain("July session")
     expect(wrapper.text()).toContain("55%")
-    expect(wrapper.findComponent(RouterLinkStub).props("to")).toEqual({ name: "courses" })
+
+    await wrapper.get('button[aria-label="Back to courses"]').trigger("click")
+    await flushPromises()
+
+    expect(router.currentRoute.value.name).toBe("courses")
   })
 })

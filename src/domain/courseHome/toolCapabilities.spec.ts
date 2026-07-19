@@ -29,11 +29,18 @@ const entry: CourseHomeEntry = {
 describe("createCourseToolCapabilities", () => {
   it("exposes all verified course tool contracts", () => {
     expect(createCourseToolCapabilities(entry).map(({ toolKey }) => toolKey)).toEqual([
+      "agenda",
       "announcements",
       "course-description",
       "documents",
       "links",
       "course-progress",
+      "learning-paths",
+      "exercises",
+      "forums",
+      "assignments",
+      "surveys",
+      "gradebook",
       "notebook",
     ])
   })

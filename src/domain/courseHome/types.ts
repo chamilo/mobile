@@ -9,11 +9,18 @@ import type {
 
 export type CourseHomeAccessState = "available" | "denied" | "closed"
 export type CourseToolKey =
+  | "agenda"
   | "announcements"
   | "course-description"
   | "course-progress"
   | "documents"
   | "links"
+  | "learning-paths"
+  | "exercises"
+  | "forums"
+  | "assignments"
+  | "surveys"
+  | "gradebook"
   | "notebook"
 
 export interface CourseHomeEntry {
