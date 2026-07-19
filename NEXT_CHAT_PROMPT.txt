@@ -1,1 +1,0 @@
-Continue Chamilo Mobile 2.x after Chat 09 Notebook. Read PROJECT_STATE.md, DECISIONS_LOG.md, API_GAPS.md and TEST_EVIDENCE.md. Verify branch, HEAD and clean working tree. Do not repeat Android setup. Select the next mobile-ready course tool from the Chat 08 capability audit and use ZIP context -> analysis -> final ZIP.
