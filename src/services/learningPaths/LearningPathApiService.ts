@@ -1,5 +1,6 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
 import {
+  buildLearningPathRuntimeActionRequest,
   buildLearningPathRuntimeRequest,
   LearningPathContractError,
   normalizeLearningPathRuntime,
@@ -17,6 +18,7 @@ export type LearningPathErrorCode =
   | "timeout"
   | "invalid_response"
   | "unsupported"
+  | "conflict"
   | "server"
 
 export class LearningPathServiceError extends Error {
@@ -67,6 +69,10 @@ function mapError(error: unknown): LearningPathServiceError {
     return new LearningPathServiceError("not_found", error.message, error)
   }
 
+  if (error.kind === "http" && error.status === 409) {
+    return new LearningPathServiceError("conflict", error.message, error)
+  }
+
   return new LearningPathServiceError("server", error.message, error)
 }
 
@@ -91,6 +97,87 @@ export class LearningPathApiService {
       })
 
       return normalizeLearningPathRuntime(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async openItem(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    itemId: number,
+    actionToken: string,
+    allowNewAttempt = false,
+  ): Promise<void> {
+    const request = buildLearningPathRuntimeActionRequest(context, learningPathId, "item")
+
+    try {
+      await this.httpClient.request<void, Record<string, unknown>>({
+        method: "POST",
+        path: request.path,
+        query: request.query,
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/json",
+        },
+        body: {
+          itemId,
+          allowNewAttempt,
+          csrfToken: actionToken,
+        },
+      })
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async sync(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    itemId: number,
+    actionToken: string,
+  ): Promise<void> {
+    const request = buildLearningPathRuntimeActionRequest(context, learningPathId, "sync")
+
+    try {
+      await this.httpClient.request<void, Record<string, unknown>>({
+        method: "POST",
+        path: request.path,
+        query: request.query,
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/json",
+        },
+        body: {
+          itemId,
+          csrfToken: actionToken,
+        },
+      })
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async restart(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    actionToken: string,
+  ): Promise<void> {
+    const request = buildLearningPathRuntimeActionRequest(context, learningPathId, "restart")
+
+    try {
+      await this.httpClient.request<void, Record<string, unknown>>({
+        method: "POST",
+        path: request.path,
+        query: request.query,
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/json",
+        },
+        body: {
+          csrfToken: actionToken,
+        },
+      })
     } catch (error) {
       throw mapError(error)
     }
