@@ -18,13 +18,26 @@ export interface LearningPathRuntime {
   title: string
   lpType: number
   runtimeSupported: boolean
+  hideToc: boolean
+  accordionToc: boolean
   progress: number
   completedItems: number
   totalItems: number
   totalTime: number
+  attemptMode: string
+  currentAttempt: number
+  currentItemAttempt: number
+  maxAttempts: number
+  canRestart: boolean
+  minimumTime: number
+  minimumTimeReached: boolean
   currentItemId: number
   previousItemId: number
   nextItemId: number
   contentUrl: string | null
+  audioUrl: string | null
+  audioTitle: string
+  audioAutoplay: boolean
+  actionToken: string
   items: LearningPathRuntimeItem[]
 }

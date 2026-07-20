@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildLearningPathRuntimeActionRequest,
   buildLearningPathRuntimeRequest,
+  isCompletedLearningPathStatus,
   isOpenableLearningPathItem,
+  isSupportedLearningPathItem,
   normalizeLearningPathRuntime,
 } from "@/domain/learningPaths/contracts"
 
@@ -15,7 +18,7 @@ const context = {
 }
 
 describe("learning path runtime contract", () => {
-  it("builds a read-only runtime request with course and session context", () => {
+  it("builds runtime read and write requests with course and session context", () => {
     expect(buildLearningPathRuntimeRequest(context, 7, 11)).toEqual({
       path: "/api/learning_paths/7/runtime",
       query: {
@@ -24,23 +27,43 @@ describe("learning path runtime contract", () => {
         itemId: 11,
       },
     })
+
+    expect(buildLearningPathRuntimeActionRequest(context, 7, "sync")).toEqual({
+      path: "/api/learning_paths/7/runtime/sync",
+      query: {
+        cid: 10,
+        sid: 4,
+      },
+    })
   })
 
-  it("normalizes the runtime without exposing action or CSRF fields", () => {
+  it("normalizes runtime tracking and action data", () => {
     const runtime = normalizeLearningPathRuntime({
       lpId: 7,
-      title: "<p>Introduction</p>",
+      title: "<strong>Introduction</strong>",
       lpType: 1,
       runtimeSupported: true,
+      hideToc: false,
+      accordionToc: true,
       progress: 45,
       completedItems: 1,
       totalItems: 3,
       totalTime: 90,
+      attemptMode: "single",
+      currentAttempt: 1,
+      currentItemAttempt: 2,
+      maxAttempts: 3,
+      canRestart: true,
+      minimumTime: 60,
+      minimumTimeReached: true,
       currentItemId: 11,
       previousItemId: 0,
       nextItemId: 12,
       contentUrl: "/r/document/files/uuid/view?cid=10",
-      csrfToken: "must-not-be-kept",
+      audioUrl: "/r/document/files/audio/view?cid=10",
+      audioTitle: "Narration",
+      audioAutoplay: true,
+      csrfToken: "runtime-action-token",
       items: [
         {
           id: 11,
@@ -49,7 +72,7 @@ describe("learning path runtime contract", () => {
           parentId: 0,
           level: 0,
           displayOrder: 1,
-          status: "not attempted",
+          status: "completed",
           score: 0,
           available: true,
           isSection: false,
@@ -60,12 +83,14 @@ describe("learning path runtime contract", () => {
     })
 
     expect(runtime.title).toBe("Introduction")
+    expect(runtime.actionToken).toBe("runtime-action-token")
+    expect(runtime.currentAttempt).toBe(1)
     expect(runtime.contentUrl).toBe("/r/document/files/uuid/view?cid=10")
-    expect(runtime).not.toHaveProperty("csrfToken")
     expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(true)
+    expect(isCompletedLearningPathStatus(runtime.items[0]?.status ?? "")).toBe(true)
   })
 
-  it("rejects absolute content URLs and legacy item types", () => {
+  it("rejects absolute content URLs and unsupported item types", () => {
     const runtime = normalizeLearningPathRuntime({
       lpId: 7,
       runtimeSupported: true,
@@ -83,6 +108,7 @@ describe("learning path runtime contract", () => {
     })
 
     expect(runtime.contentUrl).toBeNull()
+    expect(isSupportedLearningPathItem(runtime.items[0])).toBe(false)
     expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(false)
   })
 })
