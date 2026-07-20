@@ -97,7 +97,6 @@ export class ForumApiService {
       path: `/api/courses/${context.courseId}`,
       headers: {
         Accept: "application/ld+json",
-        "Cache-Control": "no-store",
       },
     })
 
@@ -122,7 +121,6 @@ export class ForumApiService {
           query: categoryRequest.query,
           headers: {
             Accept: "application/ld+json",
-            "Cache-Control": "no-store",
           },
         }),
         this.httpClient.request<unknown>({
@@ -131,7 +129,6 @@ export class ForumApiService {
           query: forumRequest.query,
           headers: {
             Accept: "application/ld+json",
-            "Cache-Control": "no-store",
           },
         }),
       ])
@@ -154,7 +151,6 @@ export class ForumApiService {
         query: request.query,
         headers: {
           Accept: "application/ld+json",
-          "Cache-Control": "no-store",
         },
       })
 
@@ -177,7 +173,6 @@ export class ForumApiService {
         query: request.query,
         headers: {
           Accept: "application/json",
-          "Cache-Control": "no-store",
         },
       })
 

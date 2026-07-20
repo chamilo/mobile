@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n"
 import CourseHeader from "@/components/courseHome/CourseHeader.vue"
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
 import ToolCard from "@/components/courseHome/ToolCard.vue"
+import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import { resolveCourseHomeEntry } from "@/domain/courseHome/resolveCourseHome"
@@ -12,6 +13,7 @@ import { createCourseToolCapabilities } from "@/domain/courseHome/toolCapabiliti
 import { CourseRouteContextError, parseCourseRouteContext } from "@/domain/courses/routeContext"
 import { useCampusStore } from "@/stores/campus"
 import { useCoursesStore } from "@/stores/courses"
+import { useCourseToolAvailabilityStore } from "@/stores/courseToolAvailability"
 
 const props = defineProps<{
   courseId: string
@@ -24,6 +26,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const campusStore = useCampusStore()
 const coursesStore = useCoursesStore()
+const toolAvailabilityStore = useCourseToolAvailabilityStore()
 
 const context = computed(() => {
   try {
@@ -36,14 +39,22 @@ const context = computed(() => {
     throw error
   }
 })
+
 const entry = computed(() =>
   context.value ? resolveCourseHomeEntry(coursesStore.overview, context.value) : null,
 )
-const capabilities = computed(() => (entry.value ? createCourseToolCapabilities(entry.value) : []))
+
+const capabilities = computed(() =>
+  entry.value ? createCourseToolCapabilities(entry.value, toolAvailabilityStore.tools) : [],
+)
+
 const isLoading = computed(
   () =>
-    coursesStore.status === "loading" || (coursesStore.status === "idle" && Boolean(context.value)),
+    coursesStore.status === "loading" ||
+    (coursesStore.status === "idle" && Boolean(context.value)) ||
+    toolAvailabilityStore.status === "loading",
 )
+
 const unavailableKind = computed<"denied" | "closed" | null>(() => {
   if (!entry.value || entry.value.accessState === "available") {
     return null
@@ -51,14 +62,29 @@ const unavailableKind = computed<"denied" | "closed" | null>(() => {
 
   return entry.value.accessState
 })
-const hasBlockingError = computed(() => coursesStore.status === "error" && !coursesStore.hasContent)
+
+const hasCourseError = computed(() => coursesStore.status === "error" && !coursesStore.hasContent)
+const hasToolError = computed(() => toolAvailabilityStore.status === "error")
+const hasBlockingError = computed(() => hasCourseError.value || hasToolError.value)
+
+const blockingErrorDescription = computed(() => {
+  if (hasToolError.value) {
+    return t(`courseHome.toolErrors.${toolAvailabilityStore.errorCode ?? "server"}`)
+  }
+
+  return t(`courses.errors.${coursesStore.errorCode ?? "server"}`)
+})
 
 async function loadCourseContext(force = false): Promise<void> {
   await coursesStore.loadOverview(force)
+
+  if (entry.value) {
+    await toolAvailabilityStore.load(entry.value, force)
+  }
 }
 
 onMounted(() => {
-  if (context.value && (coursesStore.status === "idle" || coursesStore.status === "error")) {
+  if (context.value) {
     void loadCourseContext()
   }
 })
@@ -70,7 +96,7 @@ onMounted(() => {
   <ErrorState
     v-else-if="hasBlockingError"
     :title="t('courseHome.errorTitle')"
-    :description="t(`courses.errors.${coursesStore.errorCode ?? 'server'}`)"
+    :description="blockingErrorDescription"
     :retry-label="t('actions.retry')"
     :retrying="coursesStore.isRefreshing"
     @retry="loadCourseContext(true)"
@@ -80,25 +106,20 @@ onMounted(() => {
 
   <CourseUnavailableState v-else-if="unavailableKind" :kind="unavailableKind" />
 
-  <div v-else class="space-y-6">
+  <div v-else class="space-y-5">
     <CourseHeader :entry="entry" :campus-base-url="campusStore.selectedCampus?.baseUrl ?? null" />
 
     <section aria-labelledby="course-tools-title">
-      <div class="mb-3 flex items-end justify-between gap-3">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-wide text-chamilo-700">
-            {{ t("courseHome.toolsEyebrow") }}
-          </p>
-          <h2 id="course-tools-title" class="mt-1 text-lg font-semibold text-slate-900">
-            {{ t("courseHome.toolsTitle") }}
-          </h2>
-        </div>
-        <span class="text-xs text-slate-500">
-          {{ t("courseHome.toolCount", { count: capabilities.length }) }}
-        </span>
+      <div class="mb-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-chamilo-700">
+          {{ t("courseHome.toolsEyebrow") }}
+        </p>
+        <h2 id="course-tools-title" class="mt-1 text-lg font-semibold text-slate-900">
+          {{ t("courseHome.toolsTitle") }}
+        </h2>
       </div>
 
-      <div class="space-y-3">
+      <div v-if="capabilities.length" class="space-y-2">
         <ToolCard
           v-for="capability in capabilities"
           :key="capability.toolKey"
@@ -106,9 +127,11 @@ onMounted(() => {
         />
       </div>
 
-      <p class="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-        {{ t("courseHome.verifiedToolsNotice") }}
-      </p>
+      <EmptyState
+        v-else
+        :title="t('courseHome.emptyToolsTitle')"
+        :description="t('courseHome.emptyToolsDescription')"
+      />
     </section>
   </div>
 </template>

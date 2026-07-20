@@ -88,7 +88,6 @@ export class CourseToolApiService {
           path: `/api/courses/${context.courseId}`,
           headers: {
             Accept: "application/ld+json",
-            "Cache-Control": "no-store",
           },
         })
 
@@ -105,7 +104,7 @@ export class CourseToolApiService {
         method: "GET",
         path: request.path,
         query: request.query,
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
 
       return normalizeCourseToolResponse(tool, response.data)

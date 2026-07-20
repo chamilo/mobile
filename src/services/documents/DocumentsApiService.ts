@@ -92,7 +92,7 @@ export class DocumentsApiService {
         method: "GET",
         path: "/api/documents",
         query: buildDocumentsApiQuery(context),
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
 
       return normalizeDocumentsResponse(response.data)
@@ -119,7 +119,7 @@ export class DocumentsApiService {
         method: "GET",
         path,
         query: buildDocumentDeliveryQuery(context),
-        headers: { Accept: "*/*", "Cache-Control": "no-store" },
+        headers: { Accept: "*/*" },
         responseType: "blob",
         timeoutMs: 30_000,
       })

@@ -62,7 +62,7 @@ export class NotebookApiService {
         method: "GET",
         path: "/api/notebook/list",
         query: buildNotebookApiQuery(context),
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
       return normalizeNotebookListResponse(response.data)
     } catch (error) {
@@ -78,7 +78,7 @@ export class NotebookApiService {
         method: "GET",
         path: "/api/notebook/form",
         query,
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
       return normalizeNotebookFormResponse(response.data)
     } catch (error) {

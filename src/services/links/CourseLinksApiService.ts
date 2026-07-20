@@ -67,7 +67,7 @@ export class CourseLinksApiService {
         method: "GET",
         path: "/api/links",
         query: buildLinksApiQuery(context),
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
 
       return normalizeCourseLinksResponse(response.data)

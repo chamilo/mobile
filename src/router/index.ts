@@ -18,6 +18,7 @@ import ForumsView from "@/views/ForumsView.vue"
 import ForumThreadsView from "@/views/ForumThreadsView.vue"
 import ForumThreadView from "@/views/ForumThreadView.vue"
 import GradebookView from "@/views/GradebookView.vue"
+import LearningPathDetailView from "@/views/LearningPathDetailView.vue"
 import LearningPathsView from "@/views/LearningPathsView.vue"
 import SurveysView from "@/views/SurveysView.vue"
 import SurveyDetailView from "@/views/SurveyDetailView.vue"
@@ -191,6 +192,28 @@ export const routes: RouteRecordRaw[] = [
     }),
     meta: {
       titleKey: "routes.learningPaths",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/learning-paths/:learningPathId",
+    name: "learning-path-detail",
+    component: LearningPathDetailView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      learningPathId: String(route.params.learningPathId),
+      learningPathTitle:
+        typeof route.query.learningPathTitle === "string" ? route.query.learningPathTitle : null,
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.learningPathDetail",
       showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,

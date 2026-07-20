@@ -1,4 +1,4 @@
-import type { CourseHomeEntry, ToolCapability } from "@/domain/courseHome/types"
+import type { CourseHomeEntry, CourseToolKey, ToolCapability } from "@/domain/courseHome/types"
 import {
   buildAgendaRoute,
   buildAnnouncementsRoute,
@@ -15,12 +15,17 @@ import {
   buildSurveysRoute,
 } from "@/domain/courses/routeContext"
 
-export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapability[] {
+export function createCourseToolCapabilities(
+  entry: CourseHomeEntry,
+  availableTools: readonly CourseToolKey[],
+): ToolCapability[] {
   if (entry.accessState !== "available") {
     return []
   }
 
-  return [
+  const availableToolSet = new Set(availableTools)
+
+  const capabilities: ToolCapability[] = [
     {
       toolKey: "agenda",
       titleKey: "courseHome.tools.agenda.title",
@@ -214,4 +219,6 @@ export function createCourseToolCapabilities(entry: CourseHomeEntry): ToolCapabi
       },
     },
   ]
+
+  return capabilities.filter(({ toolKey }) => availableToolSet.has(toolKey))
 }

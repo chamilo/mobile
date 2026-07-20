@@ -32,7 +32,7 @@ describe("CourseDescriptionApiService", () => {
       method: "GET",
       path: "/api/course-description/list",
       query: { cid: 10, sid: 7, isStudentView: true },
-      headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+      headers: { Accept: "application/ld+json" },
     })
   })
 })

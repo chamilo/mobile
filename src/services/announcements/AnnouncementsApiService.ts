@@ -94,7 +94,6 @@ export class AnnouncementsApiService {
         query: buildAnnouncementApiQuery(context),
         headers: {
           Accept: "application/ld+json",
-          "Cache-Control": "no-cache",
         },
       })
 
@@ -122,7 +121,6 @@ export class AnnouncementsApiService {
         query: buildAnnouncementApiQuery(context),
         headers: {
           Accept: "application/ld+json",
-          "Cache-Control": "no-cache",
         },
       })
 

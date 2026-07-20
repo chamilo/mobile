@@ -44,6 +44,7 @@ describe("NativeHttpClient", () => {
         connectTimeout: 2500,
         readTimeout: 2500,
         disableRedirects: true,
+        responseType: "json",
       }),
     )
     expect(response).toEqual({
@@ -51,6 +52,49 @@ describe("NativeHttpClient", () => {
       headers: { "content-type": "application/json" },
       data: { ok: true },
     })
+  })
+
+  it("decodes a native base64 blob response", async () => {
+    requestMock.mockResolvedValue({
+      status: 200,
+      data: "SGVsbG8=",
+      headers: { "Content-Type": "text/plain" },
+      url: "https://campus.example.org/r/document/file/view",
+    })
+
+    const client = new NativeHttpClient("https://campus.example.org")
+    const response = await client.request<Blob>({
+      method: "GET",
+      path: "/r/document/file/view",
+      responseType: "blob",
+    })
+
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        responseType: "blob",
+      }),
+    )
+    expect(response.data).toBeInstanceOf(Blob)
+    expect(response.data.type).toBe("text/plain")
+    expect(await response.data.text()).toBe("Hello")
+  })
+
+  it("decodes a data URL array buffer response", async () => {
+    requestMock.mockResolvedValue({
+      status: 200,
+      data: "data:application/octet-stream;base64,AQID",
+      headers: {},
+      url: "https://campus.example.org/file",
+    })
+
+    const client = new NativeHttpClient("https://campus.example.org")
+    const response = await client.request<ArrayBuffer>({
+      method: "GET",
+      path: "/file",
+      responseType: "arraybuffer",
+    })
+
+    expect(Array.from(new Uint8Array(response.data))).toEqual([1, 2, 3])
   })
 
   it("rejects absolute request paths", async () => {

@@ -50,7 +50,7 @@ export class CourseProgressApiService {
         method: "GET",
         path: "/api/course-progress/list",
         query: buildCourseProgressApiQuery(context),
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
       return normalizeCourseProgressResponse(response.data)
     } catch (error) {

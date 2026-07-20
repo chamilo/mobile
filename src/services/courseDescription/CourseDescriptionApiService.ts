@@ -69,7 +69,7 @@ export class CourseDescriptionApiService {
         method: "GET",
         path: "/api/course-description/list",
         query: buildCourseDescriptionApiQuery(context),
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
 
       return normalizeCourseDescriptionResponse(response.data)

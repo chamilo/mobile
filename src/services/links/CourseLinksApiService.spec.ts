@@ -24,7 +24,7 @@ describe("CourseLinksApiService", () => {
       method: "GET",
       path: "/api/links",
       query: { cid: 10, itemsPerPage: 5000 },
-      headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+      headers: { Accept: "application/ld+json" },
     })
   })
 

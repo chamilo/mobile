@@ -79,7 +79,6 @@ export class SurveyApiService {
         query: request.query,
         headers: {
           Accept: "application/json",
-          "Cache-Control": "no-store",
         },
       })
 
@@ -103,7 +102,6 @@ export class SurveyApiService {
         query: request.query,
         headers: {
           Accept: "application/json",
-          "Cache-Control": "no-store",
         },
       })
 
