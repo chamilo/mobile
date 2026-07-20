@@ -15,7 +15,6 @@ export class PlatformBrandingApiService {
       path: "/platform-config/list",
       headers: {
         Accept: "application/json",
-        "Cache-Control": "no-store",
       },
     })
 

@@ -4,7 +4,12 @@ import {
   type HttpResponse as CapacitorHttpResponse,
 } from "@capacitor/core"
 
-import type { HttpClient, HttpRequest, HttpResponse } from "@/services/http/HttpClient"
+import type {
+  HttpClient,
+  HttpRequest,
+  HttpResponse,
+  HttpResponseType,
+} from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
 const DEFAULT_TIMEOUT_MS = 10_000
@@ -64,6 +69,68 @@ function rejectWhenAborted(signal: AbortSignal | undefined): Promise<never> | nu
   })
 }
 
+function base64Payload(value: string): string {
+  const marker = ";base64,"
+  const markerIndex = value.indexOf(marker)
+
+  return markerIndex >= 0 ? value.slice(markerIndex + marker.length) : value
+}
+
+function decodeBase64(value: string): ArrayBuffer {
+  try {
+    const binary = globalThis.atob(base64Payload(value))
+    const buffer = new ArrayBuffer(binary.length)
+    const bytes = new Uint8Array(buffer)
+
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index)
+    }
+
+    return buffer
+  } catch (error) {
+    throw new HttpClientError(
+      "unsupported",
+      "The native HTTP response could not be decoded.",
+      undefined,
+      error,
+    )
+  }
+}
+
+function normalizeResponseData<TData>(
+  data: unknown,
+  responseType: HttpResponseType,
+  headers: Record<string, string>,
+): TData {
+  if (responseType === "blob") {
+    if (data instanceof Blob) {
+      return data as TData
+    }
+
+    if (typeof data !== "string") {
+      throw new HttpClientError("unsupported", "The native HTTP response is not a file.")
+    }
+
+    return new Blob([decodeBase64(data)], {
+      type: headers["content-type"] || "application/octet-stream",
+    }) as TData
+  }
+
+  if (responseType === "arraybuffer") {
+    if (data instanceof ArrayBuffer) {
+      return data as TData
+    }
+
+    if (typeof data !== "string") {
+      throw new HttpClientError("unsupported", "The native HTTP response is not an array buffer.")
+    }
+
+    return decodeBase64(data) as TData
+  }
+
+  return data as TData
+}
+
 export class NativeHttpClient implements HttpClient {
   private readonly baseUrl: URL
 
@@ -74,6 +141,7 @@ export class NativeHttpClient implements HttpClient {
   async request<TData, TBody = unknown>(request: HttpRequest<TBody>): Promise<HttpResponse<TData>> {
     const url = buildRequestUrl(this.baseUrl, request)
     const timeoutMs = request.timeoutMs ?? DEFAULT_TIMEOUT_MS
+    const responseType = request.responseType ?? "json"
     const options: HttpOptions = {
       method: request.method,
       url: url.toString(),
@@ -82,7 +150,7 @@ export class NativeHttpClient implements HttpClient {
       connectTimeout: timeoutMs,
       readTimeout: timeoutMs,
       disableRedirects: true,
-      responseType: "json",
+      responseType,
     }
 
     const nativeRequest = CapacitorHttp.request(options)
@@ -108,10 +176,12 @@ export class NativeHttpClient implements HttpClient {
         )
       }
 
+      const headers = normalizeHeaders(response.headers)
+
       return {
         status: response.status,
-        headers: normalizeHeaders(response.headers),
-        data: response.data as TData,
+        headers,
+        data: normalizeResponseData<TData>(response.data, responseType, headers),
       }
     } catch (error) {
       throw normalizeNativeError(error)

@@ -66,7 +66,7 @@ export class AgendaApiService {
         method: "GET",
         path: "/api/c_calendar_events",
         query: buildAgendaApiQuery(context),
-        headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+        headers: { Accept: "application/ld+json" },
       })
 
       return normalizeAgendaResponse(response.data)

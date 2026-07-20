@@ -85,7 +85,6 @@ export class GradebookApiService {
           query: summaryRequest.query,
           headers: {
             Accept: "application/ld+json",
-            "Cache-Control": "no-store",
           },
         }),
         this.httpClient.request<unknown>({
@@ -94,7 +93,6 @@ export class GradebookApiService {
           query: certificatesRequest.query,
           headers: {
             Accept: "application/ld+json",
-            "Cache-Control": "no-store",
           },
         }),
       ])

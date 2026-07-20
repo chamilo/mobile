@@ -188,6 +188,24 @@ function buildAcceleratedToolRoute(
 export const buildLearningPathsRoute = (context: CourseNavigationContext) =>
   buildAcceleratedToolRoute("learning-paths", context)
 
+export function buildLearningPathDetailRoute(
+  context: CourseNavigationContext,
+  learningPathId: number,
+  learningPathTitle?: string,
+): RouteLocationRaw {
+  return {
+    name: "learning-path-detail",
+    params: {
+      courseId: String(context.courseId),
+      learningPathId: String(learningPathId),
+    },
+    query: {
+      ...buildContextQuery(context),
+      ...(learningPathTitle ? { learningPathTitle } : {}),
+    },
+  }
+}
+
 export const buildExercisesRoute = (context: CourseNavigationContext) =>
   buildAcceleratedToolRoute("exercises", context)
 

@@ -31,7 +31,7 @@ describe("AgendaApiService", () => {
         sid: 7,
         itemsPerPage: 5000,
       }),
-      headers: { Accept: "application/ld+json", "Cache-Control": "no-store" },
+      headers: { Accept: "application/ld+json" },
     })
   })
 })

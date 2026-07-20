@@ -8,7 +8,7 @@ import type { CourseDocument, DocumentsSnapshot } from "@/domain/documents/types
 import type { CourseNavigationContext } from "@/domain/courses/types"
 import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
 import {
-  BrowserDocumentBlobPresenter,
+  createDocumentBlobPresenter,
   type DocumentBlobPresenter,
 } from "@/services/documents/DocumentBlobPresenter"
 import {
@@ -27,7 +27,7 @@ type DocumentsApiFactory = (campus: CampusProfile) => DocumentsApi
 
 let apiFactory: DocumentsApiFactory = (campus) =>
   new DocumentsApiService(createAuthenticatedHttpClient(campus))
-let blobPresenter: DocumentBlobPresenter = new BrowserDocumentBlobPresenter()
+let blobPresenter: DocumentBlobPresenter = createDocumentBlobPresenter()
 
 export function setDocumentsApiFactoryForTests(factory: DocumentsApiFactory): void {
   apiFactory = factory
@@ -39,7 +39,7 @@ export function setDocumentBlobPresenterForTests(presenter: DocumentBlobPresente
 
 export function resetDocumentsDependencies(): void {
   apiFactory = (campus) => new DocumentsApiService(createAuthenticatedHttpClient(campus))
-  blobPresenter = new BrowserDocumentBlobPresenter()
+  blobPresenter = createDocumentBlobPresenter()
 }
 
 export const useDocumentsStore = defineStore("documents", () => {
@@ -130,7 +130,7 @@ export const useDocumentsStore = defineStore("documents", () => {
 
     try {
       const blob = await service.getContent(context, item)
-      blobPresenter.open(blob)
+      await blobPresenter.open(blob, safeDocumentFilename(item))
       deliveryErrorCode.value = null
       deliveryStatus.value = "idle"
 
@@ -155,7 +155,7 @@ export const useDocumentsStore = defineStore("documents", () => {
 
     try {
       const blob = await service.getDownload(context, item)
-      blobPresenter.download(blob, safeDocumentFilename(item))
+      await blobPresenter.download(blob, safeDocumentFilename(item))
       deliveryErrorCode.value = null
       deliveryStatus.value = "idle"
 

@@ -14,7 +14,11 @@ const { t } = useI18n()
 const campusStore = useCampusStore()
 const brandingStore = useBrandingStore()
 
-const pageTitle = computed(() => t(route.meta.titleKey))
+const pageTitle = computed(() => {
+  const titleKey = route.meta.titleKey
+
+  return typeof titleKey === "string" ? t(titleKey) : t("app.name")
+})
 const showBottomNavigation = computed(() => route.meta.showBottomNavigation)
 const siteName = computed(
   () => brandingStore.branding?.siteName ?? campusStore.selectedCampus?.displayName ?? "Chamilo",

@@ -114,7 +114,6 @@ export class AssignmentApiService {
         query: request.query,
         headers: {
           Accept: "application/json",
-          "Cache-Control": "no-store",
         },
       })
 
@@ -139,7 +138,6 @@ export class AssignmentApiService {
           query: assignmentRequest.query,
           headers: {
             Accept: "application/ld+json",
-            "Cache-Control": "no-store",
           },
         }),
         this.httpClient.request<unknown>({
@@ -148,7 +146,6 @@ export class AssignmentApiService {
           query: submissionsRequest.query,
           headers: {
             Accept: "application/json",
-            "Cache-Control": "no-store",
           },
         }),
       ])
@@ -167,7 +164,6 @@ export class AssignmentApiService {
             query: commentsRequest.query,
             headers: {
               Accept: "application/ld+json",
-              "Cache-Control": "no-store",
             },
           })
 

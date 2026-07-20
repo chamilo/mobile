@@ -13,10 +13,10 @@ const { t } = useI18n()
 <template>
   <RouterLink
     :to="capability.route"
-    class="hover:border-chamilo-300 group flex min-h-touch items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
+    class="hover:border-chamilo-300 group flex min-h-touch items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition hover:shadow focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
   >
     <span
-      class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-chamilo-50 text-xl text-chamilo-700"
+      class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-chamilo-50 text-lg text-chamilo-700"
       aria-hidden="true"
     >
       <i :class="capability.icon" />
@@ -27,14 +27,12 @@ const { t } = useI18n()
         <span class="font-semibold text-slate-900">{{ t(capability.titleKey) }}</span>
         <span
           v-if="capability.readOnly"
-          class="rounded-full bg-slate-100 px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-slate-600"
+          class="rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-600"
         >
           {{ t("courseHome.readOnly") }}
         </span>
       </span>
-      <span class="mt-1 block text-sm leading-5 text-slate-600">
-        {{ t(capability.descriptionKey) }}
-      </span>
+      <span class="sr-only">{{ t(capability.descriptionKey) }}</span>
     </span>
 
     <i
