@@ -25,6 +25,7 @@ const TOOL_ALIASES: Readonly<Record<string, CourseToolKey>> = {
   learning_path: "learning-paths",
   exercise: "exercises",
   exercises: "exercises",
+  quiz: "exercises",
   forum: "forums",
   forums: "forums",
   student_publication: "assignments",

@@ -209,6 +209,36 @@ export function buildLearningPathDetailRoute(
 export const buildExercisesRoute = (context: CourseNavigationContext) =>
   buildAcceleratedToolRoute("exercises", context)
 
+export function buildExercisePlayerRoute(
+  context: CourseNavigationContext,
+  exerciseId: number,
+): RouteLocationRaw {
+  return {
+    name: "exercise-player",
+    params: {
+      courseId: String(context.courseId),
+      exerciseId: String(exerciseId),
+    },
+    query: buildContextQuery(context),
+  }
+}
+
+export function buildExerciseResultRoute(
+  context: CourseNavigationContext,
+  exerciseId: number,
+  attemptId: number,
+): RouteLocationRaw {
+  return {
+    name: "exercise-result",
+    params: {
+      courseId: String(context.courseId),
+      exerciseId: String(exerciseId),
+      attemptId: String(attemptId),
+    },
+    query: buildContextQuery(context),
+  }
+}
+
 export const buildForumsRoute = (context: CourseNavigationContext) =>
   buildAcceleratedToolRoute("forums", context)
 
