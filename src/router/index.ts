@@ -13,6 +13,8 @@ import CourseDescriptionView from "@/views/CourseDescriptionView.vue"
 import AgendaView from "@/views/AgendaView.vue"
 import AssignmentsView from "@/views/AssignmentsView.vue"
 import AssignmentDetailView from "@/views/AssignmentDetailView.vue"
+import ExercisePlayerView from "@/views/ExercisePlayerView.vue"
+import ExerciseResultView from "@/views/ExerciseResultView.vue"
 import ExercisesView from "@/views/ExercisesView.vue"
 import ForumsView from "@/views/ForumsView.vue"
 import ForumThreadsView from "@/views/ForumThreadsView.vue"
@@ -233,6 +235,47 @@ export const routes: RouteRecordRaw[] = [
     }),
     meta: {
       titleKey: "routes.exercises",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/exercises/:exerciseId",
+    name: "exercise-player",
+    component: ExercisePlayerView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      exerciseId: String(route.params.exerciseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.exercisePlayer",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/exercises/:exerciseId/attempts/:attemptId/result",
+    name: "exercise-result",
+    component: ExerciseResultView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      exerciseId: String(route.params.exerciseId),
+      attemptId: String(route.params.attemptId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.exerciseResult",
       showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,

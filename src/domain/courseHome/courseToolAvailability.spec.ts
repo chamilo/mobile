@@ -33,13 +33,14 @@ describe("course tool availability contract", () => {
           "hydra:member": [
             { visibility: true, tool: { title: "document" } },
             { visibility: true, tool: { title: "learnpath" } },
+            { visibility: true, tool: { title: "quiz" } },
             { visibility: true, tool: { title: "student_publication" } },
             { visibility: true, tool: { title: "plugin_custom" } },
           ],
         },
         "student",
       ),
-    ).toEqual(["documents", "learning-paths", "assignments"])
+    ).toEqual(["documents", "learning-paths", "exercises", "assignments"])
   })
 
   it("does not expose an explicitly hidden tool to a learner", () => {

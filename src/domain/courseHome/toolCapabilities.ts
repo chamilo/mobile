@@ -133,12 +133,13 @@ export function createCourseToolCapabilities(
       descriptionKey: "courseHome.tools.exercises.description",
       icon: "pi pi-check-square",
       available: true,
-      readOnly: true,
-      reason: "The first accelerated slice exposes attempt history only.",
+      readOnly: false,
+      reason: null,
       route: buildExercisesRoute(entry.context),
       apiContract: {
-        list: "GET /api/track_e_exercises",
-        context: ["course", "session", "user"],
+        list: "GET /api/exercise/list",
+        detail: "GET /api/exercise/runtime/{exerciseId}",
+        context: ["cid", "sid", "gid"],
       },
     },
     {

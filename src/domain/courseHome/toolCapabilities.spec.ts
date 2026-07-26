@@ -61,4 +61,19 @@ describe("createCourseToolCapabilities", () => {
   it("does not expose tools for unavailable course entries", () => {
     expect(createCourseToolCapabilities({ ...entry, accessState: "denied" }, allTools)).toEqual([])
   })
+
+  it("exposes the interactive exercise runtime contract", () => {
+    const exercise = createCourseToolCapabilities(entry, ["exercises"])[0]
+
+    expect(exercise).toMatchObject({
+      toolKey: "exercises",
+      readOnly: false,
+      reason: null,
+      apiContract: {
+        list: "GET /api/exercise/list",
+        detail: "GET /api/exercise/runtime/{exerciseId}",
+        context: ["cid", "sid", "gid"],
+      },
+    })
+  })
 })
