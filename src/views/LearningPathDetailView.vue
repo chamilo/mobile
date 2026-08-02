@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
 import LearningPathContentViewer from "@/components/learningPaths/LearningPathContentViewer.vue"
+import LearningPathScormPlayer from "@/components/learningPaths/LearningPathScormPlayer.vue"
 import LearningPathToc from "@/components/learningPaths/LearningPathToc.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
@@ -13,7 +14,10 @@ import {
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
 import { isSupportedLearningPathItem } from "@/domain/learningPaths/contracts"
-import type { LearningPathRuntimeItem } from "@/domain/learningPaths/types"
+import type {
+  LearningPathRuntimeItem,
+  LearningPathScormCommitPayload,
+} from "@/domain/learningPaths/types"
 import { useLearningPathRuntimeStore } from "@/stores/learningPathRuntime"
 
 const SYNC_INTERVAL_MS = 30_000
@@ -30,6 +34,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const store = useLearningPathRuntimeStore()
+const scormPlayer = ref<InstanceType<typeof LearningPathScormPlayer> | null>(null)
 let syncTimer: ReturnType<typeof setInterval> | null = null
 
 const context = computed(() => {
@@ -99,7 +104,38 @@ async function start(): Promise<void> {
 
 async function selectItem(itemId: number): Promise<void> {
   if (context.value && parsedLearningPathId.value) {
+    await scormPlayer.value?.flush("navigation")
     await store.activateItem(context.value, parsedLearningPathId.value, itemId)
+  }
+}
+
+async function commitScorm(payload: LearningPathScormCommitPayload): Promise<void> {
+  if (!context.value || !parsedLearningPathId.value || !store.runtime) {
+    return
+  }
+
+  await store.commitScorm(
+    context.value,
+    parsedLearningPathId.value,
+    store.runtime.currentItemId,
+    store.runtime.scorm,
+    store.runtime.actionToken,
+    payload,
+  )
+}
+
+async function handleScormNavigation(request: string): Promise<void> {
+  if (request === "continue" && nextItem.value) {
+    await selectItem(nextItem.value.id)
+    return
+  }
+  if (request === "previous" && previousItem.value) {
+    await selectItem(previousItem.value.id)
+    return
+  }
+
+  if (["exit", "exitAll", "suspendAll", "abandon", "abandonAll"].includes(request)) {
+    await scormPlayer.value?.flush("exit")
   }
 }
 
@@ -115,6 +151,7 @@ async function restart(): Promise<void> {
     parsedLearningPathId.value &&
     window.confirm(t("learningPaths.restartConfirm"))
   ) {
+    await scormPlayer.value?.flush("restart")
     await store.restart(context.value, parsedLearningPathId.value)
   }
 }
@@ -125,11 +162,13 @@ function canNavigateTo(item: LearningPathRuntimeItem | undefined): item is Learn
 
 function handleVisibilityChange(): void {
   if (document.visibilityState === "hidden") {
+    void scormPlayer.value?.flush("visibility-hidden")
     void sync(false)
   }
 }
 
 function handlePageHide(): void {
+  void scormPlayer.value?.flush("pagehide")
   void sync(false)
 }
 
@@ -153,6 +192,7 @@ onBeforeUnmount(() => {
 
   document.removeEventListener("visibilitychange", handleVisibilityChange)
   window.removeEventListener("pagehide", handlePageHide)
+  void scormPlayer.value?.flush("unmount")
   void sync(false)
 })
 </script>
@@ -291,6 +331,16 @@ onBeforeUnmount(() => {
           :label="t('learningPaths.contentLoading')"
         />
 
+        <LearningPathScormPlayer
+          v-else-if="store.scormEntryUrl && store.contentStatus === 'ready' && store.runtime"
+          ref="scormPlayer"
+          :entry-url="store.scormEntryUrl"
+          :runtime="store.runtime"
+          :item="store.currentItem"
+          :commit="commitScorm"
+          @navigate="handleScormNavigation"
+        />
+
         <LearningPathContentViewer
           v-else-if="store.contentBlob && store.contentStatus === 'ready'"
           class="mt-4"
@@ -305,6 +355,14 @@ onBeforeUnmount(() => {
           class="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"
         >
           {{ t("learningPaths.unsupportedItem") }}
+        </p>
+
+        <p
+          v-if="store.scormSaving"
+          class="mt-3 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900"
+          role="status"
+        >
+          {{ t("learningPaths.scormSaving") }}
         </p>
 
         <p

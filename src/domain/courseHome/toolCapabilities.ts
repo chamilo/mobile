@@ -148,13 +148,15 @@ export function createCourseToolCapabilities(
       descriptionKey: "courseHome.tools.forums.description",
       icon: "pi pi-comments",
       available: true,
-      readOnly: true,
+      readOnly: false,
       reason: null,
       route: buildForumsRoute(entry.context),
       apiContract: {
         list: "GET /api/forum_categories + GET /api/forums",
         detail:
           "GET /api/forum_threads?forum=/api/forums/{forumId} + GET /api/forum_threads/{threadId}/posts",
+        write:
+          "GET /api/forum/action-token + POST /api/forum_threads/create + POST /api/forum_posts/reply",
         context: ["cid", "sid", "gid", "resourceNode.parent"],
       },
     },
@@ -164,13 +166,14 @@ export function createCourseToolCapabilities(
       descriptionKey: "courseHome.tools.assignments.description",
       icon: "pi pi-upload",
       available: true,
-      readOnly: true,
+      readOnly: false,
       reason: null,
       route: buildAssignmentsRoute(entry.context),
       apiContract: {
         list: "GET /assignments/student",
         detail:
           "GET /api/c_student_publications/{assignmentId} + GET /assignments/{assignmentId}/submissions",
+        write: "POST /api/mobile_assignment_submissions",
         context: ["cid", "sid"],
       },
     },

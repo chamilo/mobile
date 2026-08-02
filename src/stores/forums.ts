@@ -3,9 +3,12 @@ import { defineStore } from "pinia"
 
 import type { CourseNavigationContext } from "@/domain/courses/types"
 import type {
+  CreateForumReplyInput,
+  CreateForumThreadInput,
   ForumCollection,
   ForumThreadDetail,
   ForumThreadsCollection,
+  ForumWriteResult,
 } from "@/domain/forums/types"
 import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
 import {
@@ -36,6 +39,12 @@ interface ForumThreadState {
   errorCode: ForumStoreErrorCode | null
 }
 
+interface ForumWriteState {
+  status: "idle" | "saving" | "success" | "error"
+  result: ForumWriteResult | null
+  errorCode: ForumStoreErrorCode | null
+}
+
 function listInitialState(): ForumListState {
   return {
     status: "idle",
@@ -60,10 +69,19 @@ function threadInitialState(): ForumThreadState {
   }
 }
 
+function writeInitialState(): ForumWriteState {
+  return {
+    status: "idle",
+    result: null,
+    errorCode: null,
+  }
+}
+
 export const useForumsStore = defineStore("forums", () => {
   const list = reactive<ForumListState>(listInitialState())
   const threads = reactive<ForumThreadsState>(threadsInitialState())
   const thread = reactive<ForumThreadState>(threadInitialState())
+  const write = reactive<ForumWriteState>(writeInitialState())
 
   function service(): ForumApiService | null {
     const campus = useCampusStore().selectedCampus
@@ -148,19 +166,85 @@ export const useForumsStore = defineStore("forums", () => {
     }
   }
 
+  async function createThread(
+    context: CourseNavigationContext,
+    forumId: number,
+    input: CreateForumThreadInput,
+  ): Promise<ForumWriteResult | null> {
+    const api = service()
+    if (!api) {
+      write.status = "error"
+      write.result = null
+      write.errorCode = "campus_required"
+      return null
+    }
+
+    write.status = "saving"
+    write.result = null
+    write.errorCode = null
+
+    try {
+      write.result = await api.createThread(context, forumId, input)
+      write.status = "success"
+      return write.result
+    } catch (error) {
+      write.errorCode = error instanceof ForumServiceError ? error.code : "server"
+      write.status = "error"
+      return null
+    }
+  }
+
+  async function createReply(
+    context: CourseNavigationContext,
+    forumId: number,
+    threadId: number,
+    input: CreateForumReplyInput,
+  ): Promise<ForumWriteResult | null> {
+    const api = service()
+    if (!api) {
+      write.status = "error"
+      write.result = null
+      write.errorCode = "campus_required"
+      return null
+    }
+
+    write.status = "saving"
+    write.result = null
+    write.errorCode = null
+
+    try {
+      write.result = await api.createReply(context, forumId, threadId, input)
+      write.status = "success"
+      return write.result
+    } catch (error) {
+      write.errorCode = error instanceof ForumServiceError ? error.code : "server"
+      write.status = "error"
+      return null
+    }
+  }
+
+  function resetWrite(): void {
+    Object.assign(write, writeInitialState())
+  }
+
   function reset(): void {
     Object.assign(list, listInitialState())
     Object.assign(threads, threadsInitialState())
     Object.assign(thread, threadInitialState())
+    Object.assign(write, writeInitialState())
   }
 
   return {
     list,
     threads,
     thread,
+    write,
     loadForums,
     loadThreads,
     loadThread,
+    createThread,
+    createReply,
+    resetWrite,
     reset,
   }
 })

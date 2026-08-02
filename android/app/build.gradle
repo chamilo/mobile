@@ -7,8 +7,8 @@ android {
         applicationId "org.chamilo.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "0.1.0-alpha.3"
+        versionCode 6
+        versionName "0.1.0-alpha.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -44,11 +44,22 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+def chamiloPushEnabled = System.getenv('CHAMILO_ENABLE_PUSH') == '1'
+
+if (chamiloPushEnabled) {
+    try {
+        def servicesJSON = file('google-services.json')
+        if (!servicesJSON.text) {
+            throw new GradleException('google-services.json is empty')
+        }
+
         apply plugin: 'com.google.gms.google-services'
+    } catch(Exception e) {
+        throw new GradleException(
+            'Push notifications were requested but android/app/google-services.json is missing or invalid',
+            e
+        )
     }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+} else {
+    logger.lifecycle('Chamilo push notifications disabled for this Android build')
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
 import { buildCourseRoute } from "@/domain/courses/routeContext"
@@ -12,6 +12,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const imageFailed = ref(false)
 
 const directEnrollment = computed<DirectCourseEnrollment | null>(() =>
   props.enrollment.source === "direct" ? props.enrollment : null,
@@ -19,6 +20,7 @@ const directEnrollment = computed<DirectCourseEnrollment | null>(() =>
 const imageUrl = computed(() =>
   resolveCampusAssetUrl(props.enrollment.course.illustrationUrl, props.campusBaseUrl),
 )
+const showImage = computed(() => Boolean(imageUrl.value) && !imageFailed.value)
 const courseRoute = computed(() => buildCourseRoute(props.enrollment.context))
 const accessAllowed = computed(() => directEnrollment.value?.accessAllowed ?? true)
 const teachersLabel = computed(() => {
@@ -31,22 +33,27 @@ const teachersLabel = computed(() => {
     .map((teacher) => teacher.fullName)
     .join(", ")
 })
+
+watch(imageUrl, () => {
+  imageFailed.value = false
+})
 </script>
 
 <template>
   <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="relative aspect-[16/7] overflow-hidden bg-chamilo-50">
+    <div class="relative h-28 overflow-hidden bg-chamilo-50 sm:h-32">
       <img
-        v-if="imageUrl"
-        :src="imageUrl"
+        v-if="showImage"
+        :src="imageUrl ?? undefined"
         :alt="enrollment.course.title"
         class="h-full w-full object-cover"
         loading="lazy"
         referrerpolicy="no-referrer"
+        @error="imageFailed = true"
       />
       <div
         v-else
-        class="flex h-full items-center justify-center text-4xl text-chamilo-700"
+        class="flex h-full items-center justify-center bg-gradient-to-br from-chamilo-50 to-slate-100 text-3xl text-chamilo-700"
         aria-hidden="true"
       >
         <i class="pi pi-book" />
@@ -60,7 +67,7 @@ const teachersLabel = computed(() => {
       </span>
     </div>
 
-    <div class="space-y-4 p-4">
+    <div class="space-y-3 p-4">
       <div>
         <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
           <span v-if="enrollment.course.code">{{ enrollment.course.code }}</span>
@@ -71,12 +78,12 @@ const teachersLabel = computed(() => {
             {{ t(`courses.roles.${directEnrollment.role}`) }}
           </span>
         </div>
-        <h3 class="mt-2 text-base font-semibold leading-6 text-slate-900">
+        <h3 class="mt-1.5 text-base font-semibold leading-6 text-slate-900">
           {{ enrollment.course.title }}
         </h3>
       </div>
 
-      <div v-if="directEnrollment && directEnrollment.progress !== null" class="space-y-2">
+      <div v-if="directEnrollment && directEnrollment.progress !== null" class="space-y-1.5">
         <div class="flex items-center justify-between text-xs text-slate-600">
           <span>{{ t("courses.progress") }}</span>
           <span class="font-semibold">{{ directEnrollment.progress }}%</span>
@@ -111,7 +118,7 @@ const teachersLabel = computed(() => {
       <RouterLink
         v-if="accessAllowed"
         :to="courseRoute"
-        class="hover:bg-chamilo-800 flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 text-sm font-semibold text-white transition"
+        class="hover:bg-chamilo-800 flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-2.5 text-sm font-semibold text-white transition"
       >
         {{ t("courses.openCourse") }}
         <i class="pi pi-arrow-right" aria-hidden="true" />
@@ -119,7 +126,7 @@ const teachersLabel = computed(() => {
       <button
         v-else
         type="button"
-        class="min-h-touch w-full cursor-not-allowed rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-500"
+        class="min-h-touch w-full cursor-not-allowed rounded-xl bg-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500"
         disabled
       >
         {{ t("courses.locked") }}

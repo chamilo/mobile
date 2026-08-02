@@ -13,6 +13,10 @@ import type {
   AssignmentCollection,
   AssignmentComment,
   AssignmentDetail,
+  AssignmentSubmissionDeleteInput,
+  AssignmentSubmissionInput,
+  AssignmentSubmissionResult,
+  AssignmentSubmissionUpdateInput,
 } from "@/domain/assignments/types"
 import type { HttpClient } from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
@@ -25,6 +29,7 @@ export type AssignmentErrorCode =
   | "network"
   | "timeout"
   | "server"
+  | "validation"
   | "invalid_response"
 
 export class AssignmentServiceError extends Error {
@@ -71,6 +76,10 @@ function mapError(error: unknown): AssignmentServiceError {
     return new AssignmentServiceError("not_found", error.message, error)
   }
 
+  if (error.kind === "http" && error.status === 422) {
+    return new AssignmentServiceError("validation", error.message, error)
+  }
+
   return new AssignmentServiceError("server", error.message, error)
 }
 
@@ -100,6 +109,28 @@ function submissionId(value: unknown): number | null {
   }
 
   return null
+}
+
+function normalizeSubmissionResult(value: unknown): AssignmentSubmissionResult {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new AssignmentContractError("The assignment submission response is invalid.")
+  }
+
+  const record = value as Record<string, unknown>
+  const id = submissionId({ iid: record.id })
+  const title = typeof record.title === "string" ? record.title.trim() : ""
+  const submittedAt = typeof record.submittedAt === "string" ? record.submittedAt.trim() : ""
+
+  if (id === null || !title || !submittedAt) {
+    throw new AssignmentContractError("The assignment submission response is incomplete.")
+  }
+
+  return {
+    id,
+    title,
+    submittedAt,
+    hasFile: record.hasFile === true,
+  }
 }
 
 export class AssignmentApiService {
@@ -137,7 +168,7 @@ export class AssignmentApiService {
           path: assignmentRequest.path,
           query: assignmentRequest.query,
           headers: {
-            Accept: "application/ld+json",
+            Accept: "application/json",
           },
         }),
         this.httpClient.request<unknown>({
@@ -176,6 +207,70 @@ export class AssignmentApiService {
         submissionsResponse.data,
         commentsBySubmissionId,
       )
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async submit(input: AssignmentSubmissionInput): Promise<AssignmentSubmissionResult> {
+    try {
+      const response = await this.httpClient.request<unknown, AssignmentSubmissionInput>({
+        method: "POST",
+        path: "/api/mobile_assignment_submissions",
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/json",
+        },
+        body: input,
+        timeoutMs: 60_000,
+      })
+
+      return normalizeSubmissionResult(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async updateSubmission(
+    submissionId: number,
+    input: AssignmentSubmissionUpdateInput,
+  ): Promise<AssignmentSubmissionResult> {
+    try {
+      const response = await this.httpClient.request<unknown, AssignmentSubmissionUpdateInput>({
+        method: "PATCH",
+        path: `/api/mobile_assignment_submissions/${submissionId}`,
+        query: {
+          cid: input.courseId,
+          sessionId: input.sessionId,
+          sid: input.sessionId,
+        },
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/merge-patch+json",
+        },
+        body: input,
+      })
+
+      return normalizeSubmissionResult(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async deleteSubmission(input: AssignmentSubmissionDeleteInput): Promise<void> {
+    try {
+      await this.httpClient.request<void>({
+        method: "DELETE",
+        path: `/api/mobile_assignment_submissions/${input.submissionId}`,
+        query: {
+          assignmentId: input.assignmentId,
+          courseId: input.courseId,
+          sessionId: input.sessionId,
+        },
+        headers: {
+          Accept: "application/ld+json",
+        },
+      })
     } catch (error) {
       throw mapError(error)
     }

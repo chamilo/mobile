@@ -4,6 +4,9 @@ const config: CapacitorConfig = {
   appId: "org.chamilo.mobile",
   appName: "Chamilo Mobile",
   webDir: "dist",
+  android: {
+    includePlugins: ["@capacitor/app"],
+  },
 }
 
 export default config

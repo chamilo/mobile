@@ -1,5 +1,9 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
-import type { LearningPathRuntime, LearningPathRuntimeItem } from "@/domain/learningPaths/types"
+import type {
+  LearningPathRuntime,
+  LearningPathRuntimeItem,
+  LearningPathScormRuntime,
+} from "@/domain/learningPaths/types"
 
 export class LearningPathContractError extends Error {
   constructor(message: string) {
@@ -10,13 +14,13 @@ export class LearningPathContractError extends Error {
 
 type UnknownRecord = Record<string, unknown>
 type LearningPathRuntimeAction = "item" | "sync" | "restart"
-
 export interface LearningPathRuntimeRequest {
   path: string
   query: Record<string, string | number>
 }
 
-const SUPPORTED_ITEM_TYPES = new Set(["document", "video", "readout_text"])
+const SUPPORTED_ITEM_TYPES = new Set(["document", "video", "readout_text", "sco", "asset"])
+const SCORM_ITEM_TYPES = new Set(["sco", "asset"])
 const COMPLETED_STATUSES = new Set(["completed", "passed", "succeeded", "browsed", "failed"])
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -87,6 +91,83 @@ function relativePath(value: unknown): string | null {
   return path.startsWith("/") ? path : `/${path}`
 }
 
+function archivePath(value: unknown): string {
+  if (typeof value !== "string") {
+    return ""
+  }
+
+  const path = value.trim().replace(/\\/g, "/").replace(/^\/+/, "")
+  if (!path || path.includes("\0") || /^[A-Za-z]:/.test(path)) {
+    return ""
+  }
+
+  const segments: string[] = []
+  for (const segment of path.split("/")) {
+    if (!segment || segment === ".") {
+      continue
+    }
+    if (segment === "..") {
+      return ""
+    }
+    segments.push(segment)
+  }
+
+  return segments.join("/")
+}
+
+function stringRecord(value: unknown): Record<string, string> {
+  if (!isRecord(value)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key.trim() !== "")
+      .map(([key, entry]) => [key, entry === null || entry === undefined ? "" : String(entry)]),
+  )
+}
+
+function normalizeScorm(value: unknown): LearningPathScormRuntime {
+  if (!isRecord(value)) {
+    return {
+      enabled: false,
+      version: "",
+      itemViewId: 0,
+      lpViewId: 0,
+      userId: 0,
+      lpType: 0,
+      itemType: "",
+      forceCommit: false,
+      debug: false,
+      values: {},
+      packageEntryPath: "",
+      packageParameters: "",
+      packageFingerprint: "",
+      packageSize: 0,
+    }
+  }
+
+  const version = text(value.version)
+  const packageFingerprint = text(value.packageFingerprint).toLowerCase()
+
+  return {
+    enabled: boolean(value.enabled),
+    version: version === "1.2" || version === "2004" ? version : "",
+    itemViewId: Math.max(0, integer(value.itemViewId)),
+    lpViewId: Math.max(0, integer(value.lpViewId)),
+    userId: Math.max(0, integer(value.userId)),
+    lpType: Math.max(0, integer(value.lpType)),
+    itemType: text(value.itemType).toLowerCase(),
+    forceCommit: boolean(value.forceCommit),
+    debug: boolean(value.debug),
+    values: stringRecord(value.values),
+    packageEntryPath: archivePath(value.packageEntryPath),
+    packageParameters: text(value.packageParameters),
+    packageFingerprint: /^[a-f0-9]{64}$/.test(packageFingerprint) ? packageFingerprint : "",
+    packageSize: Math.max(0, integer(value.packageSize)),
+  }
+}
+
 function normalizeItem(value: unknown): LearningPathRuntimeItem {
   if (!isRecord(value)) {
     throw new LearningPathContractError("A learning path item is invalid.")
@@ -140,6 +221,30 @@ export function buildLearningPathRuntimeActionRequest(
   }
 }
 
+export function buildLearningPathScormPackageRequest(
+  context: CourseNavigationContext,
+  learningPathId: number,
+  itemId: number,
+): LearningPathRuntimeRequest {
+  return {
+    path: `/api/learning_paths/${positiveInteger(learningPathId, "learning path id")}/runtime/scorm/package`,
+    query: {
+      ...contextQuery(context),
+      itemId: positiveInteger(itemId, "learning path item id"),
+    },
+  }
+}
+
+export function buildLearningPathScormCommitRequest(
+  context: CourseNavigationContext,
+  learningPathId: number,
+): LearningPathRuntimeRequest {
+  return {
+    path: `/api/learning_paths/${positiveInteger(learningPathId, "learning path id")}/runtime/scorm/commit`,
+    query: contextQuery(context),
+  }
+}
+
 export function normalizeLearningPathRuntime(value: unknown): LearningPathRuntime {
   if (!isRecord(value)) {
     throw new LearningPathContractError("The learning path runtime is invalid.")
@@ -175,8 +280,13 @@ export function normalizeLearningPathRuntime(value: unknown): LearningPathRuntim
     audioTitle: plainText(value.audioTitle),
     audioAutoplay: boolean(value.audioAutoplay),
     actionToken: text(value.csrfToken),
+    scorm: normalizeScorm(value.scorm),
     items: value.items.map(normalizeItem),
   }
+}
+
+export function isScormLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
+  return Boolean(item && SCORM_ITEM_TYPES.has(item.itemType.toLowerCase()))
 }
 
 export function isSupportedLearningPathItem(
@@ -194,9 +304,13 @@ export function isOpenableLearningPathItem(
   item: LearningPathRuntimeItem | null,
   runtime: LearningPathRuntime,
 ): boolean {
-  return Boolean(
-    isSupportedLearningPathItem(item) && runtime.runtimeSupported && runtime.contentUrl,
-  )
+  if (!isSupportedLearningPathItem(item) || !runtime.runtimeSupported) {
+    return false
+  }
+
+  return isScormLearningPathItem(item)
+    ? Boolean(runtime.scorm.packageEntryPath && runtime.scorm.packageFingerprint)
+    : Boolean(runtime.contentUrl)
 }
 
 export function isCompletedLearningPathStatus(status: string): boolean {

@@ -29,6 +29,7 @@
   "dependencies": {
     "@capacitor/app": "8.1.0",
     "@capacitor/core": "8.4.1",
+    "@capacitor/push-notifications": "8.1.2",
     "@primevue/core": "4.5.5",
     "@primevue/icons": "4.5.5",
     "axios": "1.16.1",

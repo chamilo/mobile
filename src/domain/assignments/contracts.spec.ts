@@ -36,7 +36,7 @@ describe("assignment contracts", () => {
     })
 
     expect(buildAssignmentRequest(sessionContext, 8)).toEqual({
-      path: "/api/c_student_publications/8",
+      path: "/assignments/8/detail",
       query: {
         cid: 16,
         sid: 4,
@@ -96,9 +96,31 @@ describe("assignment contracts", () => {
       maximumScore: 20,
       gradebookWeight: 30,
       textSubmissionAllowed: true,
+      fileSubmissionAllowed: false,
       allowedExtensions: ["pdf", "docx"],
       submittedStudentCount: 4,
     })
+  })
+
+  it("normalizes text, file and mixed submission modes", () => {
+    const result = normalizeAssignmentCollection({
+      "hydra:member": [
+        { iid: 1, allowTextAssignment: 0, assignment: {} },
+        { iid: 2, allowTextAssignment: 1, assignment: {} },
+        { iid: 3, allowTextAssignment: 2, assignment: {} },
+      ],
+    })
+
+    expect(
+      result.items.map(({ textSubmissionAllowed, fileSubmissionAllowed }) => ({
+        textSubmissionAllowed,
+        fileSubmissionAllowed,
+      })),
+    ).toEqual([
+      { textSubmissionAllowed: true, fileSubmissionAllowed: true },
+      { textSubmissionAllowed: true, fileSubmissionAllowed: false },
+      { textSubmissionAllowed: false, fileSubmissionAllowed: true },
+    ])
   })
 
   it("resolves open, late and closed deadlines", () => {

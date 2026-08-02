@@ -10,22 +10,25 @@ Implemented:
 
 - campus profiles and browser/native transport interfaces;
 - JWT login, current-user profile and logout;
+- secure native JWT persistence;
 - direct courses and session courses;
 - mobile-owned course home;
 - read-only announcements with sanitized HTML and isolated cache;
 - Capacitor Android project;
 - native HTTP through `CapacitorHttp`;
 - Android back-button handling;
+- personal social messaging with inbox, sent messages, compose, reply, search, read state, stars and per-user deletion;
+- Android push permission, FCM token registration and authenticated logout cleanup;
+- safe message opening from Android notification actions;
 - reproducible JavaScript dependency-license report;
 - debug APK build and physical installation.
 
 Not implemented yet:
 
-- secure native JWT persistence;
 - authenticated attachment downloads;
-- additional course tools;
 - public HTTPS test campus;
-- iOS, push notifications, biometrics or background sync;
+- message attachment upload/download in the mobile messaging UI;
+- iOS push notifications, biometrics or background sync;
 - store publication and release signing.
 
 ## Requirements
@@ -97,6 +100,33 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 
 `android/local.properties`, Gradle outputs, copied web assets, APKs and signing material are not committed.
 
+### Firebase Cloud Messaging
+
+Register the Android application ID `org.chamilo.mobile` in the Firebase project, then copy the
+project-specific configuration to:
+
+```text
+android/app/google-services.json
+```
+
+Never commit this file. After adding it, synchronize and build again:
+
+```bash
+yarn android:sync
+yarn android:build:debug
+```
+
+The selected Chamilo campus must expose the authenticated
+`POST /api/mobile_push_installations` and
+`DELETE /api/mobile_push_installations/{installationId}` operations. The app stores only a
+campus-scoped installation UUID and registration owner; the FCM token is sent to the selected
+campus and is not persisted by the web layer.
+
+The message inbox remains available without Firebase. It uses the authenticated
+`/api/mobile_messages` and `/api/mobile_message_recipients` operations. Firebase only adds native
+delivery while Android is in the background or closed. A notification action opens a message only
+when its installation identifier matches the active campus and authenticated user.
+
 ## Architecture boundaries
 
 All network calls pass through:
@@ -116,9 +146,11 @@ campusId/token
 campusId/profile
 campusId/cache
 campusId/settings
+campusId/push-installation
 ```
 
-The current JWT implementation is intentionally memory-only. Passwords are never stored and JWTs must not be logged or passed in query strings.
+JWTs use native secure storage on Android. Passwords are never stored, and JWTs and FCM tokens must
+not be logged or passed in query strings.
 
 ## Native transport security
 
@@ -131,7 +163,7 @@ The current JWT implementation is intentionally memory-only. Passwords are never
 
 ## Licenses
 
-Chamilo Mobile remains AGPL-3.0. Direct Chat 07 additions are official MIT-licensed Capacitor packages. See:
+Chamilo Mobile remains AGPL-3.0. Direct official Capacitor packages are MIT-licensed. See:
 
 ```text
 THIRD_PARTY_NOTICES.md

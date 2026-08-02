@@ -202,6 +202,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@capacitor/push-notifications@npm:8.1.2":
+  version: 8.1.2
+  resolution: "@capacitor/push-notifications@npm:8.1.2"
+  peerDependencies:
+    "@capacitor/core": ">=8.0.0"
+  checksum: 10c0/064e9c5780e266d715c88c96c3489c0e0dcf40e58155826d6a5beb448a1796d7561f4df0d61a11cf8440e54206fc17a84239eb40556d21e57c67be247db9adb1
+  languageName: node
+  linkType: hard
+
 "@chamilo/mobile@workspace:.":
   version: 0.0.0-use.local
   resolution: "@chamilo/mobile@workspace:."
@@ -210,6 +219,7 @@ __metadata:
     "@capacitor/app": "npm:8.1.0"
     "@capacitor/cli": "npm:8.4.1"
     "@capacitor/core": "npm:8.4.1"
+    "@capacitor/push-notifications": "npm:8.1.2"
     "@eslint/js": "npm:10.0.1"
     "@primevue/core": "npm:4.5.5"
     "@primevue/icons": "npm:4.5.5"

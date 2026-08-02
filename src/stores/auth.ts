@@ -10,6 +10,11 @@ import type {
 } from "@/domain/auth/types"
 import type { CampusProfile } from "@/domain/campus/types"
 import { AuthApiService, AuthServiceError } from "@/services/auth/AuthApiService"
+import {
+  notifyActiveCampusSessionReset,
+  notifyAuthenticatedCampusSession,
+  notifyBeforeCampusSessionClear,
+} from "@/services/auth/AuthSessionLifecycle"
 import { createTokenStorage } from "@/services/auth/createTokenStorage"
 import { clearCampusSessionData } from "@/services/auth/CampusSessionDataCleaner"
 import type { TokenStorage } from "@/services/auth/TokenStorage"
@@ -103,6 +108,7 @@ export const useAuthStore = defineStore("auth", () => {
       profile.value = currentUser
       status.value = "authenticated"
       errorCode.value = null
+      void notifyAuthenticatedCampusSession(campus, currentUser.id)
 
       return true
     } catch (error) {
@@ -144,6 +150,7 @@ export const useAuthStore = defineStore("auth", () => {
       }
 
       if (isTokenExpired(storedToken.expiresAt)) {
+        await notifyBeforeCampusSessionClear(campus)
         await tokenStorage.remove(campus.id)
         await clearCampusSessionData(campus.id).catch(() => undefined)
         status.value = "error"
@@ -158,12 +165,14 @@ export const useAuthStore = defineStore("auth", () => {
       profile.value = currentUser
       status.value = "authenticated"
       errorCode.value = null
+      void notifyAuthenticatedCampusSession(campus, currentUser.id)
 
       return true
     } catch (error) {
       const mappedError = mapAuthError(error)
 
       if (mappedError === "session_expired" || mappedError === "access_denied") {
+        await notifyBeforeCampusSessionClear(campus)
         await tokenStorage.remove(campus.id).catch(() => undefined)
         await clearCampusSessionData(campus.id).catch(() => undefined)
       }
@@ -177,11 +186,17 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function signOut(): Promise<void> {
-    const campusId = currentCampusId.value ?? useCampusStore().selectedCampusId
+    const campusStore = useCampusStore()
+    const campusId = currentCampusId.value ?? campusStore.selectedCampusId
+    const campus = campusStore.profiles.find((profile) => profile.id === campusId)
     let storageError: unknown = null
 
     if (campusId) {
       try {
+        if (campus) {
+          await notifyBeforeCampusSessionClear(campus)
+        }
+
         await tokenStorage.remove(campusId)
         await clearCampusSessionData(campusId)
       } catch (error) {
@@ -199,6 +214,12 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function clearCampusSession(campusId: string): Promise<boolean> {
     try {
+      const campus = useCampusStore().profiles.find((profile) => profile.id === campusId)
+
+      if (campus) {
+        await notifyBeforeCampusSessionClear(campus)
+      }
+
       await tokenStorage.remove(campusId)
       await clearCampusSessionData(campusId)
 
@@ -217,6 +238,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   function resetActiveSession(): void {
     clearActiveState()
+    void notifyActiveCampusSessionReset()
   }
 
   function clearError(): void {
