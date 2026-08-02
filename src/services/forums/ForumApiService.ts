@@ -10,9 +10,13 @@ import {
   normalizeForumThreads,
 } from "@/domain/forums/contracts"
 import type {
+  CreateForumReplyInput,
+  CreateForumThreadInput,
+  ForumActionToken,
   ForumCollection,
   ForumThreadDetail,
   ForumThreadsCollection,
+  ForumWriteResult,
 } from "@/domain/forums/types"
 import type { HttpClient } from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
@@ -27,6 +31,7 @@ export type ForumErrorCode =
   | "server"
   | "invalid_response"
   | "contract_gap"
+  | "validation"
 
 export class ForumServiceError extends Error {
   constructor(
@@ -73,7 +78,57 @@ function mapError(error: unknown): ForumServiceError {
     return new ForumServiceError("not_found", error.message, error)
   }
 
+  if (error.kind === "http" && (error.status === 400 || error.status === 422)) {
+    return new ForumServiceError("validation", error.message, error)
+  }
+
   return new ForumServiceError("server", error.message, error)
+}
+
+function positiveInteger(value: unknown, field: string): number {
+  const parsed = typeof value === "number" ? value : Number(value)
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new ForumContractError(`Invalid ${field}.`)
+  }
+
+  return parsed
+}
+
+function writeResult(value: unknown): ForumWriteResult {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new ForumContractError("The forum write response is invalid.")
+  }
+
+  const record = value as Record<string, unknown>
+
+  return {
+    threadId: positiveInteger(record.threadId, "thread id"),
+    postId: positiveInteger(record.postId, "post id"),
+    requiresApproval: record.requiresApproval === true,
+    message: typeof record.message === "string" ? record.message : "",
+  }
+}
+
+function actionToken(value: unknown): ForumActionToken {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new ForumContractError("The forum action token response is invalid.")
+  }
+
+  const token = (value as Record<string, unknown>).token
+
+  if (typeof token !== "string" || !token.trim()) {
+    throw new ForumContractError("The forum action token is missing.")
+  }
+
+  return { token }
+}
+
+function contextQuery(context: CourseNavigationContext): Record<string, number> {
+  return {
+    cid: context.courseId,
+    ...(context.sessionId ? { sid: context.sessionId } : {}),
+  }
 }
 
 function resourceNodeId(value: unknown): number | null {
@@ -177,6 +232,83 @@ export class ForumApiService {
       })
 
       return normalizeForumThreadDetail(response.data, forumId, threadId)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+  private async getActionToken(): Promise<ForumActionToken> {
+    const response = await this.httpClient.request<unknown>({
+      method: "GET",
+      path: "/api/forum/action-token",
+      headers: {
+        Accept: "application/ld+json",
+      },
+    })
+
+    return actionToken(response.data)
+  }
+
+  async createThread(
+    context: CourseNavigationContext,
+    forumId: number,
+    input: CreateForumThreadInput,
+  ): Promise<ForumWriteResult> {
+    try {
+      const token = await this.getActionToken()
+      const response = await this.httpClient.request<unknown>({
+        method: "POST",
+        path: "/api/forum_threads/create",
+        query: contextQuery(context),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: {
+          forumId: positiveInteger(forumId, "forum id"),
+          title: input.title.trim(),
+          text: input.text.trim(),
+          postNotification: input.postNotification,
+          threadSticky: false,
+          csrfToken: token.token,
+        },
+      })
+
+      return writeResult(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async createReply(
+    context: CourseNavigationContext,
+    forumId: number,
+    threadId: number,
+    input: CreateForumReplyInput,
+  ): Promise<ForumWriteResult> {
+    try {
+      const token = await this.getActionToken()
+      const response = await this.httpClient.request<unknown>({
+        method: "POST",
+        path: "/api/forum_posts/reply",
+        query: contextQuery(context),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: {
+          forumId: positiveInteger(forumId, "forum id"),
+          threadId: positiveInteger(threadId, "thread id"),
+          ...(input.parentPostId
+            ? { parentPostId: positiveInteger(input.parentPostId, "parent post id") }
+            : {}),
+          title: input.title.trim(),
+          text: input.text.trim(),
+          postNotification: input.postNotification,
+          csrfToken: token.token,
+        },
+      })
+
+      return writeResult(response.data)
     } catch (error) {
       throw mapError(error)
     }

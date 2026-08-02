@@ -24,6 +24,7 @@ const directNames = new Set([
 const requiredDirectPackages = new Map([
   ["@capacitor/android", { version: "8.4.1", license: "MIT" }],
   ["@capacitor/app", { version: "8.1.0", license: "MIT" }],
+  ["@capacitor/push-notifications", { version: "8.1.2", license: "MIT" }],
 ])
 
 const blockedLicensePatterns = [
@@ -213,7 +214,7 @@ const reportLines = [
   `- Direct JavaScript packages: ${packageRows.filter(({ direct }) => direct).length}`,
   `- Blocked or unknown license metadata: ${blockedPackages.length}`,
   "",
-  "## Chat 07 direct dependency gate",
+  "## Official Capacitor dependency gate",
   "",
   "| Package | Result | Details |",
   "|---|---|---|",

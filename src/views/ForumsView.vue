@@ -86,10 +86,6 @@ onMounted(load)
       </p>
     </section>
 
-    <div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900" role="status">
-      {{ t("forums.readOnlyNotice") }}
-    </div>
-
     <LoadingState
       v-if="store.list.status === 'loading' || store.list.status === 'idle'"
       :label="t('forums.loading')"

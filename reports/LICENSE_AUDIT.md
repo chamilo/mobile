@@ -4,22 +4,23 @@
 
 ## Inputs
 
-- package.json SHA-256: `5f8065d37c37f0ec0eb9787078867127c4b05f6c6b080054f9586402ffae67e4`
-- yarn.lock SHA-256: `b19d46089a831f394dc6cd0f688355b498b3ba397403f674eef90dc1411a3b1a`
+- package.json SHA-256: `b382836ca8ceefcc0a90262fe33754efdf24cf7d0748a34e40ef62a3f34b7e7e`
+- yarn.lock SHA-256: `dbe887b3dce8a77d4d7128a548cf6949df19912d5845e269eb4dce15888241fe`
 - Install layout: Yarn node-modules linker
 
 ## Summary
 
-- Installed JavaScript packages inspected: 480
-- Direct JavaScript packages: 44
+- Installed JavaScript packages inspected: 481
+- Direct JavaScript packages: 45
 - Blocked or unknown license metadata: 0
 
-## Chat 07 direct dependency gate
+## Official Capacitor dependency gate
 
-| Package            | Result | Details                        |
-| ------------------ | ------ | ------------------------------ |
-| @capacitor/android | PASS   | @capacitor/android@8.4.1 — MIT |
-| @capacitor/app     | PASS   | @capacitor/app@8.1.0 — MIT     |
+| Package                       | Result | Details                                   |
+| ----------------------------- | ------ | ----------------------------------------- |
+| @capacitor/android            | PASS   | @capacitor/android@8.4.1 — MIT            |
+| @capacitor/app                | PASS   | @capacitor/app@8.1.0 — MIT                |
+| @capacitor/push-notifications | PASS   | @capacitor/push-notifications@8.1.2 — MIT |
 
 ## License distribution
 
@@ -33,7 +34,7 @@
 | CC-BY-4.0        |        1 |
 | CC0-1.0          |        1 |
 | ISC              |       32 |
-| MIT              |      390 |
+| MIT              |      391 |
 | MIT-0            |        2 |
 | MPL-2.0          |        2 |
 | Unlicense        |        1 |
@@ -61,6 +62,7 @@
 | @capacitor/app                           |        8.1.0 |  yes   | MIT              |
 | @capacitor/cli                           |        8.4.1 |  yes   | MIT              |
 | @capacitor/core                          |        8.4.1 |  yes   | MIT              |
+| @capacitor/push-notifications            |        8.1.2 |  yes   | MIT              |
 | @csstools/color-helpers                  |        6.1.0 |   no   | MIT-0            |
 | @csstools/css-calc                       |        3.2.1 |   no   | MIT              |
 | @csstools/css-color-parser               |        4.1.9 |   no   | MIT              |

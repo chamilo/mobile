@@ -10,6 +10,11 @@ const items = [
     icon: "pi pi-book",
   },
   {
+    name: "messages",
+    labelKey: "navigation.messages",
+    icon: "pi pi-envelope",
+  },
+  {
     name: "profile",
     labelKey: "navigation.profile",
     icon: "pi pi-user",
@@ -22,7 +27,7 @@ const items = [
     class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]"
     :aria-label="t('app.name')"
   >
-    <div class="mx-auto grid max-w-screen-sm grid-cols-2">
+    <div class="mx-auto grid max-w-screen-sm grid-cols-3">
       <RouterLink
         v-for="item in items"
         :key="item.name"

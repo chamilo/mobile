@@ -6,14 +6,31 @@ import { useRouter } from "vue-router"
 
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { usePushNotificationsStore } from "@/stores/pushNotifications"
 
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const campusStore = useCampusStore()
+const pushNotificationsStore = usePushNotificationsStore()
 const { profile } = storeToRefs(authStore)
 const { selectedCampus } = storeToRefs(campusStore)
+const {
+  available: pushAvailable,
+  status: pushStatus,
+  errorCode: pushErrorCode,
+  busy: pushBusy,
+  canEnable: canEnablePush,
+} = storeToRefs(pushNotificationsStore)
 const busy = ref(false)
+
+const pushStatusMessage = computed(() => {
+  if (pushErrorCode.value) {
+    return t(`notifications.errors.${pushErrorCode.value}`)
+  }
+
+  return t(`notifications.status.${pushStatus.value}`)
+})
 
 const initials = computed(() => {
   const name = profile.value?.fullName.trim() ?? ""
@@ -80,6 +97,48 @@ async function logout(): Promise<void> {
           <dd class="mt-1 text-sm text-slate-900">{{ profile.timezone }}</dd>
         </div>
       </dl>
+    </section>
+
+    <section
+      v-if="pushAvailable"
+      class="rounded-2xl bg-white p-5 shadow-sm"
+      aria-labelledby="notifications-title"
+    >
+      <div class="flex items-start gap-3">
+        <div
+          class="text-chamilo-800 flex size-11 shrink-0 items-center justify-center rounded-xl bg-chamilo-100"
+          aria-hidden="true"
+        >
+          <i class="pi pi-bell text-lg" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 id="notifications-title" class="text-lg font-semibold text-slate-900">
+            {{ t("notifications.title") }}
+          </h2>
+          <p class="mt-1 text-sm leading-6 text-slate-600">
+            {{ t("notifications.description") }}
+          </p>
+          <p
+            class="mt-3 text-sm font-medium"
+            :class="pushErrorCode ? 'text-red-700' : 'text-slate-800'"
+            role="status"
+            aria-live="polite"
+          >
+            {{ pushStatusMessage }}
+          </p>
+        </div>
+      </div>
+
+      <button
+        v-if="canEnablePush"
+        type="button"
+        class="mt-4 flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white disabled:opacity-60"
+        :disabled="pushBusy"
+        @click="pushNotificationsStore.enable"
+      >
+        <i :class="pushBusy ? 'pi pi-spin pi-spinner' : 'pi pi-bell'" aria-hidden="true" />
+        {{ pushErrorCode ? t("notifications.retry") : t("notifications.enable") }}
+      </button>
     </section>
 
     <RouterLink

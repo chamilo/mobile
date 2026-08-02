@@ -108,3 +108,27 @@ export interface ForumThreadDetail {
   canReply: boolean
   posts: ForumPostSummary[]
 }
+
+export interface ForumActionToken {
+  token: string
+}
+
+export interface ForumWriteResult {
+  threadId: number
+  postId: number
+  requiresApproval: boolean
+  message: string
+}
+
+export interface CreateForumThreadInput {
+  title: string
+  text: string
+  postNotification: boolean
+}
+
+export interface CreateForumReplyInput {
+  title: string
+  text: string
+  parentPostId?: number | null
+  postNotification: boolean
+}

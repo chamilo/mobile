@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(ChamiloSecureStoragePlugin.class);
         registerPlugin(ChamiloDocumentPlugin.class);
+        registerPlugin(ChamiloScormPackagePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

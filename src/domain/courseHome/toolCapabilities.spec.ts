@@ -76,4 +76,26 @@ describe("createCourseToolCapabilities", () => {
       },
     })
   })
+  it("exposes interactive forum and assignment contracts", () => {
+    const capabilities = createCourseToolCapabilities(entry, ["forums", "assignments"])
+
+    expect(capabilities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          toolKey: "forums",
+          readOnly: false,
+          apiContract: expect.objectContaining({
+            write: expect.stringContaining("POST /api/forum_threads/create"),
+          }),
+        }),
+        expect.objectContaining({
+          toolKey: "assignments",
+          readOnly: false,
+          apiContract: expect.objectContaining({
+            write: "POST /api/mobile_assignment_submissions",
+          }),
+        }),
+      ]),
+    )
+  })
 })

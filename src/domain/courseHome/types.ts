@@ -36,6 +36,7 @@ export interface CourseHomeEntry {
 export interface ToolCapabilityContract {
   list: string
   detail?: string
+  write?: string
   context: readonly string[]
 }
 

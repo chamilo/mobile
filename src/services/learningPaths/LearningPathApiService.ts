@@ -2,10 +2,16 @@ import type { CourseNavigationContext } from "@/domain/courses/types"
 import {
   buildLearningPathRuntimeActionRequest,
   buildLearningPathRuntimeRequest,
+  buildLearningPathScormCommitRequest,
+  buildLearningPathScormPackageRequest,
   LearningPathContractError,
   normalizeLearningPathRuntime,
 } from "@/domain/learningPaths/contracts"
-import type { LearningPathRuntime } from "@/domain/learningPaths/types"
+import type {
+  LearningPathRuntime,
+  LearningPathScormCommitPayload,
+  LearningPathScormRuntime,
+} from "@/domain/learningPaths/types"
 import type { HttpClient } from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
@@ -175,6 +181,77 @@ export class LearningPathApiService {
           "Content-Type": "application/json",
         },
         body: {
+          csrfToken: actionToken,
+        },
+      })
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async getScormPackage(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    itemId: number,
+  ): Promise<ArrayBuffer> {
+    const request = buildLearningPathScormPackageRequest(context, learningPathId, itemId)
+
+    try {
+      const response = await this.httpClient.request<ArrayBuffer>({
+        method: "GET",
+        path: request.path,
+        query: request.query,
+        headers: {
+          Accept: "application/zip",
+        },
+        responseType: "arraybuffer",
+        timeoutMs: 120_000,
+      })
+
+      if (!(response.data instanceof ArrayBuffer)) {
+        throw new LearningPathServiceError(
+          "unsupported",
+          "The current transport did not return a SCORM package.",
+        )
+      }
+
+      return response.data
+    } catch (error) {
+      if (error instanceof LearningPathServiceError) {
+        throw error
+      }
+
+      throw mapError(error)
+    }
+  }
+
+  async commitScorm(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    itemId: number,
+    runtime: LearningPathScormRuntime,
+    actionToken: string,
+    payload: LearningPathScormCommitPayload,
+  ): Promise<void> {
+    const request = buildLearningPathScormCommitRequest(context, learningPathId)
+
+    try {
+      await this.httpClient.request<void, Record<string, unknown>>({
+        method: "POST",
+        path: request.path,
+        query: request.query,
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/json",
+        },
+        body: {
+          itemId,
+          itemViewId: runtime.itemViewId,
+          version: runtime.version,
+          values: payload.values,
+          changedKeys: payload.changedKeys,
+          terminated: payload.terminated,
+          reason: payload.reason,
           csrfToken: actionToken,
         },
       })

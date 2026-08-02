@@ -30,6 +30,10 @@ import DocumentsView from "@/views/DocumentsView.vue"
 import CourseProgressView from "@/views/CourseProgressView.vue"
 import CoursesView from "@/views/CoursesView.vue"
 import LoginView from "@/views/LoginView.vue"
+import MessageComposeView from "@/views/MessageComposeView.vue"
+import MessageDetailView from "@/views/MessageDetailView.vue"
+import MessagesView from "@/views/MessagesView.vue"
+import MyProgressView from "@/views/MyProgressView.vue"
 import NotebookFormView from "@/views/NotebookFormView.vue"
 import NotebookView from "@/views/NotebookView.vue"
 import NotFoundView from "@/views/NotFoundView.vue"
@@ -75,12 +79,64 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/progress",
+    name: "my-progress",
+    component: MyProgressView,
+    meta: {
+      titleKey: "routes.myProgress",
+      showBottomNavigation: true,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
     path: "/profile",
     name: "profile",
     component: ProfileView,
     meta: {
       titleKey: "routes.profile",
       showBottomNavigation: true,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/messages",
+    name: "messages",
+    component: MessagesView,
+    meta: {
+      titleKey: "routes.messages",
+      showBottomNavigation: true,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/messages/compose",
+    name: "message-compose",
+    component: MessageComposeView,
+    props: (route) => ({
+      recipientId: typeof route.query.recipientId === "string" ? route.query.recipientId : null,
+      recipientName:
+        typeof route.query.recipientName === "string" ? route.query.recipientName : null,
+      subject: typeof route.query.subject === "string" ? route.query.subject : null,
+      parentId: typeof route.query.parentId === "string" ? route.query.parentId : null,
+    }),
+    meta: {
+      titleKey: "routes.messageCompose",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/messages/:messageId",
+    name: "message-detail",
+    component: MessageDetailView,
+    props: true,
+    meta: {
+      titleKey: "routes.messageDetail",
+      showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,
     },

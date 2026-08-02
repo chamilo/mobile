@@ -5,6 +5,7 @@ import type {
   AssignmentComment,
   AssignmentDetail,
   AssignmentSubmission,
+  AssignmentSubmissionManagementReason,
   AssignmentSummary,
 } from "@/domain/assignments/types"
 
@@ -152,6 +153,8 @@ function normalizeAssignment(value: unknown): AssignmentSummary {
   const dueAt = isoDate(assignment.expiresOn)
   const endsAt = isoDate(assignment.endsOn)
 
+  const submissionMode = Math.trunc(numeric(value.allowTextAssignment) ?? 2)
+
   return {
     id: positiveInteger(value.iid ?? value["@id"], "assignment id"),
     title: text(value.title) || "Assignment",
@@ -161,7 +164,8 @@ function normalizeAssignment(value: unknown): AssignmentSummary {
     endsAt,
     maximumScore: numeric(value.qualification),
     gradebookWeight: numeric(value.weight),
-    textSubmissionAllowed: truthyInteger(value.allowTextAssignment),
+    textSubmissionAllowed: [0, 1].includes(submissionMode),
+    fileSubmissionAllowed: [0, 2].includes(submissionMode),
     allowedExtensions: allowedExtensions(value.extensions),
     availabilityStatus: resolveAssignmentAvailability(dueAt, endsAt),
     submittedStudentCount: Math.max(0, Math.trunc(numeric(value.uniqueStudentAttemptsTotal) ?? 0)),
@@ -199,6 +203,20 @@ export function normalizeAssignmentComments(value: unknown): AssignmentComment[]
   return collectionItems(value, "assignment comments").map(normalizeComment)
 }
 
+const managementReasons = new Set<AssignmentSubmissionManagementReason>([
+  "not_owner",
+  "context_mismatch",
+  "course_setting_disabled",
+  "reviewed",
+  "edition_blocked",
+  "session_locked",
+])
+
+function managementReason(value: unknown): AssignmentSubmissionManagementReason | null {
+  const normalized = text(value) as AssignmentSubmissionManagementReason
+  return managementReasons.has(normalized) ? normalized : null
+}
+
 function normalizeSubmission(
   value: unknown,
   maximumScore: number | null,
@@ -220,6 +238,11 @@ function normalizeSubmission(
     correctionTitle: nullableText(value.correctionTitle),
     correctionDownloadUrl: nullableText(value.correctionDownloadUrl),
     comments,
+    canEdit: value.canEdit === true,
+    canDelete: value.canDelete === true,
+    editBlockedReason: managementReason(value.editBlockedReason),
+    deleteBlockedReason: managementReason(value.deleteBlockedReason),
+    reviewed: value.reviewed === true,
   }
 }
 
@@ -271,7 +294,7 @@ export function buildAssignmentRequest(
   assignmentId: number,
 ): AssignmentRequestDefinition {
   return {
-    path: `/api/c_student_publications/${positiveInteger(assignmentId, "assignment id")}`,
+    path: `/assignments/${positiveInteger(assignmentId, "assignment id")}/detail`,
     query: contextQuery(context),
   }
 }

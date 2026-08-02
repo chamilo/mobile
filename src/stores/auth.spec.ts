@@ -7,6 +7,7 @@ import type {
   CampusRepositorySnapshot,
 } from "@/services/campus/CampusProfileRepository"
 import { AuthServiceError } from "@/services/auth/AuthApiService"
+import { registerBeforeCampusSessionClearListener } from "@/services/auth/AuthSessionLifecycle"
 import type { StoredToken, TokenStorage } from "@/services/auth/TokenStorage"
 import { resetAuthDependencies, setAuthDependenciesForTests, useAuthStore } from "@/stores/auth"
 import {
@@ -141,6 +142,30 @@ describe("auth store", () => {
 
     expect(authStore.isAuthenticated).toBe(false)
     expect(authStore.profile).toBeNull()
+    expect(await tokenStorage.load(campusId)).toBeNull()
+  })
+
+  it("runs authenticated cleanup before removing the campus token", async () => {
+    const campusId = addCampus()
+    const token = createToken(Math.floor(Date.now() / 1_000) + 3_600)
+    setAuthDependenciesForTests(tokenStorage, () => ({
+      createToken: async () => token,
+      getCurrentUser: async () => profile,
+    }))
+    const authStore = useAuthStore()
+    await authStore.signIn({ username: "student", password: "secret" })
+    let tokenAvailableDuringCleanup = false
+    const unregister = registerBeforeCampusSessionClearListener(async (campus) => {
+      tokenAvailableDuringCleanup = Boolean(await tokenStorage.load(campus.id))
+    })
+
+    try {
+      await authStore.signOut()
+    } finally {
+      unregister()
+    }
+
+    expect(tokenAvailableDuringCleanup).toBe(true)
     expect(await tokenStorage.load(campusId)).toBeNull()
   })
 

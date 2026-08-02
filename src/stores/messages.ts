@@ -1,0 +1,317 @@
+import { computed, onScopeDispose, ref } from "vue"
+import { defineStore } from "pinia"
+
+import type { CampusProfile } from "@/domain/campus/types"
+import type {
+  MessageBox,
+  MessageListFilters,
+  MessageWriteInput,
+  MobileMessage,
+  MobileMessageRecipient,
+} from "@/domain/messages/types"
+import { registerCampusSessionDataCleaner } from "@/services/auth/CampusSessionDataCleaner"
+import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
+import {
+  MessagesApiService,
+  MessagesServiceError,
+  type MessagesErrorCode,
+} from "@/services/messages/MessagesApiService"
+import { useAuthStore } from "@/stores/auth"
+import { useCampusStore } from "@/stores/campus"
+
+export type MessagesStatus = "idle" | "loading" | "ready" | "error"
+export type MessagesStoreErrorCode =
+  | MessagesErrorCode
+  | "campus_required"
+  | "offline"
+  | "validation"
+
+export type MessagesApi = Pick<
+  MessagesApiService,
+  "getList" | "getDetail" | "markRead" | "setStarred" | "remove" | "send" | "searchRecipients"
+>
+export type MessagesApiFactory = (campus: CampusProfile) => MessagesApi
+
+let apiFactory: MessagesApiFactory = (campus) =>
+  new MessagesApiService(createAuthenticatedHttpClient(campus))
+
+export function setMessagesApiFactoryForTests(factory: MessagesApiFactory): void {
+  apiFactory = factory
+}
+
+export function resetMessagesApiFactory(): void {
+  apiFactory = (campus) => new MessagesApiService(createAuthenticatedHttpClient(campus))
+}
+
+function mapError(error: unknown): MessagesStoreErrorCode {
+  return error instanceof MessagesServiceError ? error.code : "server"
+}
+
+export const useMessagesStore = defineStore("messages", () => {
+  const listStatus = ref<MessagesStatus>("idle")
+  const detailStatus = ref<MessagesStatus>("idle")
+  const mutationStatus = ref<MessagesStatus>("idle")
+  const recipientStatus = ref<MessagesStatus>("idle")
+  const currentCampusId = ref<string | null>(null)
+  const currentUserId = ref<number | null>(null)
+  const currentBox = ref<MessageBox>("inbox")
+  const items = ref<MobileMessage[]>([])
+  const selectedMessage = ref<MobileMessage | null>(null)
+  const recipients = ref<MobileMessageRecipient[]>([])
+  const errorCode = ref<MessagesStoreErrorCode | null>(null)
+
+  const unreadCount = computed(
+    () => items.value.filter((item) => item.box === "inbox" && !item.read).length,
+  )
+
+  function reset(): void {
+    listStatus.value = "idle"
+    detailStatus.value = "idle"
+    mutationStatus.value = "idle"
+    recipientStatus.value = "idle"
+    currentCampusId.value = null
+    currentUserId.value = null
+    currentBox.value = "inbox"
+    items.value = []
+    selectedMessage.value = null
+    recipients.value = []
+    errorCode.value = null
+  }
+
+  function service(): MessagesApi | null {
+    const campus = useCampusStore().selectedCampus
+    const profile = useAuthStore().profile
+
+    if (!campus) {
+      errorCode.value = "campus_required"
+      return null
+    }
+
+    if (!profile) {
+      errorCode.value = "session_required"
+      return null
+    }
+
+    if (currentCampusId.value !== campus.id || currentUserId.value !== profile.id) {
+      reset()
+      currentCampusId.value = campus.id
+      currentUserId.value = profile.id
+    }
+
+    return apiFactory(campus)
+  }
+
+  async function loadList(
+    box: MessageBox = currentBox.value,
+    filters: MessageListFilters = {},
+  ): Promise<boolean> {
+    const api = service()
+
+    if (!api) {
+      listStatus.value = "error"
+      return false
+    }
+
+    if (globalThis.navigator?.onLine === false) {
+      listStatus.value = "error"
+      errorCode.value = "offline"
+      return false
+    }
+
+    currentBox.value = box
+    listStatus.value = "loading"
+    errorCode.value = null
+
+    try {
+      items.value = await api.getList(box, filters)
+      listStatus.value = "ready"
+      return true
+    } catch (error) {
+      listStatus.value = "error"
+      errorCode.value = mapError(error)
+      return false
+    }
+  }
+
+  async function loadDetail(messageId: number): Promise<boolean> {
+    const api = service()
+
+    if (!api) {
+      detailStatus.value = "error"
+      return false
+    }
+
+    detailStatus.value = "loading"
+    selectedMessage.value = null
+    errorCode.value = null
+
+    try {
+      let message = await api.getDetail(messageId)
+
+      if (message.box === "inbox" && !message.read) {
+        message = await api.markRead(messageId)
+      }
+
+      selectedMessage.value = message
+      detailStatus.value = "ready"
+      replaceItem(message)
+      return true
+    } catch (error) {
+      detailStatus.value = "error"
+      errorCode.value = mapError(error)
+      return false
+    }
+  }
+
+  async function setStarred(message: MobileMessage, starred: boolean): Promise<boolean> {
+    const api = service()
+
+    if (!api) {
+      return false
+    }
+
+    mutationStatus.value = "loading"
+    errorCode.value = null
+
+    try {
+      const updated = await api.setStarred(message.id, starred)
+      replaceItem(updated)
+      selectedMessage.value =
+        selectedMessage.value?.id === updated.id ? updated : selectedMessage.value
+      mutationStatus.value = "ready"
+      return true
+    } catch (error) {
+      mutationStatus.value = "error"
+      errorCode.value = mapError(error)
+      return false
+    }
+  }
+
+  async function remove(messageId: number): Promise<boolean> {
+    const api = service()
+
+    if (!api) {
+      return false
+    }
+
+    mutationStatus.value = "loading"
+    errorCode.value = null
+
+    try {
+      await api.remove(messageId)
+      items.value = items.value.filter((item) => item.id !== messageId)
+
+      if (selectedMessage.value?.id === messageId) {
+        selectedMessage.value = null
+      }
+
+      mutationStatus.value = "ready"
+      return true
+    } catch (error) {
+      mutationStatus.value = "error"
+      errorCode.value = mapError(error)
+      return false
+    }
+  }
+
+  async function send(input: MessageWriteInput): Promise<MobileMessage | null> {
+    const api = service()
+    const title = input.title.trim()
+    const content = input.content.trim()
+
+    if (!api) {
+      return null
+    }
+
+    if (!Number.isInteger(input.recipientId) || input.recipientId <= 0 || !title || !content) {
+      errorCode.value = "validation"
+      return null
+    }
+
+    mutationStatus.value = "loading"
+    errorCode.value = null
+
+    try {
+      const message = await api.send({ ...input, title, content })
+      mutationStatus.value = "ready"
+      return message
+    } catch (error) {
+      mutationStatus.value = "error"
+      errorCode.value = mapError(error)
+      return null
+    }
+  }
+
+  async function searchRecipients(query: string): Promise<boolean> {
+    const api = service()
+    const normalizedQuery = query.trim()
+
+    if (!api || normalizedQuery.length < 2) {
+      recipients.value = []
+      recipientStatus.value = "idle"
+      return false
+    }
+
+    recipientStatus.value = "loading"
+    errorCode.value = null
+
+    try {
+      recipients.value = await api.searchRecipients(normalizedQuery)
+      recipientStatus.value = "ready"
+      return true
+    } catch (error) {
+      recipients.value = []
+      recipientStatus.value = "error"
+      errorCode.value = mapError(error)
+      return false
+    }
+  }
+
+  function clearDetail(): void {
+    selectedMessage.value = null
+    detailStatus.value = "idle"
+    errorCode.value = null
+  }
+
+  function clearRecipients(): void {
+    recipients.value = []
+    recipientStatus.value = "idle"
+  }
+
+  function replaceItem(message: MobileMessage): void {
+    const index = items.value.findIndex((item) => item.id === message.id)
+
+    if (index >= 0) {
+      items.value.splice(index, 1, message)
+    }
+  }
+
+  const unregisterSessionCleaner = registerCampusSessionDataCleaner((campusId) => {
+    if (currentCampusId.value === campusId) {
+      reset()
+    }
+  })
+  onScopeDispose(unregisterSessionCleaner)
+
+  return {
+    listStatus,
+    detailStatus,
+    mutationStatus,
+    recipientStatus,
+    currentBox,
+    items,
+    selectedMessage,
+    recipients,
+    errorCode,
+    unreadCount,
+    loadList,
+    loadDetail,
+    setStarred,
+    remove,
+    send,
+    searchRecipients,
+    clearDetail,
+    clearRecipients,
+    reset,
+  }
+})
