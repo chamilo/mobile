@@ -25,6 +25,7 @@ import LearningPathsView from "@/views/LearningPathsView.vue"
 import SurveysView from "@/views/SurveysView.vue"
 import SurveyDetailView from "@/views/SurveyDetailView.vue"
 import CourseHomeView from "@/views/CourseHomeView.vue"
+import CourseOfflineSetupView from "@/views/CourseOfflineSetupView.vue"
 import CourseLinksView from "@/views/CourseLinksView.vue"
 import DocumentsView from "@/views/DocumentsView.vue"
 import CourseProgressView from "@/views/CourseProgressView.vue"
@@ -36,6 +37,7 @@ import MessagesView from "@/views/MessagesView.vue"
 import MyProgressView from "@/views/MyProgressView.vue"
 import NotebookFormView from "@/views/NotebookFormView.vue"
 import NotebookView from "@/views/NotebookView.vue"
+import OfflineSyncView from "@/views/OfflineSyncView.vue"
 import NotFoundView from "@/views/NotFoundView.vue"
 import ProfileView from "@/views/ProfileView.vue"
 
@@ -101,6 +103,17 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/offline-sync",
+    name: "offline-sync",
+    component: OfflineSyncView,
+    meta: {
+      titleKey: "routes.offlineSync",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
     path: "/messages",
     name: "messages",
     component: MessagesView,
@@ -155,6 +168,25 @@ export const routes: RouteRecordRaw[] = [
     }),
     meta: {
       titleKey: "routes.courseHome",
+      showBottomNavigation: false,
+      requiresCampus: true,
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/courses/:courseId/offline",
+    name: "course-offline-setup",
+    component: CourseOfflineSetupView,
+    props: (route) => ({
+      courseId: String(route.params.courseId),
+      sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
+      membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
+      sessionCourseId:
+        typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
+      source: typeof route.query.source === "string" ? route.query.source : null,
+    }),
+    meta: {
+      titleKey: "routes.courseOfflineSetup",
       showBottomNavigation: false,
       requiresCampus: true,
       requiresAuth: true,
@@ -470,6 +502,8 @@ export const routes: RouteRecordRaw[] = [
       surveyTitle: typeof route.query.surveyTitle === "string" ? route.query.surveyTitle : null,
       mode: typeof route.query.mode === "string" ? route.query.mode : null,
       invitationLpItemId: typeof route.query.lpItemId === "string" ? route.query.lpItemId : null,
+      invitationCode:
+        typeof route.query.invitationCode === "string" ? route.query.invitationCode : null,
       sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
       membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
       sessionCourseId:

@@ -33,23 +33,34 @@ describe("registerNativeAppListeners", () => {
     expect(App.addListener).not.toHaveBeenCalled()
   })
 
-  it("uses router history for the Android back button", async () => {
+  it("uses router history for the Android back button and syncs on resume", async () => {
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true)
-    const remove = vi.fn().mockResolvedValue(undefined)
-    let listener: ((event: { canGoBack: boolean }) => void) | undefined
+    const removeBack = vi.fn().mockResolvedValue(undefined)
+    const removeState = vi.fn().mockResolvedValue(undefined)
+    let backListener: ((event: { canGoBack: boolean }) => void) | undefined
+    let stateListener: ((event: { isActive: boolean }) => void) | undefined
 
-    vi.mocked(App.addListener).mockImplementation(async (_event, callback) => {
-      listener = callback as (event: { canGoBack: boolean }) => void
-      return { remove }
+    vi.mocked(App.addListener).mockImplementation(async (event, callback) => {
+      if (event === "backButton") {
+        backListener = callback as (value: { canGoBack: boolean }) => void
+        return { remove: removeBack }
+      }
+
+      stateListener = callback as (value: { isActive: boolean }) => void
+      return { remove: removeState }
     })
 
     const router = { back: vi.fn() } as unknown as Router
-    const cleanup = await registerNativeAppListeners(router)
+    const onResume = vi.fn()
+    const cleanup = await registerNativeAppListeners(router, onResume)
 
-    listener?.({ canGoBack: true })
+    backListener?.({ canGoBack: true })
+    stateListener?.({ isActive: true })
 
     expect(router.back).toHaveBeenCalledOnce()
+    expect(onResume).toHaveBeenCalledOnce()
     await cleanup()
-    expect(remove).toHaveBeenCalledOnce()
+    expect(removeBack).toHaveBeenCalledOnce()
+    expect(removeState).toHaveBeenCalledOnce()
   })
 })

@@ -23,6 +23,7 @@ export interface SurveySummary {
   canAnswer: boolean
   invitationAnswered: boolean
   invitationLpItemId: number
+  invitationCode: string
   unsupportedReason: string
   openMode: SurveyOpenMode | null
   unavailableReason: "anonymous" | "meeting" | "unsupported" | null
@@ -49,12 +50,37 @@ export interface SurveyQuestion {
   typeLabel: string
   required: boolean
   supported: boolean
+  maxValue: number | null
+  parentQuestionId: number | null
+  parentOptionId: number | null
   options: SurveyOption[]
 }
 
 export interface SurveyPage {
   number: number
   questions: SurveyQuestion[]
+}
+
+export interface SurveyProfileOption {
+  value: string
+  label: string
+}
+
+export interface SurveyProfileField {
+  key: string
+  label: string
+  type: "text" | "textarea" | "select" | "multiselect"
+  inputType: string
+  value: string | string[]
+  required: boolean
+  readOnly: boolean
+  options: SurveyProfileOption[]
+  helpText: string
+}
+
+export interface SurveySettings {
+  backwardsEnabled: boolean
+  allowAnsweredQuestionEdit: boolean
 }
 
 export interface SurveyDetail {
@@ -70,6 +96,8 @@ export interface SurveyDetail {
   availableFrom: string | null
   availableUntil: string | null
   surveyType: number
+  invitationCode: string
+  csrfToken: string
   preview: boolean
   canSubmit: boolean
   isAnswered: boolean
@@ -77,4 +105,29 @@ export interface SurveyDetail {
   message: string
   pages: SurveyPage[]
   answers: Record<string, unknown>
+  profileFields: SurveyProfileField[]
+  settings: SurveySettings
+}
+
+export interface SurveyAnswerDraft {
+  version: 1
+  surveyId: number
+  answers: Record<string, unknown>
+  otherAnswers: Record<string, string>
+  profileValues: Record<string, string | string[]>
+  savedAt: string
+  finalizedAt: string | null
+}
+
+export interface SurveySubmissionPayload {
+  csrfToken: string
+  answers: Record<string, unknown>
+  otherAnswers: Record<string, string>
+  profileValues: Record<string, string | string[]>
+}
+
+export interface SurveyValidationResult {
+  valid: boolean
+  questionErrors: Record<string, string>
+  profileErrors: Record<string, string>
 }

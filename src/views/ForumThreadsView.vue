@@ -100,6 +100,11 @@ async function submitThread(): Promise<void> {
 
   if (!result) return
 
+  if (result.threadId < 0) {
+    resetComposer()
+    return
+  }
+
   const route = buildForumThreadRoute(
     context.value,
     parsedForumId.value,

@@ -18,7 +18,7 @@ import type {
   ForumThreadsCollection,
   ForumWriteResult,
 } from "@/domain/forums/types"
-import type { HttpClient } from "@/services/http/HttpClient"
+import type { HttpClient, HttpRequest } from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
 export type ForumErrorCode =
@@ -188,7 +188,9 @@ export class ForumApiService {
         }),
       ])
 
-      return normalizeForumCollection(categoryResponse.data, forumResponse.data)
+      const collection = normalizeForumCollection(categoryResponse.data, forumResponse.data)
+      await this.getActionToken().catch(() => undefined)
+      return collection
     } catch (error) {
       throw mapError(error)
     }
@@ -236,7 +238,7 @@ export class ForumApiService {
       throw mapError(error)
     }
   }
-  private async getActionToken(): Promise<ForumActionToken> {
+  async getActionToken(): Promise<ForumActionToken> {
     const response = await this.httpClient.request<unknown>({
       method: "GET",
       path: "/api/forum/action-token",
@@ -248,31 +250,71 @@ export class ForumApiService {
     return actionToken(response.data)
   }
 
+  async prepareCreateThreadRequest(
+    context: CourseNavigationContext,
+    forumId: number,
+    input: CreateForumThreadInput,
+  ): Promise<HttpRequest<Record<string, unknown>>> {
+    const token = await this.getActionToken()
+
+    return {
+      method: "POST",
+      path: "/api/forum_threads/create",
+      query: contextQuery(context),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: {
+        forumId: positiveInteger(forumId, "forum id"),
+        title: input.title.trim(),
+        text: input.text.trim(),
+        postNotification: input.postNotification,
+        threadSticky: false,
+        csrfToken: token.token,
+      },
+    }
+  }
+
+  async prepareCreateReplyRequest(
+    context: CourseNavigationContext,
+    forumId: number,
+    threadId: number,
+    input: CreateForumReplyInput,
+  ): Promise<HttpRequest<Record<string, unknown>>> {
+    const token = await this.getActionToken()
+
+    return {
+      method: "POST",
+      path: "/api/forum_posts/reply",
+      query: contextQuery(context),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: {
+        forumId: positiveInteger(forumId, "forum id"),
+        threadId: positiveInteger(threadId, "thread id"),
+        ...(input.parentPostId
+          ? { parentPostId: positiveInteger(input.parentPostId, "parent post id") }
+          : {}),
+        title: input.title.trim(),
+        text: input.text.trim(),
+        postNotification: input.postNotification,
+        csrfToken: token.token,
+      },
+    }
+  }
+
   async createThread(
     context: CourseNavigationContext,
     forumId: number,
     input: CreateForumThreadInput,
   ): Promise<ForumWriteResult> {
     try {
-      const token = await this.getActionToken()
-      const response = await this.httpClient.request<unknown>({
-        method: "POST",
-        path: "/api/forum_threads/create",
-        query: contextQuery(context),
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: {
-          forumId: positiveInteger(forumId, "forum id"),
-          title: input.title.trim(),
-          text: input.text.trim(),
-          postNotification: input.postNotification,
-          threadSticky: false,
-          csrfToken: token.token,
-        },
-      })
-
+      const response = await this.httpClient.request<unknown>(
+        await this.prepareCreateThreadRequest(context, forumId, input),
+      )
       return writeResult(response.data)
     } catch (error) {
       throw mapError(error)
@@ -286,28 +328,9 @@ export class ForumApiService {
     input: CreateForumReplyInput,
   ): Promise<ForumWriteResult> {
     try {
-      const token = await this.getActionToken()
-      const response = await this.httpClient.request<unknown>({
-        method: "POST",
-        path: "/api/forum_posts/reply",
-        query: contextQuery(context),
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: {
-          forumId: positiveInteger(forumId, "forum id"),
-          threadId: positiveInteger(threadId, "thread id"),
-          ...(input.parentPostId
-            ? { parentPostId: positiveInteger(input.parentPostId, "parent post id") }
-            : {}),
-          title: input.title.trim(),
-          text: input.text.trim(),
-          postNotification: input.postNotification,
-          csrfToken: token.token,
-        },
-      })
-
+      const response = await this.httpClient.request<unknown>(
+        await this.prepareCreateReplyRequest(context, forumId, threadId, input),
+      )
       return writeResult(response.data)
     } catch (error) {
       throw mapError(error)

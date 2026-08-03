@@ -2,7 +2,12 @@ import { App } from "@capacitor/app"
 import { Capacitor, type PluginListenerHandle } from "@capacitor/core"
 import type { Router } from "vue-router"
 
-export async function registerNativeAppListeners(router: Router): Promise<() => Promise<void>> {
+export type NativeAppResumeHandler = () => void | Promise<void>
+
+export async function registerNativeAppListeners(
+  router: Router,
+  onResume?: NativeAppResumeHandler,
+): Promise<() => Promise<void>> {
   if (!Capacitor.isNativePlatform()) {
     return async () => undefined
   }
@@ -17,6 +22,12 @@ export async function registerNativeAppListeners(router: Router): Promise<() => 
       }
 
       void App.exitApp()
+    }),
+  )
+
+  handles.push(
+    await App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) void onResume?.()
     }),
   )
 

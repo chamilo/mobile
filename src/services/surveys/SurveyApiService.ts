@@ -1,13 +1,20 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
 import {
   buildSurveyDetailRequest,
+  buildSurveySubmitRequest,
   buildSurveysRequest,
   normalizeSurveyCollection,
   normalizeSurveyDetail,
   SurveyContractError,
 } from "@/domain/surveys/contracts"
-import type { SurveyCollection, SurveyDetail, SurveyOpenMode } from "@/domain/surveys/types"
-import type { HttpClient } from "@/services/http/HttpClient"
+import type {
+  SurveyAnswerDraft,
+  SurveyCollection,
+  SurveyDetail,
+  SurveyOpenMode,
+} from "@/domain/surveys/types"
+import { buildSurveySubmissionPayload } from "@/domain/surveys/answers"
+import type { HttpClient, HttpRequest } from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
 export type SurveyErrorCode =
@@ -17,6 +24,8 @@ export type SurveyErrorCode =
   | "not_found"
   | "network"
   | "timeout"
+  | "validation"
+  | "conflict"
   | "server"
   | "invalid_response"
 
@@ -64,6 +73,14 @@ function mapError(error: unknown): SurveyServiceError {
     return new SurveyServiceError("not_found", error.message, error)
   }
 
+  if (error.kind === "http" && error.status === 409) {
+    return new SurveyServiceError("conflict", error.message, error)
+  }
+
+  if (error.kind === "http" && [400, 422].includes(error.status ?? 0)) {
+    return new SurveyServiceError("validation", error.message, error)
+  }
+
   return new SurveyServiceError("server", error.message, error)
 }
 
@@ -93,9 +110,16 @@ export class SurveyApiService {
     surveyId: number,
     mode: SurveyOpenMode,
     invitationLpItemId = 0,
+    invitationCode = "",
   ): Promise<SurveyDetail> {
     try {
-      const request = buildSurveyDetailRequest(context, surveyId, mode, invitationLpItemId)
+      const request = buildSurveyDetailRequest(
+        context,
+        surveyId,
+        mode,
+        invitationLpItemId,
+        invitationCode,
+      )
       const response = await this.httpClient.request<unknown>({
         method: "GET",
         path: request.path,
@@ -104,6 +128,49 @@ export class SurveyApiService {
           Accept: "application/json",
         },
       })
+
+      return normalizeSurveyDetail(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  buildSubmitRequest(
+    context: CourseNavigationContext,
+    detail: SurveyDetail,
+    draft: SurveyAnswerDraft,
+    invitationLpItemId = 0,
+  ): HttpRequest {
+    const request = buildSurveySubmitRequest(
+      context,
+      detail.id,
+      invitationLpItemId,
+      detail.invitationCode,
+      buildSurveySubmissionPayload(detail, draft),
+    )
+
+    return {
+      method: "POST",
+      path: request.path,
+      query: request.query,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: request.body,
+    }
+  }
+
+  async submitSurvey(
+    context: CourseNavigationContext,
+    detail: SurveyDetail,
+    draft: SurveyAnswerDraft,
+    invitationLpItemId = 0,
+  ): Promise<SurveyDetail> {
+    try {
+      const response = await this.httpClient.request<unknown>(
+        this.buildSubmitRequest(context, detail, draft, invitationLpItemId),
+      )
 
       return normalizeSurveyDetail(response.data)
     } catch (error) {

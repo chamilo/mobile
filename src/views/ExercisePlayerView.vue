@@ -19,6 +19,7 @@ import {
   isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
 import { useCampusStore } from "@/stores/campus"
+import { useConnectivityStore } from "@/stores/connectivity"
 import { useExercisesStore } from "@/stores/exercises"
 
 const props = defineProps<{
@@ -33,6 +34,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const router = useRouter()
 const campusStore = useCampusStore()
+const connectivityStore = useConnectivityStore()
 const store = useExercisesStore()
 const confirmedSavedAnswers = ref(false)
 const remainingSeconds = ref<number | null>(null)
@@ -102,6 +104,7 @@ const campusExerciseUrl = computed(() => {
 const startBlockMessage = computed(() => {
   if (!store.runtime || store.runtime.attempt) return null
   if (store.runtime.canManage) return null
+  if (!connectivityStore.campusAvailable) return t("exercises.offlineAttemptNotPrepared")
   if (!store.runtime.canStartAttempt) return t("exercises.startUnavailable")
   return null
 })
@@ -330,6 +333,7 @@ onBeforeUnmount(() => {
           {{ startBlockMessage }}
         </p>
         <button
+          v-if="connectivityStore.campusAvailable"
           type="button"
           class="mt-4 min-h-touch w-full rounded-xl bg-chamilo-700 px-4 font-semibold text-white disabled:opacity-50"
           :disabled="store.saving || !store.runtime.canStartAttempt"

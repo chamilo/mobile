@@ -2,7 +2,9 @@ import { computed, ref, shallowRef } from "vue"
 import { defineStore } from "pinia"
 
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import type { OfflineHttpWritePayload } from "@/domain/offline/types"
 import {
+  buildLearningPathScormCommitRequest,
   isScormLearningPathItem,
   isSupportedLearningPathItem,
 } from "@/domain/learningPaths/contracts"
@@ -21,11 +23,17 @@ import {
 } from "@/services/learningPaths/LearningPathApiService"
 import {
   appendScormLaunchParameters,
+  buildScormPackageScope,
   MAX_SCORM_PACKAGE_SIZE_BYTES,
   scormPackageHost,
   ScormPackageHostError,
 } from "@/services/learningPaths/ScormPackageHost"
+import { offlineCoreFlowRepository } from "@/services/offline/OfflineCoreFlowRepository"
+import { isOfflineNow } from "@/services/offline/OfflineWriteSupport"
+import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { useConnectivityStore } from "@/stores/connectivity"
+import { useOfflineSyncStore } from "@/stores/offlineSync"
 
 export type LearningPathStatus = "idle" | "loading" | "ready" | "error"
 export type LearningPathActionStatus = "idle" | "opening" | "syncing" | "restarting"
@@ -55,6 +63,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
   const contentBlob = shallowRef<Blob | null>(null)
   const scormEntryUrl = ref("")
   const scormSaving = ref(false)
+  const offlineQueued = ref(false)
   const errorCode = ref<LearningPathStoreErrorCode | null>(null)
   const actionErrorCode = ref<LearningPathStoreErrorCode | null>(null)
   const contentErrorCode = ref<LearningPathStoreErrorCode | null>(null)
@@ -71,6 +80,88 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     const campus = useCampusStore().selectedCampus
 
     return campus ? new LearningPathApiService(createAuthenticatedHttpClient(campus)) : null
+  }
+
+  function activeIdentity(): { campusId: string; userId: number } | null {
+    const campus = useCampusStore().selectedCampus
+    const userId = useAuthStore().profile?.id
+
+    return campus && userId ? { campusId: campus.id, userId } : null
+  }
+
+  function shouldUsePreparedData(): boolean {
+    return isOfflineNow() || !useConnectivityStore().campusAvailable
+  }
+
+  async function loadPreparedItem(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    itemId: number,
+  ) {
+    const identity = activeIdentity()
+    if (!identity) return null
+
+    return offlineCoreFlowRepository
+      .loadLearningPathItem(identity.campusId, identity.userId, context, learningPathId, itemId)
+      .catch(() => null)
+  }
+
+  async function savePreparedItem(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    itemId: number,
+    activeRuntime: LearningPathRuntime,
+    blob: Blob | null = null,
+  ): Promise<void> {
+    const identity = activeIdentity()
+    if (!identity) return
+
+    await offlineCoreFlowRepository
+      .saveLearningPathItem(
+        identity.campusId,
+        identity.userId,
+        context,
+        learningPathId,
+        itemId,
+        activeRuntime,
+        blob,
+      )
+      .catch(() => undefined)
+  }
+
+  async function restorePreparedStart(
+    api: LearningPathApiService,
+    context: CourseNavigationContext,
+    learningPathId: number,
+  ): Promise<boolean> {
+    const prepared = await loadPreparedItem(context, learningPathId, 0)
+    if (!prepared) return false
+
+    runtime.value = structuredClone(prepared.runtime)
+    status.value = "ready"
+    errorCode.value = null
+    const item =
+      prepared.runtime.items.find(({ id }) => id === prepared.runtime.currentItemId) ?? null
+
+    if (isSupportedLearningPathItem(item)) {
+      try {
+        const opened = await openPreparedItem(
+          api,
+          context,
+          learningPathId,
+          prepared.runtime.currentItemId,
+        )
+        if (!opened) {
+          contentErrorCode.value = "unsupported"
+          contentStatus.value = "error"
+        }
+      } catch (error) {
+        contentErrorCode.value = mapError(error)
+        contentStatus.value = "error"
+      }
+    }
+
+    return true
   }
 
   function mapError(error: unknown): LearningPathStoreErrorCode {
@@ -139,20 +230,36 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     return { runtime: previewRuntime, item: previewItem, blob }
   }
 
-  function scormScope(
+  function applyQueuedScormValues(
     context: CourseNavigationContext,
     learningPathId: number,
-    scorm: LearningPathScormRuntime,
-  ): string {
-    const campus = useCampusStore().selectedCampus
+    itemId: number,
+    activeRuntime: LearningPathRuntime,
+  ): LearningPathRuntime {
+    const operation = [...useOfflineSyncStore().operations].reverse().find((candidate) => {
+      if (candidate.type !== "http_write") return false
+      const payload = candidate.payload as OfflineHttpWritePayload
+      const body = payload.request.body as Record<string, unknown> | undefined
+      return (
+        payload.category === "learning_path_scorm_commit" &&
+        Number(body?.itemId) === itemId &&
+        payload.request.path.includes(`/learning_paths/${learningPathId}/`) &&
+        Number(payload.request.query?.cid) === context.courseId
+      )
+    })
 
-    return [
-      campus?.id ?? "campus",
-      scorm.userId,
-      context.courseId,
-      context.sessionId ?? 0,
-      learningPathId,
-    ].join(":")
+    if (!operation || operation.type !== "http_write") return activeRuntime
+    const payload = operation.payload as OfflineHttpWritePayload
+    const clientState = payload.clientState as LearningPathScormCommitPayload | undefined
+    if (!clientState) return activeRuntime
+
+    return {
+      ...activeRuntime,
+      scorm: {
+        ...activeRuntime.scorm,
+        values: { ...activeRuntime.scorm.values, ...clientState.values },
+      },
+    }
   }
 
   async function prepareScormPackage(
@@ -187,7 +294,15 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
       )
     }
 
-    const scope = scormScope(context, learningPathId, scorm)
+    const campus = useCampusStore().selectedCampus
+    if (!campus) {
+      throw new LearningPathServiceError(
+        "session_required",
+        "Select a campus before opening SCORM content.",
+      )
+    }
+
+    const scope = buildScormPackageScope(campus.id, scorm.userId, context, learningPathId)
     const cached = await scormPackageHost.resolve(
       scope,
       scorm.packageFingerprint,
@@ -207,6 +322,52 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     )
 
     return appendScormLaunchParameters(installed, scorm.packageParameters)
+  }
+
+  async function openPreparedItem(
+    api: LearningPathApiService,
+    context: CourseNavigationContext,
+    learningPathId: number,
+    itemId: number,
+  ): Promise<boolean> {
+    const prepared = await loadPreparedItem(context, learningPathId, itemId)
+    if (!prepared) return false
+
+    const item =
+      prepared.runtime.items.find(({ id }) => id === prepared.runtime.currentItemId) ?? null
+    if (!item || !isSupportedLearningPathItem(item)) return false
+
+    if (isScormLearningPathItem(item)) {
+      const activeRuntime = applyQueuedScormValues(
+        context,
+        learningPathId,
+        itemId,
+        structuredClone(prepared.runtime),
+      )
+      const entryUrl = await prepareScormPackage(
+        api,
+        context,
+        learningPathId,
+        itemId,
+        activeRuntime,
+      )
+
+      runtime.value = activeRuntime
+      contentBlob.value = null
+      scormEntryUrl.value = entryUrl
+      contentStatus.value = "ready"
+      contentErrorCode.value = null
+      return true
+    }
+
+    if (!prepared.contentBlob) return false
+
+    runtime.value = structuredClone(prepared.runtime)
+    contentBlob.value = prepared.contentBlob
+    scormEntryUrl.value = ""
+    contentStatus.value = "ready"
+    contentErrorCode.value = null
+    return true
   }
 
   async function openItemWithService(
@@ -229,7 +390,21 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     contentStatus.value = "loading"
 
     try {
+      if (
+        shouldUsePreparedData() &&
+        (await openPreparedItem(api, context, learningPathId, itemId))
+      ) {
+        return true
+      }
+
       const previewRuntime = await api.getRuntime(context, learningPathId, itemId)
+      if (
+        !useConnectivityStore().campusAvailable &&
+        (await openPreparedItem(api, context, learningPathId, itemId))
+      ) {
+        return true
+      }
+
       const previewItem =
         previewRuntime.items.find(({ id }) => id === previewRuntime.currentItemId) ?? null
 
@@ -247,17 +422,28 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
           currentRuntime.items.find(({ id }) => id === currentRuntime.currentItemId),
         )
       ) {
-        await api.sync(
-          context,
-          learningPathId,
-          currentRuntime.currentItemId,
-          currentRuntime.actionToken,
-        )
+        if (useConnectivityStore().campusAvailable) {
+          await api.sync(
+            context,
+            learningPathId,
+            currentRuntime.currentItemId,
+            currentRuntime.actionToken,
+          )
+        } else {
+          await queueRegularSync(context, learningPathId, currentRuntime)
+        }
       }
 
       if (isScormLearningPathItem(previewItem)) {
-        await api.openItem(context, learningPathId, itemId, previewRuntime.actionToken)
-        const activeRuntime = await api.getRuntime(context, learningPathId, itemId)
+        let activeRuntime = previewRuntime
+
+        if (useConnectivityStore().campusAvailable) {
+          await api.openItem(context, learningPathId, itemId, previewRuntime.actionToken)
+          activeRuntime = await api.getRuntime(context, learningPathId, itemId)
+        } else {
+          activeRuntime = applyQueuedScormValues(context, learningPathId, itemId, activeRuntime)
+        }
+
         const entryUrl = await prepareScormPackage(
           api,
           context,
@@ -270,6 +456,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         contentBlob.value = null
         scormEntryUrl.value = entryUrl
         contentStatus.value = "ready"
+        await savePreparedItem(context, learningPathId, itemId, activeRuntime)
         return true
       }
 
@@ -280,15 +467,35 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         return false
       }
 
-      await api.openItem(context, learningPathId, itemId, prepared.runtime.actionToken)
-      await loadRuntime(api, context, learningPathId, itemId)
+      if (useConnectivityStore().campusAvailable) {
+        await api.openItem(context, learningPathId, itemId, prepared.runtime.actionToken)
+        await loadRuntime(api, context, learningPathId, itemId)
+      } else {
+        runtime.value = prepared.runtime
+      }
       scormEntryUrl.value = ""
       contentBlob.value = prepared.blob
       contentStatus.value = "ready"
+      await savePreparedItem(
+        context,
+        learningPathId,
+        itemId,
+        runtime.value ?? prepared.runtime,
+        prepared.blob,
+      )
 
       return true
     } catch (error) {
-      contentErrorCode.value = mapError(error)
+      try {
+        if (await openPreparedItem(api, context, learningPathId, itemId)) {
+          actionErrorCode.value = null
+          return true
+        }
+      } catch (preparedError) {
+        contentErrorCode.value = mapError(preparedError)
+      }
+
+      contentErrorCode.value = contentErrorCode.value ?? mapError(error)
       actionErrorCode.value = error instanceof LearningPathServiceError ? mapError(error) : null
       contentStatus.value = contentBlob.value || scormEntryUrl.value ? "ready" : "error"
       return false
@@ -312,7 +519,19 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     clearContent()
 
     try {
+      if (shouldUsePreparedData() && (await restorePreparedStart(api, context, learningPathId))) {
+        return true
+      }
+
       const initialRuntime = await loadRuntime(api, context, learningPathId)
+      if (
+        !useConnectivityStore().campusAvailable &&
+        (await restorePreparedStart(api, context, learningPathId))
+      ) {
+        return true
+      }
+
+      await savePreparedItem(context, learningPathId, 0, initialRuntime)
       status.value = "ready"
       const item =
         initialRuntime.items.find(({ id }) => id === initialRuntime.currentItemId) ?? null
@@ -323,6 +542,8 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
 
       return true
     } catch (error) {
+      if (await restorePreparedStart(api, context, learningPathId)) return true
+
       errorCode.value = mapError(error)
       status.value = "error"
       return false
@@ -342,6 +563,24 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     }
 
     return openItemWithService(api, context, learningPathId, itemId, true)
+  }
+
+  async function queueRegularSync(
+    context: CourseNavigationContext,
+    learningPathId: number,
+    activeRuntime: LearningPathRuntime,
+    uncertainDelivery = false,
+  ): Promise<boolean> {
+    const queued = await useOfflineSyncStore().enqueueLearningPathSync({
+      context,
+      learningPathId,
+      itemId: activeRuntime.currentItemId,
+      actionToken: activeRuntime.actionToken,
+      uncertainDelivery,
+    })
+
+    offlineQueued.value = queued
+    return queued
   }
 
   async function performSync(
@@ -366,12 +605,27 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
 
     try {
       if (!currentItemIsScorm.value) {
-        await api.sync(
-          context,
-          learningPathId,
-          currentRuntime.currentItemId,
-          currentRuntime.actionToken,
-        )
+        if (!useConnectivityStore().campusAvailable) {
+          return queueRegularSync(context, learningPathId, currentRuntime)
+        }
+
+        try {
+          await api.sync(
+            context,
+            learningPathId,
+            currentRuntime.currentItemId,
+            currentRuntime.actionToken,
+          )
+          offlineQueued.value = false
+        } catch (error) {
+          const mappedError = mapError(error)
+
+          if (mappedError === "network" || mappedError === "timeout") {
+            return queueRegularSync(context, learningPathId, currentRuntime, true)
+          }
+
+          throw error
+        }
       }
 
       if (refreshRuntime) {
@@ -417,10 +671,54 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     scormSaving.value = true
     actionErrorCode.value = null
 
+    const queueCommit = async (uncertainDelivery = false): Promise<boolean> => {
+      const request = buildLearningPathScormCommitRequest(context, learningPathId)
+      return useOfflineSyncStore().enqueueHttpWrite({
+        category: "learning_path_scorm_commit",
+        description: `SCORM progress for learning path ${learningPathId}`,
+        dedupeKey: `lp:${learningPathId}:item:${itemId}:scorm`,
+        uncertainDelivery,
+        clientState: structuredClone(payload),
+        request: {
+          method: "POST",
+          path: request.path,
+          query: request.query,
+          headers: {
+            Accept: "application/ld+json",
+            "Content-Type": "application/json",
+          },
+          body: {
+            itemId,
+            itemViewId: scorm.itemViewId,
+            version: scorm.version,
+            values: payload.values,
+            changedKeys: payload.changedKeys,
+            terminated: payload.terminated,
+            reason: payload.reason,
+            csrfToken: actionToken,
+          },
+        },
+      })
+    }
+
     try {
+      if (!useConnectivityStore().campusAvailable) {
+        const queued = await queueCommit()
+        if (!queued) {
+          throw new LearningPathServiceError("server", "SCORM progress could not be queued.")
+        }
+        offlineQueued.value = true
+        return
+      }
+
       await api.commitScorm(context, learningPathId, itemId, scorm, actionToken, payload)
+      offlineQueued.value = false
     } catch (error) {
-      actionErrorCode.value = mapError(error)
+      const mappedError = mapError(error)
+      if (mappedError === "network" || mappedError === "timeout") {
+        await queueCommit(true)
+      }
+      actionErrorCode.value = mappedError
       throw error
     } finally {
       scormSaving.value = false
@@ -506,6 +804,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     contentBlob.value = null
     scormEntryUrl.value = ""
     scormSaving.value = false
+    offlineQueued.value = false
     errorCode.value = null
     actionErrorCode.value = null
     contentErrorCode.value = null
@@ -520,6 +819,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     contentBlob,
     scormEntryUrl,
     scormSaving,
+    offlineQueued,
     errorCode,
     actionErrorCode,
     contentErrorCode,

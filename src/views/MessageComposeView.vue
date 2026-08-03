@@ -79,6 +79,11 @@ async function submit(): Promise<void> {
   })
 
   if (message) {
+    if (message.id < 0) {
+      await router.replace({ name: "messages", query: { box: "sent" } })
+      return
+    }
+
     await router.replace({
       name: "message-detail",
       params: { messageId: message.id },

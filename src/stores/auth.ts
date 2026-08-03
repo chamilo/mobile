@@ -15,41 +15,48 @@ import {
   notifyAuthenticatedCampusSession,
   notifyBeforeCampusSessionClear,
 } from "@/services/auth/AuthSessionLifecycle"
-import { createTokenStorage } from "@/services/auth/createTokenStorage"
 import { clearCampusSessionData } from "@/services/auth/CampusSessionDataCleaner"
+import { createTokenStorage } from "@/services/auth/createTokenStorage"
 import type { TokenStorage } from "@/services/auth/TokenStorage"
 import { TokenStorageError } from "@/services/auth/TokenStorage"
 import { createHttpClient } from "@/services/http/createHttpClient"
+import {
+  clearOfflineSessionUser,
+  setOfflineSessionUser,
+} from "@/services/offline/OfflineSessionContext"
+import {
+  offlineProfileRepository,
+  type OfflineProfileRepository,
+} from "@/services/offline/OfflineProfileRepository"
 import { useCampusStore } from "@/stores/campus"
 
 export type AuthApi = Pick<AuthApiService, "createToken" | "getCurrentUser">
 export type AuthApiFactory = (campus: CampusProfile) => AuthApi
+export type AuthSessionMode = "online" | "offline" | null
 
 let tokenStorage: TokenStorage = createTokenStorage()
 let authApiFactory: AuthApiFactory = (campus) => new AuthApiService(createHttpClient(campus))
+let profileRepository: OfflineProfileRepository = offlineProfileRepository
 
 export function setAuthDependenciesForTests(
   testTokenStorage: TokenStorage,
   testAuthApiFactory: AuthApiFactory,
+  testProfileRepository: OfflineProfileRepository = offlineProfileRepository,
 ): void {
   tokenStorage = testTokenStorage
   authApiFactory = testAuthApiFactory
+  profileRepository = testProfileRepository
 }
 
 export function resetAuthDependencies(): void {
   tokenStorage = createTokenStorage()
   authApiFactory = (campus) => new AuthApiService(createHttpClient(campus))
+  profileRepository = offlineProfileRepository
 }
 
 function mapAuthError(error: unknown): AuthErrorCode {
-  if (error instanceof AuthServiceError) {
-    return error.code
-  }
-
-  if (error instanceof JwtParseError) {
-    return "invalid_response"
-  }
-
+  if (error instanceof AuthServiceError) return error.code
+  if (error instanceof JwtParseError) return "invalid_response"
   if (error instanceof TokenStorageError) {
     return error.kind === "unsupported" ? "unsupported" : "storage_failed"
   }
@@ -57,22 +64,38 @@ function mapAuthError(error: unknown): AuthErrorCode {
   return "server"
 }
 
+function canRestoreOffline(errorCode: AuthErrorCode): boolean {
+  return errorCode === "network" || errorCode === "timeout"
+}
+
 export const useAuthStore = defineStore("auth", () => {
   const status = ref<AuthStatus>("idle")
   const currentCampusId = ref<string | null>(null)
   const profile = ref<CurrentUserProfile | null>(null)
+  const sessionMode = ref<AuthSessionMode>(null)
   const errorCode = ref<AuthErrorCode | null>(null)
 
   const isAuthenticated = computed(
     () =>
       status.value === "authenticated" && profile.value !== null && currentCampusId.value !== null,
   )
+  const isOfflineSession = computed(() => isAuthenticated.value && sessionMode.value === "offline")
 
   function clearActiveState(): void {
+    const previousCampusId = currentCampusId.value
     status.value = "idle"
     currentCampusId.value = null
     profile.value = null
+    sessionMode.value = null
     errorCode.value = null
+
+    if (previousCampusId) {
+      clearOfflineSessionUser(previousCampusId)
+    }
+  }
+
+  async function cacheProfile(campusId: string, currentUser: CurrentUserProfile): Promise<void> {
+    await profileRepository.save(campusId, currentUser).catch(() => undefined)
   }
 
   async function signIn(credentials: AuthCredentials): Promise<boolean> {
@@ -83,13 +106,13 @@ export const useAuthStore = defineStore("auth", () => {
       clearActiveState()
       status.value = "error"
       errorCode.value = "campus_required"
-
       return false
     }
 
     status.value = "authenticating"
     errorCode.value = null
     profile.value = null
+    sessionMode.value = null
     currentCampusId.value = campus.id
 
     try {
@@ -104,8 +127,11 @@ export const useAuthStore = defineStore("auth", () => {
       const currentUser = await api.getCurrentUser(token)
 
       await tokenStorage.save(campus.id, { token, expiresAt })
+      await cacheProfile(campus.id, currentUser)
 
       profile.value = currentUser
+      setOfflineSessionUser(campus.id, currentUser.id)
+      sessionMode.value = "online"
       status.value = "authenticated"
       errorCode.value = null
       void notifyAuthenticatedCampusSession(campus, currentUser.id)
@@ -114,9 +140,10 @@ export const useAuthStore = defineStore("auth", () => {
     } catch (error) {
       await tokenStorage.remove(campus.id).catch(() => undefined)
       profile.value = null
+      clearOfflineSessionUser(campus.id)
+      sessionMode.value = null
       status.value = "error"
       errorCode.value = mapAuthError(error)
-
       return false
     }
   }
@@ -127,17 +154,15 @@ export const useAuthStore = defineStore("auth", () => {
 
     if (!campus) {
       clearActiveState()
-
       return false
     }
 
-    if (isAuthenticated.value && currentCampusId.value === campus.id) {
-      return true
-    }
+    if (isAuthenticated.value && currentCampusId.value === campus.id) return true
 
     status.value = "restoring"
     errorCode.value = null
     profile.value = null
+    sessionMode.value = null
     currentCampusId.value = campus.id
 
     try {
@@ -145,7 +170,6 @@ export const useAuthStore = defineStore("auth", () => {
 
       if (!storedToken) {
         clearActiveState()
-
         return false
       }
 
@@ -156,18 +180,38 @@ export const useAuthStore = defineStore("auth", () => {
         status.value = "error"
         errorCode.value = "session_expired"
         currentCampusId.value = campus.id
-
         return false
       }
 
-      const currentUser = await authApiFactory(campus).getCurrentUser(storedToken.token)
+      try {
+        const currentUser = await authApiFactory(campus).getCurrentUser(storedToken.token)
+        await cacheProfile(campus.id, currentUser)
 
-      profile.value = currentUser
-      status.value = "authenticated"
-      errorCode.value = null
-      void notifyAuthenticatedCampusSession(campus, currentUser.id)
+        profile.value = currentUser
+        setOfflineSessionUser(campus.id, currentUser.id)
+        sessionMode.value = "online"
+        status.value = "authenticated"
+        errorCode.value = null
+        void notifyAuthenticatedCampusSession(campus, currentUser.id)
+        return true
+      } catch (error) {
+        const mappedError = mapAuthError(error)
 
-      return true
+        if (canRestoreOffline(mappedError)) {
+          const cachedProfile = await profileRepository.load(campus.id).catch(() => null)
+
+          if (cachedProfile) {
+            profile.value = cachedProfile.profile
+            setOfflineSessionUser(campus.id, cachedProfile.profile.id)
+            sessionMode.value = "offline"
+            status.value = "authenticated"
+            errorCode.value = null
+            return true
+          }
+        }
+
+        throw error
+      }
     } catch (error) {
       const mappedError = mapAuthError(error)
 
@@ -178,9 +222,10 @@ export const useAuthStore = defineStore("auth", () => {
       }
 
       profile.value = null
+      clearOfflineSessionUser(campus.id)
+      sessionMode.value = null
       status.value = "error"
       errorCode.value = mappedError
-
       return false
     }
   }
@@ -188,15 +233,12 @@ export const useAuthStore = defineStore("auth", () => {
   async function signOut(): Promise<void> {
     const campusStore = useCampusStore()
     const campusId = currentCampusId.value ?? campusStore.selectedCampusId
-    const campus = campusStore.profiles.find((profile) => profile.id === campusId)
+    const campus = campusStore.profiles.find((candidate) => candidate.id === campusId)
     let storageError: unknown = null
 
     if (campusId) {
       try {
-        if (campus) {
-          await notifyBeforeCampusSessionClear(campus)
-        }
-
+        if (campus) await notifyBeforeCampusSessionClear(campus)
         await tokenStorage.remove(campusId)
         await clearCampusSessionData(campusId)
       } catch (error) {
@@ -214,24 +256,17 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function clearCampusSession(campusId: string): Promise<boolean> {
     try {
-      const campus = useCampusStore().profiles.find((profile) => profile.id === campusId)
+      const campus = useCampusStore().profiles.find((candidate) => candidate.id === campusId)
 
-      if (campus) {
-        await notifyBeforeCampusSessionClear(campus)
-      }
-
+      if (campus) await notifyBeforeCampusSessionClear(campus)
       await tokenStorage.remove(campusId)
       await clearCampusSessionData(campusId)
 
-      if (currentCampusId.value === campusId) {
-        clearActiveState()
-      }
-
+      if (currentCampusId.value === campusId) clearActiveState()
       return true
     } catch (error) {
       status.value = "error"
       errorCode.value = mapAuthError(error)
-
       return false
     }
   }
@@ -243,18 +278,17 @@ export const useAuthStore = defineStore("auth", () => {
 
   function clearError(): void {
     errorCode.value = null
-
-    if (status.value === "error") {
-      status.value = "idle"
-    }
+    if (status.value === "error") status.value = "idle"
   }
 
   return {
     status,
     currentCampusId,
     profile,
+    sessionMode,
     errorCode,
     isAuthenticated,
+    isOfflineSession,
     signIn,
     ensureSession,
     signOut,

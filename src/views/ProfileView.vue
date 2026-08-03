@@ -6,6 +6,7 @@ import { useRouter } from "vue-router"
 
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { useOfflineSyncStore } from "@/stores/offlineSync"
 import { usePushNotificationsStore } from "@/stores/pushNotifications"
 
 const { t } = useI18n()
@@ -13,6 +14,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const campusStore = useCampusStore()
 const pushNotificationsStore = usePushNotificationsStore()
+const offlineSyncStore = useOfflineSyncStore()
 const { profile } = storeToRefs(authStore)
 const { selectedCampus } = storeToRefs(campusStore)
 const {
@@ -140,6 +142,38 @@ async function logout(): Promise<void> {
         {{ pushErrorCode ? t("notifications.retry") : t("notifications.enable") }}
       </button>
     </section>
+
+    <RouterLink
+      :to="{ name: 'offline-sync' }"
+      class="flex min-h-touch w-full items-center justify-between gap-3 rounded-2xl bg-white p-5 shadow-sm"
+    >
+      <span class="flex items-center gap-3">
+        <span
+          class="text-chamilo-800 flex size-11 items-center justify-center rounded-xl bg-chamilo-100"
+          aria-hidden="true"
+        >
+          <i class="pi pi-cloud-upload text-lg" />
+        </span>
+        <span class="text-left">
+          <span class="block font-semibold text-slate-900">{{ t("offlineSync.title") }}</span>
+          <span class="mt-1 block text-sm text-slate-600">
+            {{
+              t("profile.offlineSummary", {
+                pending: offlineSyncStore.pendingCount,
+                issues: offlineSyncStore.issueCount,
+              })
+            }}
+          </span>
+          <span
+            v-if="authStore.isOfflineSession"
+            class="mt-1 block text-xs font-semibold text-amber-700"
+          >
+            {{ t("profile.offlineSession") }}
+          </span>
+        </span>
+      </span>
+      <i class="pi pi-chevron-right text-slate-400" aria-hidden="true" />
+    </RouterLink>
 
     <RouterLink
       :to="{ name: 'campuses' }"

@@ -120,9 +120,12 @@ async function submitReply(): Promise<void> {
 
   if (!result) return
 
-  const publishedMessage = result.requiresApproval
-    ? t("forums.write.pendingApproval")
-    : t("forums.write.replyPublished")
+  const publishedMessage =
+    result.postId < 0
+      ? t("offlineSync.savedForSync")
+      : result.requiresApproval
+        ? t("forums.write.pendingApproval")
+        : t("forums.write.replyPublished")
 
   closeComposer()
   successMessage.value = publishedMessage

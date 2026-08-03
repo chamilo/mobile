@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { mount, RouterLinkStub } from "@vue/test-utils"
+import { createPinia } from "pinia"
 
 import CourseCard from "@/components/courses/CourseCard.vue"
 import { i18n } from "@/i18n"
@@ -43,7 +44,7 @@ describe("CourseCard", () => {
         campusBaseUrl: "https://campus.example.org",
       },
       global: {
-        plugins: [i18n],
+        plugins: [createPinia(), i18n],
         stubs: { RouterLink: RouterLinkStub },
       },
     })
@@ -64,7 +65,7 @@ describe("CourseCard", () => {
         campusBaseUrl: "https://campus.example.org",
       },
       global: {
-        plugins: [i18n],
+        plugins: [createPinia(), i18n],
         stubs: { RouterLink: RouterLinkStub },
       },
     })
