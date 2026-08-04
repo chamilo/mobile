@@ -6,11 +6,14 @@ import CourseUnavailableState from "@/components/courseHome/CourseUnavailableSta
 import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
+import SurveyProfileFieldInput from "@/components/surveys/SurveyProfileFieldInput.vue"
+import SurveyQuestionInput from "@/components/surveys/SurveyQuestionInput.vue"
 import {
   buildSurveysRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import { isSurveyQuestionVisible } from "@/domain/surveys/answers"
 import { formatRecordedAnswers } from "@/domain/surveys/contracts"
 import type { SurveyOpenMode, SurveyQuestion } from "@/domain/surveys/types"
 import { useSurveysStore } from "@/stores/surveys"
@@ -21,6 +24,7 @@ const props = defineProps<{
   surveyTitle: string | null
   mode: string | null
   invitationLpItemId: string | null
+  invitationCode: string | null
   sessionId: string | null
   membershipId: string | null
   sessionCourseId: string | null
@@ -58,8 +62,22 @@ const parsedInvitationLpItemId = computed(() => {
 const usableContext = computed(
   () => context.value && parsedSurveyId.value !== null && parsedMode.value !== null,
 )
-
+const editable = computed(
+  () =>
+    Boolean(store.detail.data?.canSubmit) &&
+    !store.detail.data?.preview &&
+    Boolean(store.detail.draft) &&
+    !store.detail.draft?.finalizedAt,
+)
+const pendingSubmission = computed(() => store.detail.submitStatus === "queued")
+const submitBusy = computed(() => store.detail.submitStatus === "saving")
 const errorDescription = computed(() => t(`surveys.errors.${store.detail.errorCode ?? "server"}`))
+const visibleQuestionCount = computed(
+  () =>
+    store.detail.data?.pages
+      .flatMap((page) => page.questions)
+      .filter((question) => isVisible(question)).length ?? 0,
+)
 
 function formatDate(value: string | null): string {
   if (!value) return ""
@@ -77,6 +95,47 @@ function answersFor(question: SurveyQuestion): string[] {
   return store.detail.data ? formatRecordedAnswers(question, store.detail.data.answers) : []
 }
 
+function answerValue(questionId: number): unknown {
+  return store.detail.draft?.answers[String(questionId)]
+}
+
+function otherValue(questionId: number): string {
+  return store.detail.draft?.otherAnswers[String(questionId)] ?? ""
+}
+
+function profileValue(key: string): string | string[] {
+  return store.detail.draft?.profileValues[key] ?? ""
+}
+
+function isVisible(question: SurveyQuestion): boolean {
+  return store.detail.draft ? isSurveyQuestionVisible(question, store.detail.draft.answers) : true
+}
+
+function questionNumber(question: SurveyQuestion): number {
+  const questions = store.detail.data?.pages.flatMap((page) => page.questions) ?? []
+  return questions.filter(isVisible).findIndex((candidate) => candidate.id === question.id) + 1
+}
+
+async function updateAnswer(questionId: number, value: unknown): Promise<void> {
+  if (!context.value) return
+  await store.setAnswer(context.value, questionId, value, parsedInvitationLpItemId.value)
+}
+
+async function updateOtherAnswer(questionId: number, value: string): Promise<void> {
+  if (!context.value) return
+  await store.setOtherAnswer(context.value, questionId, value, parsedInvitationLpItemId.value)
+}
+
+async function updateProfileValue(key: string, value: string | string[]): Promise<void> {
+  if (!context.value) return
+  await store.setProfileValue(context.value, key, value, parsedInvitationLpItemId.value)
+}
+
+async function submit(): Promise<void> {
+  if (!context.value) return
+  await store.submitSurvey(context.value, parsedInvitationLpItemId.value)
+}
+
 async function load(): Promise<void> {
   if (context.value && parsedSurveyId.value !== null && parsedMode.value !== null) {
     await store.loadSurvey(
@@ -84,6 +143,7 @@ async function load(): Promise<void> {
       parsedSurveyId.value,
       parsedMode.value,
       parsedInvitationLpItemId.value,
+      props.invitationCode ?? "",
     )
   }
 }
@@ -146,7 +206,7 @@ onMounted(load)
             {{ t("surveys.badges.preview") }}
           </span>
           <span
-            v-if="store.detail.data.isAnswered"
+            v-if="store.detail.data.isAnswered || store.detail.submitStatus === 'submitted'"
             class="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-900"
           >
             {{ t("surveys.badges.answered") }}
@@ -167,33 +227,51 @@ onMounted(load)
 
         <dl class="mt-4 space-y-2 text-sm">
           <div v-if="store.detail.data.availableFrom" class="flex flex-wrap justify-between gap-2">
-            <dt class="font-medium text-slate-600">
-              {{ t("surveys.detail.availableFrom") }}
-            </dt>
+            <dt class="font-medium text-slate-600">{{ t("surveys.detail.availableFrom") }}</dt>
             <dd class="text-right text-slate-800">
               {{ formatDate(store.detail.data.availableFrom) }}
             </dd>
           </div>
           <div v-if="store.detail.data.availableUntil" class="flex flex-wrap justify-between gap-2">
-            <dt class="font-medium text-slate-600">
-              {{ t("surveys.detail.availableUntil") }}
-            </dt>
+            <dt class="font-medium text-slate-600">{{ t("surveys.detail.availableUntil") }}</dt>
             <dd class="text-right text-slate-800">
               {{ formatDate(store.detail.data.availableUntil) }}
             </dd>
+          </div>
+          <div class="flex flex-wrap justify-between gap-2">
+            <dt class="font-medium text-slate-600">{{ t("surveys.detail.questions") }}</dt>
+            <dd class="text-right text-slate-800">{{ visibleQuestionCount }}</dd>
           </div>
         </dl>
       </section>
 
       <div
+        v-if="pendingSubmission"
+        class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+        role="status"
+      >
+        {{ t("surveys.detail.queuedNotice") }}
+      </div>
+      <div
+        v-else-if="store.detail.submitStatus === 'submitted' || store.detail.data.isFinished"
+        class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+        role="status"
+      >
+        {{ t("surveys.detail.submittedNotice") }}
+      </div>
+      <div
+        v-else-if="editable"
         class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900"
         role="status"
       >
-        {{
-          store.detail.data.canSubmit
-            ? t("surveys.detail.pendingReadOnlyNotice")
-            : t("surveys.detail.readOnlyNotice")
-        }}
+        {{ t("surveys.detail.offlineAnswerNotice") }}
+      </div>
+      <div
+        v-else
+        class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700"
+        role="status"
+      >
+        {{ t("surveys.detail.readOnlyNotice") }}
       </div>
 
       <p
@@ -202,6 +280,25 @@ onMounted(load)
       >
         {{ store.detail.data.message }}
       </p>
+
+      <section
+        v-if="editable && store.detail.data.profileFields.length"
+        class="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div>
+          <h2 class="font-semibold text-slate-900">{{ t("surveys.detail.profileTitle") }}</h2>
+          <p class="mt-1 text-sm text-slate-600">{{ t("surveys.detail.profileDescription") }}</p>
+        </div>
+        <SurveyProfileFieldInput
+          v-for="field in store.detail.data.profileFields"
+          :key="field.key"
+          :field="field"
+          :model-value="profileValue(field.key)"
+          :disabled="submitBusy"
+          :error="store.detail.validationProfileErrors[field.key] ?? ''"
+          @update:model-value="updateProfileValue(field.key, $event)"
+        />
+      </section>
 
       <div v-if="store.detail.data.pages.length" class="space-y-6">
         <section v-for="page in store.detail.data.pages" :key="page.number" class="space-y-3">
@@ -218,14 +315,14 @@ onMounted(load)
           </h2>
 
           <article
-            v-for="(question, questionIndex) in page.questions"
+            v-for="question in page.questions.filter(isVisible)"
             :key="question.id"
             class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
           >
             <div class="flex flex-wrap items-start justify-between gap-3">
               <h3 class="min-w-0 flex-1 break-words font-semibold text-slate-900">
                 <span v-if="store.detail.data.displayQuestionNumber">
-                  {{ questionIndex + 1 }}.
+                  {{ questionNumber(question) }}.
                 </span>
                 {{ question.text }}
               </h3>
@@ -248,22 +345,36 @@ onMounted(load)
               {{ question.typeLabel }}
             </p>
 
-            <div v-if="answersFor(question).length" class="mt-3 space-y-2">
-              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {{ t("surveys.detail.recordedAnswer") }}
-              </p>
-              <p
-                v-for="answer in answersFor(question)"
-                :key="answer"
-                class="whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-800"
-              >
-                {{ answer }}
-              </p>
-            </div>
+            <SurveyQuestionInput
+              v-if="editable && question.supported"
+              :question="question"
+              :model-value="answerValue(question.id)"
+              :other-value="otherValue(question.id)"
+              :disabled="submitBusy"
+              :error="store.detail.validationQuestionErrors[String(question.id)] ?? ''"
+              name-prefix="surveyAnswers"
+              @update:model-value="updateAnswer(question.id, $event)"
+              @update:other-value="updateOtherAnswer(question.id, $event)"
+            />
 
-            <p v-else class="mt-3 text-sm text-slate-500">
-              {{ t("surveys.detail.noRecordedAnswer") }}
-            </p>
+            <template v-else>
+              <div v-if="answersFor(question).length" class="mt-3 space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {{ t("surveys.detail.recordedAnswer") }}
+                </p>
+                <p
+                  v-for="answer in answersFor(question)"
+                  :key="answer"
+                  class="whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-800"
+                >
+                  {{ answer }}
+                </p>
+              </div>
+
+              <p v-else class="mt-3 text-sm text-slate-500">
+                {{ t("surveys.detail.noRecordedAnswer") }}
+              </p>
+            </template>
 
             <p v-if="!question.supported" class="mt-3 text-sm font-medium text-amber-800">
               {{ t("surveys.detail.unsupportedQuestion") }}
@@ -278,10 +389,30 @@ onMounted(load)
         :description="t('surveys.detail.emptyQuestionsDescription')"
       />
 
+      <section v-if="editable" class="rounded-2xl bg-white p-4 shadow-sm">
+        <p v-if="store.detail.draft?.savedAt" class="text-xs text-slate-500">
+          {{ t("surveys.detail.draftSaved", { date: formatDate(store.detail.draft.savedAt) }) }}
+        </p>
+        <p
+          v-if="store.detail.submitStatus === 'error' && store.detail.errorCode"
+          class="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-800"
+          role="alert"
+        >
+          {{ errorDescription }}
+        </p>
+        <button
+          type="button"
+          class="mt-3 flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white disabled:opacity-50"
+          :disabled="submitBusy"
+          @click="submit"
+        >
+          <i class="pi pi-send" aria-hidden="true" />
+          {{ submitBusy ? t("surveys.detail.saving") : t("surveys.detail.submit") }}
+        </button>
+      </section>
+
       <section v-if="store.detail.data.thanks" class="rounded-2xl bg-white p-4 shadow-sm">
-        <h2 class="font-semibold text-slate-900">
-          {{ t("surveys.detail.thanksTitle") }}
-        </h2>
+        <h2 class="font-semibold text-slate-900">{{ t("surveys.detail.thanksTitle") }}</h2>
         <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
           {{ store.detail.data.thanks }}
         </p>

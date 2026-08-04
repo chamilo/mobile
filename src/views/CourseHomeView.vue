@@ -3,6 +3,7 @@ import { computed, onMounted } from "vue"
 import { useI18n } from "vue-i18n"
 
 import CourseHeader from "@/components/courseHome/CourseHeader.vue"
+import CourseOfflineCard from "@/components/courseHome/CourseOfflineCard.vue"
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
 import ToolCard from "@/components/courseHome/ToolCard.vue"
 import EmptyState from "@/components/states/EmptyState.vue"
@@ -108,6 +109,8 @@ onMounted(() => {
 
   <div v-else class="space-y-5">
     <CourseHeader :entry="entry" :campus-base-url="campusStore.selectedCampus?.baseUrl ?? null" />
+
+    <CourseOfflineCard :entry="entry" />
 
     <section aria-labelledby="course-tools-title">
       <div class="mb-3">

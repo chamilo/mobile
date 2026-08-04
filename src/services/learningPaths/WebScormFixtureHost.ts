@@ -200,6 +200,11 @@ export class WebScormFixtureHost implements ScormPackageHost {
 
     return new URL(resolved.url, window.location.origin).toString()
   }
+
+  async remove(scope: string): Promise<void> {
+    void scope
+    // Local Vite fixtures are application assets, not downloaded course data.
+  }
 }
 
 export const webScormFixtureHost = new WebScormFixtureHost()

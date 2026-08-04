@@ -29,7 +29,6 @@ public class ChamiloScormPackagePlugin extends Plugin {
     private static final long MAX_UNCOMPRESSED_SIZE = 1024L * 1024L * 1024L;
     private static final int BUFFER_SIZE = 64 * 1024;
 
-
     @PluginMethod
     public void status(PluginCall call) {
         JSObject result = new JSObject();
@@ -78,6 +77,9 @@ public class ChamiloScormPackagePlugin extends Plugin {
                 call.reject("The SCORM package exceeds the supported size.");
                 return;
             }
+            if (!fingerprint.equals(sha256(archive))) {
+                throw new IOException("The SCORM package fingerprint does not match the downloaded archive.");
+            }
 
             File scopeRoot = scopeRoot(scope);
             File target = new File(scopeRoot, fingerprint);
@@ -117,6 +119,16 @@ public class ChamiloScormPackagePlugin extends Plugin {
             call.resolve();
         } catch (Exception exception) {
             call.reject("The SCORM package cache could not be removed.", exception);
+        }
+    }
+
+    @PluginMethod
+    public void removeCampus(PluginCall call) {
+        try {
+            deleteRecursively(campusRoot(required(call, "campusId")));
+            call.resolve();
+        } catch (Exception exception) {
+            call.reject("The offline SCORM packages for this campus could not be removed.", exception);
         }
     }
 
@@ -191,12 +203,26 @@ public class ChamiloScormPackagePlugin extends Plugin {
     }
 
     private File scopeRoot(String scope) throws Exception {
-        File root = new File(getContext().getCacheDir(), "chamilo-scorm");
-        File scopeDirectory = new File(root, sha256(scope));
+        String campusId = campusIdFromScope(scope);
+        File scopeDirectory = new File(campusRoot(campusId), sha256(scope));
         if (!scopeDirectory.mkdirs() && !scopeDirectory.isDirectory()) {
             throw new IOException("The SCORM cache directory could not be created.");
         }
         return scopeDirectory;
+    }
+
+    private File campusRoot(String campusId) throws Exception {
+        File root = new File(getContext().getFilesDir(), "chamilo-scorm-offline");
+        return new File(root, sha256(campusId));
+    }
+
+    private String campusIdFromScope(String scope) {
+        int separator = scope.indexOf(':');
+        String campusId = separator >= 0 ? scope.substring(0, separator) : scope;
+        if (campusId.trim().isEmpty()) {
+            throw new IllegalArgumentException("The SCORM package scope has no campus identifier.");
+        }
+        return campusId;
     }
 
     private String required(PluginCall call, String key) {
@@ -267,8 +293,12 @@ public class ChamiloScormPackagePlugin extends Plugin {
     }
 
     private String sha256(String value) throws NoSuchAlgorithmException {
+        return sha256(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String sha256(byte[] value) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+        byte[] hash = digest.digest(value);
         StringBuilder output = new StringBuilder(hash.length * 2);
         for (byte item : hash) {
             output.append(String.format(Locale.ROOT, "%02x", item));

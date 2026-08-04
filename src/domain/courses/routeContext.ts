@@ -102,6 +102,16 @@ export function buildCourseRoute(context: CourseNavigationContext): RouteLocatio
   }
 }
 
+export function buildCourseOfflineSetupRoute(context: CourseNavigationContext): RouteLocationRaw {
+  return {
+    name: "course-offline-setup",
+    params: {
+      courseId: String(context.courseId),
+    },
+    query: buildContextQuery(context),
+  }
+}
+
 export function buildNotebookRoute(context: CourseNavigationContext): RouteLocationRaw {
   return {
     name: "notebook",
@@ -312,6 +322,7 @@ export function buildSurveyDetailRoute(
   mode: SurveyOpenMode,
   surveyTitle?: string,
   invitationLpItemId = 0,
+  invitationCode = "",
 ): RouteLocationRaw {
   return {
     name: "survey-detail",
@@ -324,6 +335,7 @@ export function buildSurveyDetailRoute(
       mode,
       ...(surveyTitle ? { surveyTitle } : {}),
       ...(invitationLpItemId > 0 ? { lpItemId: String(invitationLpItemId) } : {}),
+      ...(invitationCode.trim() ? { invitationCode: invitationCode.trim() } : {}),
     },
   }
 }

@@ -5,6 +5,7 @@ import type { CampusProfile } from "@/domain/campus/types"
 import { BrowserHttpClient } from "@/services/http/BrowserHttpClient"
 import type { HttpClient } from "@/services/http/HttpClient"
 import { NativeHttpClient } from "@/services/http/NativeHttpClient"
+import { ObservedCampusHttpClient } from "@/services/http/ObservedCampusHttpClient"
 
 function getNormalizedCampusUrl(campus: CampusProfile): string {
   return normalizeCampusUrl(campus.baseUrl, {
@@ -38,9 +39,9 @@ function getBrowserBaseUrl(campus: CampusProfile): string {
 }
 
 export function createHttpClient(campus: CampusProfile): HttpClient {
-  if (Capacitor.isNativePlatform()) {
-    return new NativeHttpClient(getNormalizedCampusUrl(campus))
-  }
+  const client = Capacitor.isNativePlatform()
+    ? new NativeHttpClient(getNormalizedCampusUrl(campus))
+    : new BrowserHttpClient(getBrowserBaseUrl(campus))
 
-  return new BrowserHttpClient(getBrowserBaseUrl(campus))
+  return new ObservedCampusHttpClient(campus.id, client)
 }

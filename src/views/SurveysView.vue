@@ -77,6 +77,7 @@ function detailRoute(survey: SurveySummary) {
     survey.openMode,
     survey.title,
     survey.invitationLpItemId,
+    survey.invitationCode,
   )
 }
 

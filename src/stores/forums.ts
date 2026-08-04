@@ -16,7 +16,13 @@ import {
   type ForumErrorCode,
   ForumServiceError,
 } from "@/services/forums/ForumApiService"
+import {
+  isOfflineNow,
+  isUncertainDeliveryError,
+  temporaryOfflineId,
+} from "@/services/offline/OfflineWriteSupport"
 import { useCampusStore } from "@/stores/campus"
+import { useOfflineSyncStore } from "@/stores/offlineSync"
 
 export type ForumLoadStatus = "idle" | "loading" | "ready" | "error"
 export type ForumStoreErrorCode = ForumErrorCode | "campus_required"
@@ -183,11 +189,40 @@ export const useForumsStore = defineStore("forums", () => {
     write.result = null
     write.errorCode = null
 
+    const queueThread = async (uncertainDelivery = false): Promise<ForumWriteResult | null> => {
+      try {
+        const request = await api.prepareCreateThreadRequest(context, forumId, input)
+        const queued = await useOfflineSyncStore().enqueueHttpWrite({
+          category: "forum_thread_create",
+          request,
+          description: input.title.trim() || "Forum thread",
+          uncertainDelivery,
+        })
+        if (!queued || uncertainDelivery) return null
+
+        write.result = {
+          threadId: temporaryOfflineId(),
+          postId: temporaryOfflineId(),
+          requiresApproval: false,
+          message: "Saved on this device and waiting to sync.",
+        }
+        write.status = "success"
+        return write.result
+      } catch (error) {
+        write.errorCode = error instanceof ForumServiceError ? error.code : "server"
+        write.status = "error"
+        return null
+      }
+    }
+
+    if (isOfflineNow()) return queueThread()
+
     try {
       write.result = await api.createThread(context, forumId, input)
       write.status = "success"
       return write.result
     } catch (error) {
+      if (isUncertainDeliveryError(error)) await queueThread(true)
       write.errorCode = error instanceof ForumServiceError ? error.code : "server"
       write.status = "error"
       return null
@@ -212,11 +247,40 @@ export const useForumsStore = defineStore("forums", () => {
     write.result = null
     write.errorCode = null
 
+    const queueReply = async (uncertainDelivery = false): Promise<ForumWriteResult | null> => {
+      try {
+        const request = await api.prepareCreateReplyRequest(context, forumId, threadId, input)
+        const queued = await useOfflineSyncStore().enqueueHttpWrite({
+          category: "forum_reply_create",
+          request,
+          description: input.title.trim() || "Forum reply",
+          uncertainDelivery,
+        })
+        if (!queued || uncertainDelivery) return null
+
+        write.result = {
+          threadId,
+          postId: temporaryOfflineId(),
+          requiresApproval: false,
+          message: "Saved on this device and waiting to sync.",
+        }
+        write.status = "success"
+        return write.result
+      } catch (error) {
+        write.errorCode = error instanceof ForumServiceError ? error.code : "server"
+        write.status = "error"
+        return null
+      }
+    }
+
+    if (isOfflineNow()) return queueReply()
+
     try {
       write.result = await api.createReply(context, forumId, threadId, input)
       write.status = "success"
       return write.result
     } catch (error) {
+      if (isUncertainDeliveryError(error)) await queueReply(true)
       write.errorCode = error instanceof ForumServiceError ? error.code : "server"
       write.status = "error"
       return null

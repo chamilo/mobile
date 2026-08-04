@@ -30,6 +30,7 @@ interface ChamiloScormPackagePlugin {
   resolve(options: ResolveOptions): Promise<ScormPackageResult>
   install(options: InstallOptions): Promise<ScormPackageResult>
   removeScope(options: { scope: string }): Promise<void>
+  removeCampus(options: { campusId: string }): Promise<void>
 }
 
 const nativePlugin = registerPlugin<ChamiloScormPackagePlugin>("ChamiloScormPackage")
@@ -136,6 +137,36 @@ export class NativeScormPackageHost implements ScormPackageHost {
       )
     }
   }
+
+  async remove(scope: string): Promise<void> {
+    await this.assertAvailable()
+
+    try {
+      await nativePlugin.removeScope({ scope })
+    } catch (error) {
+      throw new ScormPackageHostError(
+        "install_failed",
+        "The cached SCORM package could not be removed from this device.",
+        error,
+      )
+    }
+  }
 }
 
 export const nativeScormPackageHost = new NativeScormPackageHost()
+
+export async function clearNativeScormCampusPackages(campusId: string): Promise<void> {
+  if (Capacitor.getPlatform() !== "android") {
+    return
+  }
+
+  try {
+    await nativePlugin.removeCampus({ campusId })
+  } catch (error) {
+    throw new ScormPackageHostError(
+      "install_failed",
+      "The offline SCORM packages for this campus could not be removed.",
+      error,
+    )
+  }
+}

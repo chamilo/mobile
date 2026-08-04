@@ -42,6 +42,12 @@ const primaryItems = computed<NavigationItem[]>(() => [
     to: { name: "messages" },
   },
   {
+    key: "offline-sync",
+    label: t("navigation.offlineSync"),
+    icon: "pi pi-cloud-upload",
+    to: { name: "offline-sync" },
+  },
+  {
     key: "profile",
     label: t("navigation.profile"),
     icon: "pi pi-user",

@@ -282,14 +282,21 @@ onBeforeUnmount(() => {
       </section>
 
       <div
-        class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+        class="rounded-xl border p-3 text-sm"
+        :class="
+          store.offlineQueued
+            ? 'border-amber-200 bg-amber-50 text-amber-900'
+            : 'border-emerald-200 bg-emerald-50 text-emerald-900'
+        "
         role="status"
         aria-live="polite"
       >
         {{
-          store.actionStatus === "syncing"
-            ? t("learningPaths.syncing")
-            : t("learningPaths.progressSaved")
+          store.offlineQueued
+            ? t("learningPaths.progressQueuedOffline")
+            : store.actionStatus === "syncing"
+              ? t("learningPaths.syncing")
+              : t("learningPaths.progressSaved")
         }}
       </div>
 

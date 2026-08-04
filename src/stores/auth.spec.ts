@@ -9,6 +9,8 @@ import type {
 import { AuthServiceError } from "@/services/auth/AuthApiService"
 import { registerBeforeCampusSessionClearListener } from "@/services/auth/AuthSessionLifecycle"
 import type { StoredToken, TokenStorage } from "@/services/auth/TokenStorage"
+import type { OfflineProfileRecord } from "@/domain/offline/types"
+import type { OfflineProfileRepository } from "@/services/offline/OfflineProfileRepository"
 import { resetAuthDependencies, setAuthDependenciesForTests, useAuthStore } from "@/stores/auth"
 import {
   resetCampusProfileRepository,
@@ -49,6 +51,29 @@ class MemoryCampusRepository implements CampusProfileRepository {
 
   save(snapshot: CampusRepositorySnapshot): void {
     this.snapshot = structuredClone(snapshot)
+  }
+}
+
+class MemoryOfflineProfileRepository implements OfflineProfileRepository {
+  records = new Map<string, OfflineProfileRecord>()
+
+  async load(campusId: string): Promise<OfflineProfileRecord | null> {
+    return structuredClone(this.records.get(campusId) ?? null)
+  }
+
+  async save(campusId: string, currentProfile: CurrentUserProfile): Promise<void> {
+    this.records.set(campusId, {
+      version: 1,
+      key: `profile:${campusId}`,
+      campusId,
+      userId: currentProfile.id,
+      savedAt: new Date().toISOString(),
+      profile: structuredClone(currentProfile),
+    })
+  }
+
+  async clearCampus(campusId: string): Promise<void> {
+    this.records.delete(campusId)
   }
 }
 
@@ -167,6 +192,34 @@ describe("auth store", () => {
 
     expect(tokenAvailableDuringCleanup).toBe(true)
     expect(await tokenStorage.load(campusId)).toBeNull()
+  })
+
+  it("restores a valid saved session when the campus is offline", async () => {
+    const campusId = addCampus()
+    const token = createToken(Math.floor(Date.now() / 1_000) + 3_600)
+    const profiles = new MemoryOfflineProfileRepository()
+    await tokenStorage.save(campusId, {
+      token,
+      expiresAt: (Math.floor(Date.now() / 1_000) + 3_600) * 1_000,
+    })
+    await profiles.save(campusId, profile)
+    setAuthDependenciesForTests(
+      tokenStorage,
+      () => ({
+        createToken: async () => token,
+        getCurrentUser: async () => {
+          throw new AuthServiceError("network", "Offline")
+        },
+      }),
+      profiles,
+    )
+    const authStore = useAuthStore()
+
+    await expect(authStore.ensureSession()).resolves.toBe(true)
+
+    expect(authStore.isAuthenticated).toBe(true)
+    expect(authStore.isOfflineSession).toBe(true)
+    expect(authStore.profile).toEqual(profile)
   })
 
   it("rejects and removes an expired stored token", async () => {

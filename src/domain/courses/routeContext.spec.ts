@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildAnnouncementsRoute,
   buildCourseRoute,
+  buildSurveyDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
@@ -45,6 +46,24 @@ describe("course route context", () => {
       name: "announcements",
       params: { courseId: "4" },
       query: { source: "session", sid: "8", sessionCourse: "17" },
+    })
+  })
+
+  it("preserves the survey invitation when opening offline answer details", () => {
+    expect(
+      buildSurveyDetailRoute(sessionContext, 12, "answer", "Feedback", 27, "invite-12"),
+    ).toEqual({
+      name: "survey-detail",
+      params: { courseId: "4", surveyId: "12" },
+      query: {
+        source: "session",
+        sid: "8",
+        sessionCourse: "17",
+        surveyTitle: "Feedback",
+        mode: "answer",
+        lpItemId: "27",
+        invitationCode: "invite-12",
+      },
     })
   })
 

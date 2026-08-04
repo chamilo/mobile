@@ -13,6 +13,7 @@ import type { SessionPeriod } from "@/domain/courses/types"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useCoursesStore } from "@/stores/courses"
+import { useOfflineCoursePacksStore } from "@/stores/offlineCoursePacks"
 
 type CourseTab = "sessions" | "direct"
 
@@ -21,6 +22,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const campusStore = useCampusStore()
 const coursesStore = useCoursesStore()
+const packsStore = useOfflineCoursePacksStore()
 const { profile } = storeToRefs(authStore)
 const { selectedCampus } = storeToRefs(campusStore)
 const { overview, status, errorCode, isStale, isRefreshing, cacheSavedAt, hasContent } =
@@ -114,7 +116,9 @@ async function load(force = false): Promise<void> {
   selectAvailableTabs()
 }
 
-onMounted(() => load())
+onMounted(async () => {
+  await Promise.all([load(), packsStore.refresh()])
+})
 </script>
 
 <template>

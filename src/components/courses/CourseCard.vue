@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n"
 import { buildCourseRoute } from "@/domain/courses/routeContext"
 import { resolveCampusAssetUrl } from "@/domain/courses/resolveCampusAssetUrl"
 import type { DirectCourseEnrollment, SessionCourseEnrollment } from "@/domain/courses/types"
+import { useOfflineCoursePacksStore } from "@/stores/offlineCoursePacks"
 
 const props = defineProps<{
   enrollment: DirectCourseEnrollment | SessionCourseEnrollment
@@ -12,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const packsStore = useOfflineCoursePacksStore()
 const imageFailed = ref(false)
 
 const directEnrollment = computed<DirectCourseEnrollment | null>(() =>
@@ -23,6 +25,7 @@ const imageUrl = computed(() =>
 const showImage = computed(() => Boolean(imageUrl.value) && !imageFailed.value)
 const courseRoute = computed(() => buildCourseRoute(props.enrollment.context))
 const accessAllowed = computed(() => directEnrollment.value?.accessAllowed ?? true)
+const offlineManifest = computed(() => packsStore.manifestForContext(props.enrollment.context))
 const teachersLabel = computed(() => {
   if (!directEnrollment.value || directEnrollment.value.teachers.length === 0) {
     return null
@@ -58,6 +61,14 @@ watch(imageUrl, () => {
       >
         <i class="pi pi-book" />
       </div>
+
+      <span
+        v-if="offlineManifest"
+        class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold text-white shadow"
+      >
+        <i class="pi pi-download" aria-hidden="true" />
+        {{ t("offlineCourse.readyBadge") }}
+      </span>
 
       <span
         v-if="directEnrollment?.hasNewContent"

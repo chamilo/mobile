@@ -6,7 +6,10 @@ import type {
   SurveyOpenMode,
   SurveyOption,
   SurveyPage,
+  SurveyProfileField,
+  SurveyProfileOption,
   SurveyQuestion,
+  SurveySubmissionPayload,
   SurveySummary,
 } from "@/domain/surveys/types"
 
@@ -22,6 +25,10 @@ type UnknownRecord = Record<string, unknown>
 export interface SurveyRequestDefinition {
   path: string
   query: Record<string, string | number | boolean>
+}
+
+export interface SurveySubmitRequestDefinition extends SurveyRequestDefinition {
+  body: SurveySubmissionPayload
 }
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -138,14 +145,34 @@ export function buildSurveyDetailRequest(
   surveyId: number,
   mode: SurveyOpenMode,
   invitationLpItemId = 0,
+  invitationCode = "",
 ): SurveyRequestDefinition {
   return {
     path: `/api/survey/answer/${positiveInteger(surveyId, "survey id")}`,
     query: {
       ...contextQuery(context),
       ...(invitationLpItemId > 0 ? { lpItemId: invitationLpItemId } : {}),
+      ...(invitationCode.trim() ? { invitationCode: invitationCode.trim() } : {}),
       ...(mode === "preview" ? { preview: true } : {}),
     },
+  }
+}
+
+export function buildSurveySubmitRequest(
+  context: CourseNavigationContext,
+  surveyId: number,
+  invitationLpItemId: number,
+  invitationCode: string,
+  body: SurveySubmissionPayload,
+): SurveySubmitRequestDefinition {
+  return {
+    path: `/api/survey/answer/${positiveInteger(surveyId, "survey id")}`,
+    query: {
+      ...contextQuery(context),
+      ...(invitationLpItemId > 0 ? { lpItemId: invitationLpItemId } : {}),
+      ...(invitationCode.trim() ? { invitationCode: invitationCode.trim() } : {}),
+    },
+    body: structuredClone(body),
   }
 }
 
@@ -153,6 +180,9 @@ function openModeForSurvey(
   surveyType: number,
   anonymous: boolean,
   canPreview: boolean,
+  canAnswer: boolean,
+  invitationAnswered: boolean,
+  invitationCode: string,
   unsupportedReason: string,
 ): {
   openMode: SurveyOpenMode | null
@@ -179,10 +209,10 @@ function openModeForSurvey(
     }
   }
 
-  if (anonymous) {
+  if ((!canAnswer && !invitationAnswered) || (anonymous && !invitationCode)) {
     return {
       openMode: null,
-      unavailableReason: "anonymous",
+      unavailableReason: anonymous ? "anonymous" : "unsupported",
     }
   }
 
@@ -199,11 +229,18 @@ function normalizeSurveySummary(value: unknown): SurveySummary {
 
   const surveyType = numeric(value.surveyType) ?? 0
   const anonymous = boolean(value.anonymous)
+  const canPreview = boolean(value.canPreview)
+  const canAnswer = boolean(value.canAnswer)
+  const invitationAnswered = boolean(value.invitationAnswered)
+  const invitationCode = text(value.invitationCode)
   const unsupportedReason = text(value.unsupportedReason)
   const mode = openModeForSurvey(
     surveyType,
     anonymous,
-    boolean(value.canPreview),
+    canPreview,
+    canAnswer,
+    invitationAnswered,
+    invitationCode,
     unsupportedReason,
   )
 
@@ -224,10 +261,11 @@ function normalizeSurveySummary(value: unknown): SurveySummary {
     surveyTypeLabel: text(value.surveyTypeLabel) || "Survey",
     mandatory: boolean(value.mandatory),
     visible: value.visible === undefined || boolean(value.visible),
-    canPreview: boolean(value.canPreview),
-    canAnswer: boolean(value.canAnswer),
-    invitationAnswered: boolean(value.invitationAnswered),
+    canPreview,
+    canAnswer,
+    invitationAnswered,
     invitationLpItemId: Math.max(0, Math.trunc(numeric(value.invitationLpItemId) ?? 0)),
+    invitationCode,
     unsupportedReason,
     openMode: mode.openMode,
     unavailableReason: mode.unavailableReason,
@@ -274,6 +312,9 @@ function normalizeQuestion(value: unknown): SurveyQuestion {
     typeLabel: text(value.typeLabel) || text(value.type) || "Question",
     required: boolean(value.isRequired),
     supported: value.isSupported === undefined || boolean(value.isSupported),
+    maxValue: numeric(value.maxValue),
+    parentQuestionId: Math.max(0, Math.trunc(numeric(value.parentQuestionId) ?? 0)) || null,
+    parentOptionId: Math.max(0, Math.trunc(numeric(value.parentOptionId) ?? 0)) || null,
     options: Array.isArray(value.options) ? value.options.map(normalizeOption) : [],
   }
 }
@@ -315,6 +356,42 @@ function normalizePages(rawPages: unknown, questions: SurveyQuestion[]): SurveyP
     : []
 }
 
+function normalizeProfileOption(value: unknown): SurveyProfileOption {
+  if (!isRecord(value)) {
+    throw new SurveyContractError("A survey profile option is invalid.")
+  }
+
+  return {
+    value: text(value.value),
+    label: plainText(value.label) || text(value.value),
+  }
+}
+
+function normalizeProfileField(value: unknown): SurveyProfileField {
+  if (!isRecord(value)) {
+    throw new SurveyContractError("A survey profile field is invalid.")
+  }
+
+  const type = text(value.type)
+  const normalizedType: SurveyProfileField["type"] =
+    type === "textarea" || type === "select" || type === "multiselect" ? type : "text"
+  const rawValue = value.value
+
+  return {
+    key: text(value.key),
+    label: plainText(value.label) || text(value.key) || "Profile field",
+    type: normalizedType,
+    inputType: text(value.inputType) || "text",
+    value: Array.isArray(rawValue)
+      ? rawValue.map((item) => text(item)).filter(Boolean)
+      : text(rawValue),
+    required: boolean(value.required),
+    readOnly: boolean(value.readOnly),
+    options: Array.isArray(value.options) ? value.options.map(normalizeProfileOption) : [],
+    helpText: plainText(value.helpText),
+  }
+}
+
 export function normalizeSurveyDetail(value: unknown): SurveyDetail {
   if (!isRecord(value)) {
     throw new SurveyContractError("The survey detail response is invalid.")
@@ -336,6 +413,8 @@ export function normalizeSurveyDetail(value: unknown): SurveyDetail {
     availableFrom: nullableText(survey.availableFrom),
     availableUntil: nullableText(survey.availableUntil),
     surveyType: numeric(survey.surveyType) ?? 0,
+    invitationCode: text(value.invitationCode),
+    csrfToken: text(value.csrfToken),
     preview: boolean(value.preview),
     canSubmit: boolean(value.canSubmit),
     isAnswered: boolean(value.isAnswered),
@@ -343,6 +422,14 @@ export function normalizeSurveyDetail(value: unknown): SurveyDetail {
     message: plainText(value.message),
     pages: normalizePages(value.pages, questions),
     answers: isRecord(value.answers) ? value.answers : {},
+    profileFields: Array.isArray(value.profileFields)
+      ? value.profileFields.map(normalizeProfileField)
+      : [],
+    settings: {
+      backwardsEnabled: isRecord(value.settings) && boolean(value.settings.backwardsEnabled),
+      allowAnsweredQuestionEdit:
+        isRecord(value.settings) && boolean(value.settings.allowAnsweredQuestionEdit),
+    },
   }
 }
 

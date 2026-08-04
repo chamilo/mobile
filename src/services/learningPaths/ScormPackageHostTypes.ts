@@ -1,3 +1,5 @@
+import type { CourseNavigationContext } from "@/domain/courses/types"
+
 export const MAX_SCORM_PACKAGE_SIZE_BYTES = 100 * 1024 * 1024
 
 export type ScormPackageHostErrorCode =
@@ -29,6 +31,16 @@ export interface ScormPackageHost {
     entryPath: string,
     archive: ArrayBuffer,
   ): Promise<string>
+  remove(scope: string): Promise<void>
+}
+
+export function buildScormPackageScope(
+  campusId: string,
+  userId: number,
+  context: CourseNavigationContext,
+  learningPathId: number,
+): string {
+  return [campusId, userId, context.courseId, context.sessionId ?? 0, learningPathId].join(":")
 }
 
 export function appendScormLaunchParameters(entryUrl: string, parameters: string): string {

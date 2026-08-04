@@ -8,6 +8,7 @@ import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticat
 import { browserCampusCacheRepository } from "@/services/cache/BrowserCampusCacheRepository"
 import {
   CampusCacheError,
+  type CacheRecord,
   type CampusCacheRepository,
 } from "@/services/cache/CampusCacheRepository"
 import {
@@ -15,8 +16,15 @@ import {
   CoursesServiceError,
   type CoursesErrorCode,
 } from "@/services/courses/CoursesApiService"
+import {
+  offlineSnapshotRepository,
+  type OfflineSnapshotRepository,
+} from "@/services/offline/OfflineSnapshotRepository"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { useConnectivityStore } from "@/stores/connectivity"
+
+const COURSES_SNAPSHOT_KEY = "courses-overview-v1"
 
 export type CoursesStatus = "idle" | "loading" | "ready" | "error"
 export type CoursesStoreErrorCode =
@@ -29,19 +37,23 @@ export type CoursesApi = Pick<CoursesApiService, "getOverview">
 export type CoursesApiFactory = (campus: CampusProfile) => CoursesApi
 
 let cacheRepository: CampusCacheRepository = browserCampusCacheRepository
+let durableCacheRepository: OfflineSnapshotRepository = offlineSnapshotRepository
 let coursesApiFactory: CoursesApiFactory = (campus) =>
   new CoursesApiService(createAuthenticatedHttpClient(campus))
 
 export function setCoursesDependenciesForTests(
   testCacheRepository: CampusCacheRepository,
   testCoursesApiFactory: CoursesApiFactory,
+  testDurableCacheRepository: OfflineSnapshotRepository = offlineSnapshotRepository,
 ): void {
   cacheRepository = testCacheRepository
   coursesApiFactory = testCoursesApiFactory
+  durableCacheRepository = testDurableCacheRepository
 }
 
 export function resetCoursesDependencies(): void {
   cacheRepository = browserCampusCacheRepository
+  durableCacheRepository = offlineSnapshotRepository
   coursesApiFactory = (campus) => new CoursesApiService(createAuthenticatedHttpClient(campus))
 }
 
@@ -56,15 +68,14 @@ function emptyOverview(): CoursesOverview {
 }
 
 function mapCoursesError(error: unknown): CoursesStoreErrorCode {
-  if (error instanceof CoursesServiceError) {
-    return error.code
-  }
-
-  if (error instanceof CampusCacheError) {
-    return "cache_failed"
-  }
+  if (error instanceof CoursesServiceError) return error.code
+  if (error instanceof CampusCacheError) return "cache_failed"
 
   return "server"
+}
+
+function latestCache(records: CacheRecord<CoursesOverview>[]): CacheRecord<CoursesOverview> | null {
+  return records.sort((left, right) => right.savedAt.localeCompare(left.savedAt))[0] ?? null
 }
 
 export const useCoursesStore = defineStore("courses", () => {
@@ -96,6 +107,68 @@ export const useCoursesStore = defineStore("courses", () => {
     cacheSavedAt.value = null
   }
 
+  async function loadCachedOverview(
+    campusId: string,
+    userId: number,
+  ): Promise<CacheRecord<CoursesOverview> | null> {
+    const records: CacheRecord<CoursesOverview>[] = []
+    let browserRecord: CacheRecord<CoursesOverview> | null = null
+
+    try {
+      browserRecord = cacheRepository.loadCourses(campusId, userId)
+      if (browserRecord) records.push(browserRecord)
+    } catch (error) {
+      errorCode.value = mapCoursesError(error)
+    }
+
+    try {
+      const durableRecord = await durableCacheRepository.load<CoursesOverview>(
+        campusId,
+        userId,
+        COURSES_SNAPSHOT_KEY,
+      )
+      if (durableRecord) {
+        records.push({ version: 1, savedAt: durableRecord.savedAt, data: durableRecord.data })
+      } else if (browserRecord) {
+        await durableCacheRepository.save(
+          campusId,
+          userId,
+          COURSES_SNAPSHOT_KEY,
+          browserRecord.data,
+        )
+      }
+    } catch {
+      if (!browserRecord) errorCode.value = "cache_failed"
+    }
+
+    return latestCache(records)
+  }
+
+  async function saveCachedOverview(
+    campusId: string,
+    userId: number,
+    data: CoursesOverview,
+  ): Promise<boolean> {
+    let browserSaved = false
+    let durableSaved = false
+
+    try {
+      cacheRepository.saveCourses(campusId, userId, data)
+      browserSaved = true
+    } catch {
+      // The durable cache may still succeed.
+    }
+
+    try {
+      await durableCacheRepository.save(campusId, userId, COURSES_SNAPSHOT_KEY, data)
+      durableSaved = true
+    } catch {
+      // The browser cache may still keep a last-read fallback.
+    }
+
+    return browserSaved || durableSaved
+  }
+
   async function loadOverview(force = false): Promise<boolean> {
     const campus = useCampusStore().selectedCampus
     const profile = useAuthStore().profile
@@ -104,7 +177,6 @@ export const useCoursesStore = defineStore("courses", () => {
       resetState()
       status.value = "error"
       errorCode.value = "campus_required"
-
       return false
     }
 
@@ -113,7 +185,6 @@ export const useCoursesStore = defineStore("courses", () => {
       currentCampusId.value = campus.id
       status.value = "error"
       errorCode.value = "session_required"
-
       return false
     }
 
@@ -133,35 +204,25 @@ export const useCoursesStore = defineStore("courses", () => {
       currentUserId.value = profile.id
     }
 
-    let hasCachedOverview = false
+    const cached = await loadCachedOverview(campus.id, profile.id)
+    const hasCachedOverview = Boolean(cached)
 
-    try {
-      const cached = cacheRepository.loadCourses(campus.id, profile.id)
-
-      if (cached) {
-        overview.value = cached.data
-        cacheSavedAt.value = cached.savedAt
-        status.value = "ready"
-        isStale.value = true
-        hasCachedOverview = true
-      }
-    } catch (error) {
-      errorCode.value = mapCoursesError(error)
+    if (cached) {
+      overview.value = cached.data
+      cacheSavedAt.value = cached.savedAt
+      status.value = "ready"
+      isStale.value = true
     }
 
-    if (globalThis.navigator?.onLine === false) {
+    if (!useConnectivityStore().deviceOnline) {
       errorCode.value = "offline"
       status.value = hasCachedOverview ? "ready" : "error"
       isStale.value = hasCachedOverview
-
       return hasCachedOverview
     }
 
-    if (hasCachedOverview) {
-      isRefreshing.value = true
-    } else {
-      status.value = "loading"
-    }
+    if (hasCachedOverview) isRefreshing.value = true
+    else status.value = "loading"
 
     errorCode.value = null
 
@@ -173,9 +234,7 @@ export const useCoursesStore = defineStore("courses", () => {
       status.value = "ready"
       isStale.value = false
 
-      try {
-        cacheRepository.saveCourses(campus.id, profile.id, freshOverview)
-      } catch {
+      if (!(await saveCachedOverview(campus.id, profile.id, freshOverview))) {
         errorCode.value = "cache_failed"
       }
 
@@ -184,7 +243,6 @@ export const useCoursesStore = defineStore("courses", () => {
       errorCode.value = mapCoursesError(error)
       status.value = hasCachedOverview ? "ready" : "error"
       isStale.value = hasCachedOverview
-
       return hasCachedOverview
     } finally {
       isRefreshing.value = false
@@ -195,18 +253,15 @@ export const useCoursesStore = defineStore("courses", () => {
     resetState()
   }
 
-  function clearCampusCache(campusId: string): boolean {
+  async function clearCampusCache(campusId: string): Promise<boolean> {
     try {
       cacheRepository.clearCampus(campusId)
+      await durableCacheRepository.clearCampus(campusId)
 
-      if (currentCampusId.value === campusId) {
-        resetState()
-      }
-
+      if (currentCampusId.value === campusId) resetState()
       return true
     } catch {
       errorCode.value = "cache_failed"
-
       return false
     }
   }
@@ -216,9 +271,7 @@ export const useCoursesStore = defineStore("courses", () => {
   }
 
   const unregisterSessionCleaner = registerCampusSessionDataCleaner((campusId) => {
-    if (currentCampusId.value === campusId) {
-      resetState()
-    }
+    if (currentCampusId.value === campusId) resetState()
   })
   onScopeDispose(unregisterSessionCleaner)
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildSurveyDetailRequest,
+  buildSurveySubmitRequest,
   buildSurveysRequest,
   formatRecordedAnswers,
   normalizeSurveyCollection,
@@ -50,6 +51,29 @@ describe("survey contracts", () => {
         preview: true,
       },
     })
+
+    expect(
+      buildSurveySubmitRequest(sessionContext, 8, 27, "invite-8", {
+        csrfToken: "csrf-8",
+        answers: { "20": 30 },
+        otherAnswers: {},
+        profileValues: {},
+      }),
+    ).toEqual({
+      path: "/api/survey/answer/8",
+      query: {
+        cid: 16,
+        sid: 4,
+        lpItemId: 27,
+        invitationCode: "invite-8",
+      },
+      body: {
+        csrfToken: "csrf-8",
+        answers: { "20": 30 },
+        otherAnswers: {},
+        profileValues: {},
+      },
+    })
   })
 
   it("normalizes learner and teacher survey actions safely", () => {
@@ -89,8 +113,17 @@ describe("survey contracts", () => {
           surveyType: 0,
           canPreview: false,
         },
+        {
+          iid: 11,
+          title: "Completed survey",
+          anonymous: false,
+          surveyType: 0,
+          canPreview: false,
+          canAnswer: false,
+          invitationAnswered: true,
+        },
       ],
-      totalItems: 3,
+      totalItems: 4,
       canManage: false,
     })
 
@@ -110,11 +143,18 @@ describe("survey contracts", () => {
       openMode: null,
       unavailableReason: "anonymous",
     })
+    expect(result.items[3]).toMatchObject({
+      openMode: "answer",
+      unavailableReason: null,
+      invitationAnswered: true,
+    })
   })
 
   it("normalizes questions, pages and existing answers", () => {
     const detail = normalizeSurveyDetail({
       surveyId: 8,
+      invitationCode: "invite-8",
+      csrfToken: "csrf-8",
       preview: false,
       canSubmit: false,
       isAnswered: true,
@@ -142,6 +182,9 @@ describe("survey contracts", () => {
           typeLabel: "Yes / No",
           isRequired: true,
           isSupported: true,
+          maxValue: 0,
+          parentQuestionId: 0,
+          parentOptionId: 0,
           options: [
             {
               iid: 30,
@@ -164,6 +207,9 @@ describe("survey contracts", () => {
           typeLabel: "Open",
           isRequired: false,
           isSupported: true,
+          maxValue: 0,
+          parentQuestionId: 20,
+          parentOptionId: 30,
           options: [],
         },
       ],
@@ -172,6 +218,23 @@ describe("survey contracts", () => {
         "20": 30,
         "21": "Very useful",
       },
+      profileFields: [
+        {
+          key: "profile_language",
+          label: "Language",
+          type: "select",
+          inputType: "text",
+          value: "english",
+          required: true,
+          readOnly: false,
+          options: [{ value: "english", label: "English" }],
+          helpText: "",
+        },
+      ],
+      settings: {
+        backwardsEnabled: true,
+        allowAnsweredQuestionEdit: false,
+      },
     })
 
     expect(detail).toMatchObject({
@@ -179,8 +242,19 @@ describe("survey contracts", () => {
       title: "Course feedback",
       intro: "Please answer honestly.",
       isAnswered: true,
+      invitationCode: "invite-8",
+      csrfToken: "csrf-8",
     })
     expect(detail.pages[0]?.questions).toHaveLength(2)
+    expect(detail.pages[0]?.questions[1]).toMatchObject({
+      parentQuestionId: 20,
+      parentOptionId: 30,
+    })
+    expect(detail.profileFields[0]).toMatchObject({
+      key: "profile_language",
+      type: "select",
+      value: "english",
+    })
     expect(formatRecordedAnswers(detail.pages[0]!.questions[0]!, detail.answers)).toEqual(["Yes"])
     expect(formatRecordedAnswers(detail.pages[0]!.questions[1]!, detail.answers)).toEqual([
       "Very useful",

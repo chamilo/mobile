@@ -16,8 +16,14 @@ import {
   MessagesServiceError,
   type MessagesErrorCode,
 } from "@/services/messages/MessagesApiService"
+import {
+  isOfflineNow,
+  isUncertainDeliveryError,
+  temporaryOfflineId,
+} from "@/services/offline/OfflineWriteSupport"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { useOfflineSyncStore } from "@/stores/offlineSync"
 
 export type MessagesStatus = "idle" | "loading" | "ready" | "error"
 export type MessagesStoreErrorCode =
@@ -101,6 +107,16 @@ export const useMessagesStore = defineStore("messages", () => {
     return apiFactory(campus)
   }
 
+  async function queueMessageWrite(input: {
+    category: "message_send" | "message_read" | "message_star" | "message_delete"
+    request: import("@/services/http/HttpClient").HttpRequest
+    description: string
+    dedupeKey?: string
+    uncertainDelivery?: boolean
+  }): Promise<boolean> {
+    return useOfflineSyncStore().enqueueHttpWrite(input)
+  }
+
   async function loadList(
     box: MessageBox = currentBox.value,
     filters: MessageListFilters = {},
@@ -109,12 +125,6 @@ export const useMessagesStore = defineStore("messages", () => {
 
     if (!api) {
       listStatus.value = "error"
-      return false
-    }
-
-    if (globalThis.navigator?.onLine === false) {
-      listStatus.value = "error"
-      errorCode.value = "offline"
       return false
     }
 
@@ -149,7 +159,45 @@ export const useMessagesStore = defineStore("messages", () => {
       let message = await api.getDetail(messageId)
 
       if (message.box === "inbox" && !message.read) {
-        message = await api.markRead(messageId)
+        if (isOfflineNow()) {
+          const queued = await queueMessageWrite({
+            category: "message_read",
+            description: `Mark message ${messageId} as read`,
+            dedupeKey: `message:${messageId}:read`,
+            request: {
+              method: "POST",
+              path: `/api/mobile_messages/${messageId}/read`,
+              headers: {
+                Accept: "application/ld+json",
+                "Content-Type": "application/ld+json",
+              },
+            },
+          })
+          if (queued) message = { ...message, read: true }
+        } else {
+          try {
+            message = await api.markRead(messageId)
+          } catch (error) {
+            if (isUncertainDeliveryError(error)) {
+              await queueMessageWrite({
+                category: "message_read",
+                description: `Mark message ${messageId} as read`,
+                dedupeKey: `message:${messageId}:read`,
+                uncertainDelivery: true,
+                request: {
+                  method: "POST",
+                  path: `/api/mobile_messages/${messageId}/read`,
+                  headers: {
+                    Accept: "application/ld+json",
+                    "Content-Type": "application/ld+json",
+                  },
+                },
+              })
+            } else {
+              throw error
+            }
+          }
+        }
       }
 
       selectedMessage.value = message
@@ -173,6 +221,33 @@ export const useMessagesStore = defineStore("messages", () => {
     mutationStatus.value = "loading"
     errorCode.value = null
 
+    const queueStar = async (uncertainDelivery = false): Promise<boolean> => {
+      const queued = await queueMessageWrite({
+        category: "message_star",
+        description: `${starred ? "Star" : "Unstar"} message ${message.id}`,
+        dedupeKey: `message:${message.id}:star`,
+        uncertainDelivery,
+        request: {
+          method: "POST",
+          path: `/api/mobile_messages/${message.id}/star`,
+          body: { starred },
+          headers: {
+            Accept: "application/ld+json",
+            "Content-Type": "application/ld+json",
+          },
+        },
+      })
+      if (queued && !uncertainDelivery) {
+        const updated = { ...message, starred }
+        replaceItem(updated)
+        if (selectedMessage.value?.id === updated.id) selectedMessage.value = updated
+        mutationStatus.value = "ready"
+      }
+      return queued && !uncertainDelivery
+    }
+
+    if (isOfflineNow()) return queueStar()
+
     try {
       const updated = await api.setStarred(message.id, starred)
       replaceItem(updated)
@@ -181,6 +256,7 @@ export const useMessagesStore = defineStore("messages", () => {
       mutationStatus.value = "ready"
       return true
     } catch (error) {
+      if (isUncertainDeliveryError(error)) await queueStar(true)
       mutationStatus.value = "error"
       errorCode.value = mapError(error)
       return false
@@ -197,17 +273,38 @@ export const useMessagesStore = defineStore("messages", () => {
     mutationStatus.value = "loading"
     errorCode.value = null
 
+    const applyLocalRemoval = (): void => {
+      items.value = items.value.filter((item) => item.id !== messageId)
+      if (selectedMessage.value?.id === messageId) selectedMessage.value = null
+    }
+    const queueRemoval = async (uncertainDelivery = false): Promise<boolean> => {
+      const queued = await queueMessageWrite({
+        category: "message_delete",
+        description: `Delete message ${messageId}`,
+        dedupeKey: `message:${messageId}:delete`,
+        uncertainDelivery,
+        request: {
+          method: "DELETE",
+          path: `/api/mobile_messages/${messageId}`,
+          headers: { Accept: "application/ld+json" },
+        },
+      })
+      if (queued && !uncertainDelivery) {
+        applyLocalRemoval()
+        mutationStatus.value = "ready"
+      }
+      return queued && !uncertainDelivery
+    }
+
+    if (isOfflineNow()) return queueRemoval()
+
     try {
       await api.remove(messageId)
-      items.value = items.value.filter((item) => item.id !== messageId)
-
-      if (selectedMessage.value?.id === messageId) {
-        selectedMessage.value = null
-      }
-
+      applyLocalRemoval()
       mutationStatus.value = "ready"
       return true
     } catch (error) {
+      if (isUncertainDeliveryError(error)) await queueRemoval(true)
       mutationStatus.value = "error"
       errorCode.value = mapError(error)
       return false
@@ -231,11 +328,55 @@ export const useMessagesStore = defineStore("messages", () => {
     mutationStatus.value = "loading"
     errorCode.value = null
 
+    const normalizedInput = { ...input, title, content }
+    const queueSend = async (uncertainDelivery = false): Promise<MobileMessage | null> => {
+      const queued = await queueMessageWrite({
+        category: "message_send",
+        description: title,
+        uncertainDelivery,
+        request: {
+          method: "POST",
+          path: "/api/mobile_messages",
+          body: normalizedInput,
+          headers: {
+            Accept: "application/ld+json",
+            "Content-Type": "application/ld+json",
+          },
+        },
+      })
+      if (!queued || uncertainDelivery) return null
+
+      const profile = useAuthStore().profile
+      const recipient = recipients.value.find(({ id }) => id === input.recipientId)
+      const message: MobileMessage = {
+        id: temporaryOfflineId(),
+        box: "sent",
+        title,
+        preview: content.slice(0, 160),
+        content,
+        sendDate: new Date().toISOString(),
+        read: true,
+        starred: false,
+        attachmentCount: 0,
+        senderId: profile?.id ?? 0,
+        senderUsername: profile?.username ?? "",
+        senderName: profile?.fullName ?? "",
+        recipientIds: [input.recipientId],
+        recipientNames: [recipient?.fullName ?? String(input.recipientId)],
+        parentId: input.parentId ?? null,
+      }
+      mutationStatus.value = "ready"
+      return message
+    }
+
+    if (isOfflineNow()) return queueSend()
+
     try {
-      const message = await api.send({ ...input, title, content })
+      const message = await api.send(normalizedInput)
       mutationStatus.value = "ready"
       return message
     } catch (error) {
+      if (isUncertainDeliveryError(error)) await queueSend(true)
       mutationStatus.value = "error"
       errorCode.value = mapError(error)
       return null

@@ -4,6 +4,7 @@ import { AuthenticatedHttpClient } from "@/services/auth/AuthenticatedHttpClient
 import { createTokenStorage } from "@/services/auth/createTokenStorage"
 import type { TokenStorage } from "@/services/auth/TokenStorage"
 import type { HttpClient } from "@/services/http/HttpClient"
+import { OfflineCachedHttpClient } from "@/services/http/OfflineCachedHttpClient"
 import { createHttpClient } from "@/services/http/createHttpClient"
 
 export function createAuthenticatedHttpClient(
@@ -11,7 +12,7 @@ export function createAuthenticatedHttpClient(
   tokenStorage: TokenStorage = createTokenStorage(),
   client: HttpClient = createHttpClient(campus),
 ): HttpClient {
-  return new AuthenticatedHttpClient(client, async () => {
+  const authenticatedClient = new AuthenticatedHttpClient(client, async () => {
     const storedToken = await tokenStorage.load(campus.id)
 
     if (!storedToken) {
@@ -26,4 +27,6 @@ export function createAuthenticatedHttpClient(
 
     return storedToken.token
   })
+
+  return new OfflineCachedHttpClient(campus.id, authenticatedClient)
 }

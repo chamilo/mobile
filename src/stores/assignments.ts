@@ -16,7 +16,16 @@ import {
   AssignmentServiceError,
 } from "@/services/assignments/AssignmentApiService"
 import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
+import { offlineCoreFlowRepository } from "@/services/offline/OfflineCoreFlowRepository"
+import {
+  isOfflineNow,
+  isUncertainDeliveryError,
+  temporaryOfflineId,
+} from "@/services/offline/OfflineWriteSupport"
+import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { useConnectivityStore } from "@/stores/connectivity"
+import { useOfflineSyncStore } from "@/stores/offlineSync"
 
 export type AssignmentLoadStatus = "idle" | "loading" | "ready" | "error"
 export type AssignmentStoreErrorCode = AssignmentErrorCode | "campus_required"
@@ -92,6 +101,62 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     return new AssignmentApiService(createAuthenticatedHttpClient(campus))
   }
 
+  function activeIdentity(): { campusId: string; userId: number } | null {
+    const campus = useCampusStore().selectedCampus
+    const userId = useAuthStore().profile?.id
+
+    return campus && userId ? { campusId: campus.id, userId } : null
+  }
+
+  function shouldUsePreparedData(): boolean {
+    return isOfflineNow() || !useConnectivityStore().campusAvailable
+  }
+
+  async function restorePreparedList(context: CourseNavigationContext): Promise<boolean> {
+    const identity = activeIdentity()
+    if (!identity) return false
+
+    const prepared = await offlineCoreFlowRepository
+      .loadAssignmentList(identity.campusId, identity.userId, context)
+      .catch(() => null)
+
+    if (!prepared) return false
+
+    list.data = structuredClone(prepared)
+    list.status = "ready"
+    list.errorCode = null
+    return true
+  }
+
+  async function restorePreparedDetail(
+    context: CourseNavigationContext,
+    assignmentId: number,
+  ): Promise<boolean> {
+    const identity = activeIdentity()
+    if (!identity) return false
+
+    const prepared = await offlineCoreFlowRepository
+      .loadAssignmentDetail(identity.campusId, identity.userId, context, assignmentId)
+      .catch(() => null)
+
+    if (!prepared) return false
+
+    detail.data = structuredClone(prepared)
+    detail.status = "ready"
+    detail.errorCode = null
+    return true
+  }
+
+  async function queueWrite(input: {
+    category: "assignment_submit" | "assignment_update" | "assignment_delete"
+    request: import("@/services/http/HttpClient").HttpRequest
+    description: string
+    dedupeKey?: string
+    uncertainDelivery?: boolean
+  }): Promise<boolean> {
+    return useOfflineSyncStore().enqueueHttpWrite(input)
+  }
+
   async function loadAssignments(context: CourseNavigationContext): Promise<boolean> {
     const api = service()
 
@@ -107,10 +172,24 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     list.errorCode = null
 
     try {
-      list.data = await api.getAssignments(context)
+      if (shouldUsePreparedData() && (await restorePreparedList(context))) return true
+
+      const loaded = await api.getAssignments(context)
+      if (!useConnectivityStore().campusAvailable && (await restorePreparedList(context))) {
+        return true
+      }
+
+      list.data = loaded
       list.status = "ready"
+      const identity = activeIdentity()
+      if (identity && list.data && useConnectivityStore().campusAvailable) {
+        await offlineCoreFlowRepository
+          .saveAssignmentList(identity.campusId, identity.userId, context, list.data)
+          .catch(() => undefined)
+      }
       return true
     } catch (error) {
+      if (await restorePreparedList(context)) return true
       list.errorCode = error instanceof AssignmentServiceError ? error.code : "server"
       list.status = "error"
       return false
@@ -135,10 +214,35 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     detail.errorCode = null
 
     try {
-      detail.data = await api.getAssignment(context, assignmentId)
+      if (shouldUsePreparedData() && (await restorePreparedDetail(context, assignmentId))) {
+        return true
+      }
+
+      const loaded = await api.getAssignment(context, assignmentId)
+      if (
+        !useConnectivityStore().campusAvailable &&
+        (await restorePreparedDetail(context, assignmentId))
+      ) {
+        return true
+      }
+
+      detail.data = loaded
       detail.status = "ready"
+      const identity = activeIdentity()
+      if (identity && detail.data && useConnectivityStore().campusAvailable) {
+        await offlineCoreFlowRepository
+          .saveAssignmentDetail(
+            identity.campusId,
+            identity.userId,
+            context,
+            assignmentId,
+            detail.data,
+          )
+          .catch(() => undefined)
+      }
       return true
     } catch (error) {
+      if (await restorePreparedDetail(context, assignmentId)) return true
       detail.errorCode = error instanceof AssignmentServiceError ? error.code : "server"
       detail.status = "error"
       return false
@@ -159,11 +263,53 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     write.data = null
     write.errorCode = null
 
+    const queueSubmission = async (uncertainDelivery = false): Promise<boolean> => {
+      const queued = await queueWrite({
+        category: "assignment_submit",
+        description: input.title.trim() || "Assignment submission",
+        dedupeKey: [
+          "assignment",
+          input.courseId,
+          input.sessionId ?? 0,
+          input.assignmentId,
+          input.kind,
+        ].join(":"),
+        uncertainDelivery,
+        request: {
+          method: "POST",
+          path: "/api/mobile_assignment_submissions",
+          headers: {
+            Accept: "application/ld+json",
+            "Content-Type": "application/json",
+          },
+          body: input,
+          timeoutMs: 60_000,
+        },
+      })
+
+      if (queued && !uncertainDelivery) {
+        write.data = {
+          id: temporaryOfflineId(),
+          title: input.title.trim(),
+          submittedAt: new Date().toISOString(),
+          hasFile: input.kind === "file",
+        }
+        write.status = "ready"
+      }
+
+      return queued && !uncertainDelivery
+    }
+
+    if (shouldUsePreparedData()) return queueSubmission()
+
     try {
       write.data = await api.submit(input)
       write.status = "ready"
       return true
     } catch (error) {
+      if (isUncertainDeliveryError(error)) {
+        await queueSubmission(true)
+      }
       write.errorCode = error instanceof AssignmentServiceError ? error.code : "server"
       write.status = "error"
       return false
@@ -189,11 +335,39 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     management.submissionId = submissionId
     management.errorCode = null
 
+    const queueUpdate = async (uncertainDelivery = false): Promise<boolean> => {
+      const queued = await queueWrite({
+        category: "assignment_update",
+        description: input.title.trim() || "Assignment submission update",
+        dedupeKey: `submission:${submissionId}`,
+        uncertainDelivery,
+        request: {
+          method: "PATCH",
+          path: `/api/mobile_assignment_submissions/${submissionId}`,
+          query: {
+            cid: input.courseId,
+            sessionId: input.sessionId,
+            sid: input.sessionId,
+          },
+          headers: {
+            Accept: "application/ld+json",
+            "Content-Type": "application/merge-patch+json",
+          },
+          body: input,
+        },
+      })
+      if (queued && !uncertainDelivery) management.status = "ready"
+      return queued && !uncertainDelivery
+    }
+
+    if (shouldUsePreparedData()) return queueUpdate()
+
     try {
       await api.updateSubmission(submissionId, input)
       management.status = "ready"
       return true
     } catch (error) {
+      if (isUncertainDeliveryError(error)) await queueUpdate(true)
       management.errorCode = error instanceof AssignmentServiceError ? error.code : "server"
       management.status = "error"
       return false
@@ -216,11 +390,35 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     management.submissionId = input.submissionId
     management.errorCode = null
 
+    const queueDelete = async (uncertainDelivery = false): Promise<boolean> => {
+      const queued = await queueWrite({
+        category: "assignment_delete",
+        description: `Delete assignment submission ${input.submissionId}`,
+        dedupeKey: `submission:${input.submissionId}`,
+        uncertainDelivery,
+        request: {
+          method: "DELETE",
+          path: `/api/mobile_assignment_submissions/${input.submissionId}`,
+          query: {
+            assignmentId: input.assignmentId,
+            courseId: input.courseId,
+            sessionId: input.sessionId,
+          },
+          headers: { Accept: "application/ld+json" },
+        },
+      })
+      if (queued && !uncertainDelivery) management.status = "ready"
+      return queued && !uncertainDelivery
+    }
+
+    if (shouldUsePreparedData()) return queueDelete()
+
     try {
       await api.deleteSubmission(input)
       management.status = "ready"
       return true
     } catch (error) {
+      if (isUncertainDeliveryError(error)) await queueDelete(true)
       management.errorCode = error instanceof AssignmentServiceError ? error.code : "server"
       management.status = "error"
       return false
