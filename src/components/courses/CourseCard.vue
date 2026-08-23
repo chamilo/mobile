@@ -44,27 +44,53 @@ watch(imageUrl, () => {
 
 <template>
   <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="relative h-28 overflow-hidden bg-chamilo-50 sm:h-32">
-      <img
-        v-if="showImage"
-        :src="imageUrl ?? undefined"
-        :alt="enrollment.course.title"
-        class="h-full w-full object-cover"
-        loading="lazy"
-        referrerpolicy="no-referrer"
-        @error="imageFailed = true"
-      />
-      <div
-        v-else
-        class="flex h-full items-center justify-center bg-gradient-to-br from-chamilo-50 to-slate-100 text-3xl text-chamilo-700"
-        aria-hidden="true"
+    <div class="relative aspect-video overflow-hidden bg-chamilo-50">
+      <RouterLink
+        v-if="accessAllowed"
+        :to="courseRoute"
+        class="block size-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-chamilo-600"
+        :aria-label="enrollment.course.title"
       >
-        <i class="pi pi-book" />
-      </div>
+        <img
+          v-if="showImage"
+          :src="imageUrl ?? undefined"
+          :alt="enrollment.course.title"
+          class="size-full object-cover"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          @error="imageFailed = true"
+        />
+        <div
+          v-else
+          class="flex size-full items-center justify-center bg-gradient-to-br from-chamilo-50 to-slate-100 text-3xl text-chamilo-700"
+          aria-hidden="true"
+        >
+          <i class="pi pi-book" />
+        </div>
+      </RouterLink>
+
+      <template v-else>
+        <img
+          v-if="showImage"
+          :src="imageUrl ?? undefined"
+          :alt="enrollment.course.title"
+          class="size-full object-cover"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          @error="imageFailed = true"
+        />
+        <div
+          v-else
+          class="flex size-full items-center justify-center bg-gradient-to-br from-chamilo-50 to-slate-100 text-3xl text-chamilo-700"
+          aria-hidden="true"
+        >
+          <i class="pi pi-book" />
+        </div>
+      </template>
 
       <span
         v-if="offlineManifest"
-        class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold text-white shadow"
+        class="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold text-white shadow"
       >
         <i class="pi pi-download" aria-hidden="true" />
         {{ t("offlineCourse.readyBadge") }}
@@ -72,7 +98,7 @@ watch(imageUrl, () => {
 
       <span
         v-if="directEnrollment?.hasNewContent"
-        class="absolute right-3 top-3 rounded-full bg-chamilo-700 px-3 py-1 text-xs font-semibold text-white shadow"
+        class="pointer-events-none absolute right-3 top-3 rounded-full bg-chamilo-700 px-3 py-1 text-xs font-semibold text-white shadow"
       >
         {{ t("courses.newContent") }}
       </span>
@@ -89,7 +115,15 @@ watch(imageUrl, () => {
             {{ t(`courses.roles.${directEnrollment.role}`) }}
           </span>
         </div>
-        <h3 class="mt-1.5 text-base font-semibold leading-6 text-slate-900">
+
+        <RouterLink
+          v-if="accessAllowed"
+          :to="courseRoute"
+          class="hover:text-chamilo-800 mt-1.5 block rounded-md text-base font-semibold leading-6 text-slate-900 focus:outline-none focus:ring-2 focus:ring-chamilo-600"
+        >
+          {{ enrollment.course.title }}
+        </RouterLink>
+        <h3 v-else class="mt-1.5 text-base font-semibold leading-6 text-slate-900">
           {{ enrollment.course.title }}
         </h3>
       </div>
@@ -125,23 +159,6 @@ watch(imageUrl, () => {
       >
         {{ t("courses.requirementsLocked") }}
       </p>
-
-      <RouterLink
-        v-if="accessAllowed"
-        :to="courseRoute"
-        class="hover:bg-chamilo-800 flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-2.5 text-sm font-semibold text-white transition"
-      >
-        {{ t("courses.openCourse") }}
-        <i class="pi pi-arrow-right" aria-hidden="true" />
-      </RouterLink>
-      <button
-        v-else
-        type="button"
-        class="min-h-touch w-full cursor-not-allowed rounded-xl bg-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500"
-        disabled
-      >
-        {{ t("courses.locked") }}
-      </button>
     </div>
   </article>
 </template>

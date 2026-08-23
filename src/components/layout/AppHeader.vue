@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue"
 
 const props = withDefaults(
   defineProps<{
+    brandName: string
     title: string
     logoUrl: string | null
     logoAlt: string
@@ -73,7 +74,7 @@ function handleLogoError(): void {
 
       <div class="min-w-0">
         <p class="truncate text-xs font-medium uppercase tracking-wide text-chamilo-700">
-          Chamilo Mobile
+          {{ brandName }}
         </p>
         <h1 class="truncate text-lg font-semibold text-slate-900">{{ title }}</h1>
       </div>

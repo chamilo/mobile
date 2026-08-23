@@ -37,10 +37,17 @@ const validationCode = reactive<{
 
 const isEditing = computed(() => Boolean(props.campus))
 const isDevelopment = import.meta.env.DEV
+const protocolPrefix = computed(() =>
+  isDevelopment && form.allowInsecureHttp ? "http://" : "https://",
+)
+
+function stripProtocol(value: string): string {
+  return value.trim().replace(/^https?:\/\//i, "")
+}
 
 function resetForm(): void {
   form.displayName = props.campus?.displayName ?? ""
-  form.baseUrl = props.campus?.baseUrl ?? ""
+  form.baseUrl = stripProtocol(props.campus?.baseUrl ?? "")
   form.allowInsecureHttp = props.campus?.allowInsecureHttp ?? false
   validationCode.displayName = null
   validationCode.baseUrl = null
@@ -57,7 +64,11 @@ function submit(): void {
   validationCode.baseUrl = null
 
   try {
-    const input = normalizeCampusProfileInput(form)
+    const input = normalizeCampusProfileInput({
+      displayName: form.displayName,
+      baseUrl: `${protocolPrefix.value}${stripProtocol(form.baseUrl)}`,
+      allowInsecureHttp: form.allowInsecureHttp,
+    })
     emit("submit", input)
 
     if (!isEditing.value) {
@@ -124,20 +135,30 @@ function submit(): void {
         <label for="campus-url" class="text-sm font-medium text-slate-800">
           {{ t("campus.form.url") }}
         </label>
-        <input
-          id="campus-url"
-          v-model="form.baseUrl"
-          name="campusUrl"
-          type="url"
-          inputmode="url"
-          autocomplete="url"
-          placeholder="https://campus.example.org"
-          class="mt-2 min-h-touch w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900"
-          :aria-invalid="Boolean(validationCode.baseUrl)"
-          :aria-describedby="validationCode.baseUrl ? 'campus-url-error' : 'campus-url-help'"
-        />
+        <div
+          class="mt-2 flex min-h-touch overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-chamilo-600 focus-within:ring-2 focus-within:ring-chamilo-100"
+        >
+          <span
+            class="flex shrink-0 items-center border-r border-slate-200 bg-slate-50 px-3 text-base font-medium text-slate-600"
+            aria-hidden="true"
+          >
+            {{ protocolPrefix }}
+          </span>
+          <input
+            id="campus-url"
+            v-model="form.baseUrl"
+            name="campusUrl"
+            type="text"
+            inputmode="url"
+            autocomplete="url"
+            placeholder="campus.example.org"
+            class="min-w-0 flex-1 border-0 bg-white px-3 py-2 text-base text-slate-900 outline-none"
+            :aria-invalid="Boolean(validationCode.baseUrl)"
+            :aria-describedby="validationCode.baseUrl ? 'campus-url-error' : 'campus-url-help'"
+          />
+        </div>
         <p id="campus-url-help" class="mt-2 text-sm text-slate-500">
-          {{ t("campus.form.urlHelp") }}
+          {{ t("campus.form.urlPrefixHelp") }}
         </p>
         <p
           v-if="validationCode.baseUrl"

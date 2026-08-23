@@ -15,13 +15,17 @@ describe("course response normalizers", () => {
     expect(extractNumericId("invalid")).toBeNull()
   })
 
-  it("normalizes direct course enrollment and preserves membership identity", () => {
+  it("normalizes direct course enrollment and preserves student summary data", () => {
     expect(
       normalizeDirectCourseEnrollment({
         "@id": "/api/course_rel_users/9",
         status: 5,
         trackingProgress: 44.6,
+        score: 72.345,
+        bestScore: 88.4,
+        timeSpentSeconds: 3661,
         completed: false,
+        certificateAvailable: true,
         hasNewContent: true,
         allowSubscription: true,
         teachersLite: [{ id: 2, fullName: "Teacher One", illustrationUrl: null }],
@@ -37,6 +41,10 @@ describe("course response normalizers", () => {
       membershipId: 9,
       role: "student",
       progress: 45,
+      score: 72.35,
+      bestScore: 88.4,
+      timeSpentSeconds: 3661,
+      certificateAvailable: true,
       hasNewContent: true,
       context: {
         courseId: 3,
@@ -56,6 +64,12 @@ describe("course response normalizers", () => {
         courses: [
           {
             "@id": "/api/session_rel_courses/17",
+            trackingProgress: 61.6,
+            score: 78.25,
+            bestScore: 91.5,
+            timeSpentSeconds: 5400,
+            completed: false,
+            certificateAvailable: true,
             course: {
               "@id": "/api/courses/4",
               id: 4,
@@ -67,12 +81,20 @@ describe("course response normalizers", () => {
       "current",
     )
 
-    expect(session.courses[0]?.context).toEqual({
-      courseId: 4,
-      sessionId: 8,
-      membershipId: null,
-      sessionCourseId: 17,
-      source: "session",
+    expect(session.courses[0]).toMatchObject({
+      progress: 62,
+      score: 78.25,
+      bestScore: 91.5,
+      timeSpentSeconds: 5400,
+      completed: false,
+      certificateAvailable: true,
+      context: {
+        courseId: 4,
+        sessionId: 8,
+        membershipId: null,
+        sessionCourseId: 17,
+        source: "session",
+      },
     })
   })
 

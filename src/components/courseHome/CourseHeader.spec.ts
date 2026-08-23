@@ -60,11 +60,12 @@ describe("CourseHeader", () => {
       },
     })
 
-    expect(wrapper.text()).toContain("Mobile course home")
+    expect(wrapper.text()).not.toContain("Mobile course home")
+    expect(wrapper.text()).toContain("Course home")
     expect(wrapper.text()).toContain("July session")
     expect(wrapper.text()).toContain("55%")
 
-    await wrapper.get('button[aria-label="Back to courses"]').trigger("click")
+    await wrapper.get("nav button").trigger("click")
     await flushPromises()
 
     expect(router.currentRoute.value.name).toBe("courses")

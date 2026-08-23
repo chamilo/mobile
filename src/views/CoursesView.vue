@@ -123,26 +123,6 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-5">
-    <section class="rounded-2xl bg-white p-4 shadow-sm">
-      <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
-          <p class="text-sm text-slate-500">{{ t("courses.signedInAs") }}</p>
-          <p class="mt-1 truncate font-semibold text-slate-900">{{ profile?.fullName }}</p>
-          <p class="truncate text-sm text-slate-600">{{ selectedCampus?.displayName }}</p>
-        </div>
-
-        <button
-          type="button"
-          class="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-slate-200 text-chamilo-700 transition hover:bg-chamilo-50 disabled:opacity-60"
-          :aria-label="t('courses.refresh')"
-          :disabled="status === 'loading' || isRefreshing"
-          @click="load(true)"
-        >
-          <i class="pi pi-refresh" :class="isRefreshing ? 'pi-spin' : ''" aria-hidden="true" />
-        </button>
-      </div>
-    </section>
-
     <div
       v-if="isStale"
       class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
@@ -282,5 +262,25 @@ onMounted(async () => {
         :description="t('courses.emptyDescription')"
       />
     </template>
+
+    <section class="rounded-2xl bg-white p-4 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <p class="text-sm text-slate-500">{{ t("courses.signedInAs") }}</p>
+          <p class="mt-1 truncate font-semibold text-slate-900">{{ profile?.fullName }}</p>
+          <p class="truncate text-sm text-slate-600">{{ selectedCampus?.displayName }}</p>
+        </div>
+
+        <button
+          type="button"
+          class="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-slate-200 text-chamilo-700 transition hover:bg-chamilo-50 disabled:opacity-60"
+          :aria-label="t('courses.refresh')"
+          :disabled="status === 'loading' || isRefreshing"
+          @click="load(true)"
+        >
+          <i class="pi pi-refresh" :class="isRefreshing ? 'pi-spin' : ''" aria-hidden="true" />
+        </button>
+      </div>
+    </section>
   </div>
 </template>

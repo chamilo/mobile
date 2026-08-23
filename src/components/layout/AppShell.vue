@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute } from "vue-router"
 
+import AppFooter from "@/components/layout/AppFooter.vue"
 import AppHeader from "@/components/layout/AppHeader.vue"
 import BottomNavigation from "@/components/layout/BottomNavigation.vue"
 import SideNavigationDrawer from "@/components/layout/SideNavigationDrawer.vue"
@@ -12,21 +13,61 @@ import {
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import { useAuthStore } from "@/stores/auth"
 import { useBrandingStore } from "@/stores/branding"
 import { useCampusStore } from "@/stores/campus"
+import { useCoursesStore } from "@/stores/courses"
 
 const EDGE_SWIPE_WIDTH_PX = 28
 const OPEN_SWIPE_DISTANCE_PX = 72
 
 const route = useRoute()
 const { t } = useI18n()
+const authStore = useAuthStore()
 const campusStore = useCampusStore()
 const brandingStore = useBrandingStore()
+const coursesStore = useCoursesStore()
+const appVersion = import.meta.env.VITE_APP_VERSION ?? "development"
 const drawerOpen = ref(false)
 const touchStartX = ref<number | null>(null)
 const touchStartY = ref<number | null>(null)
 
+const currentCourseTitle = computed(() => {
+  const courseId = Number(route.params.courseId)
+
+  if (!Number.isInteger(courseId) || courseId <= 0) {
+    return null
+  }
+
+  const directCourse = coursesStore.overview.directCourses.find(
+    (enrollment) => enrollment.course.id === courseId,
+  )
+
+  if (directCourse) {
+    return directCourse.course.title
+  }
+
+  const sessions = [
+    ...coursesStore.overview.currentSessions,
+    ...coursesStore.overview.upcomingSessions,
+    ...coursesStore.overview.pastSessions,
+  ]
+
+  for (const session of sessions) {
+    const enrollment = session.courses.find((candidate) => candidate.course.id === courseId)
+    if (enrollment) {
+      return enrollment.course.title
+    }
+  }
+
+  return null
+})
+
 const pageTitle = computed(() => {
+  if (currentCourseTitle.value) {
+    return currentCourseTitle.value
+  }
+
   const titleKey = route.meta.titleKey
 
   return typeof titleKey === "string" ? t(titleKey) : t("app.name")
@@ -36,6 +77,13 @@ const showNavigationDrawer = computed(() => route.meta.requiresAuth === true)
 const siteName = computed(
   () => brandingStore.branding?.siteName ?? campusStore.selectedCampus?.displayName ?? "Chamilo",
 )
+const brandName = computed(() => {
+  if (route.name === "campuses") {
+    return t("app.name")
+  }
+
+  return campusStore.selectedCampus ? siteName.value : t("app.name")
+})
 const logoUrl = computed(() => brandingStore.branding?.logoUrl ?? null)
 const logoAlt = computed(() => t("app.platformLogoAlt", { siteName: siteName.value }))
 
@@ -105,6 +153,16 @@ function handleTouchEnd(event: TouchEvent): void {
 }
 
 watch(
+  [() => route.params.courseId, () => authStore.isAuthenticated],
+  ([courseId, authenticated]) => {
+    if (typeof courseId === "string" && authenticated && coursesStore.status === "idle") {
+      void coursesStore.loadOverview()
+    }
+  },
+  { immediate: true },
+)
+
+watch(
   () => campusStore.selectedCampus,
   (campus) => {
     if (campus) {
@@ -138,6 +196,7 @@ onBeforeUnmount(() => {
     @touchend.passive="handleTouchEnd"
   >
     <AppHeader
+      :brand-name="brandName"
       :title="pageTitle"
       :logo-url="logoUrl"
       :logo-alt="logoAlt"
@@ -153,6 +212,7 @@ onBeforeUnmount(() => {
       :class="showBottomNavigation ? 'pb-24' : 'pb-8'"
     >
       <RouterView />
+      <AppFooter :version="appVersion" />
     </main>
 
     <BottomNavigation v-if="showBottomNavigation" />

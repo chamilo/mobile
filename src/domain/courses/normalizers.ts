@@ -34,8 +34,18 @@ function asFiniteNumber(value: unknown): number | null {
   return value
 }
 
+function asNonNegativeInteger(value: unknown): number | null {
+  const number = asFiniteNumber(value)
+
+  return number !== null && Number.isInteger(number) && number >= 0 ? number : null
+}
+
 function asBoolean(value: unknown, fallback = false): boolean {
   return typeof value === "boolean" ? value : fallback
+}
+
+function asNullableBoolean(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null
 }
 
 export function extractNumericId(value: unknown): number | null {
@@ -141,6 +151,12 @@ function normalizeProgress(item: UnknownRecord): number | null {
   return Math.min(100, Math.max(0, Math.round(progress)))
 }
 
+function normalizeScore(value: unknown): number | null {
+  const score = asFiniteNumber(value)
+
+  return score === null ? null : Math.round(score * 100) / 100
+}
+
 export function normalizeDirectCourseEnrollment(value: unknown): DirectCourseEnrollment {
   if (!isRecord(value)) {
     throw new CourseContractError("A direct course enrollment is invalid.")
@@ -162,6 +178,9 @@ export function normalizeDirectCourseEnrollment(value: unknown): DirectCourseEnr
     course,
     role: normalizeRole(value.status),
     progress: normalizeProgress(value),
+    score: normalizeScore(value.score),
+    bestScore: normalizeScore(value.bestScore),
+    timeSpentSeconds: asNonNegativeInteger(value.timeSpentSeconds),
     completed: asBoolean(value.completed),
     certificateAvailable: asBoolean(value.certificateAvailable),
     hasNewContent: asBoolean(value.hasNewContent),
@@ -197,6 +216,12 @@ function normalizeSessionCourse(value: unknown, sessionId: number): SessionCours
     sessionCourseId,
     sessionCourseIri,
     course,
+    progress: normalizeProgress(value),
+    score: normalizeScore(value.score),
+    bestScore: normalizeScore(value.bestScore),
+    timeSpentSeconds: asNonNegativeInteger(value.timeSpentSeconds),
+    completed: asNullableBoolean(value.completed),
+    certificateAvailable: asNullableBoolean(value.certificateAvailable),
     context: {
       courseId: course.id,
       sessionId,

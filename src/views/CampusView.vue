@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 
@@ -13,7 +13,6 @@ const { t } = useI18n()
 const campusStore = useCampusStore()
 const authStore = useAuthStore()
 const { profiles, selectedCampusId, errorCode } = storeToRefs(campusStore)
-const { errorCode: authErrorCode } = storeToRefs(authStore)
 
 const editingCampus = ref<CampusProfile | null>(null)
 const pendingRemovalId = ref<string | null>(null)
@@ -21,9 +20,6 @@ const busy = ref(false)
 
 const storeErrorMessage = computed(() =>
   errorCode.value ? t(`campus.storeErrors.${errorCode.value}`) : null,
-)
-const authErrorMessage = computed(() =>
-  authErrorCode.value ? t(`auth.errors.${authErrorCode.value}`) : null,
 )
 
 async function addOrUpdateCampus(input: CampusProfileInput): Promise<void> {
@@ -69,7 +65,6 @@ async function selectCampus(id: string): Promise<void> {
 
 function retryErrors(): void {
   campusStore.initialize()
-  authStore.clearError()
 }
 
 async function confirmRemoval(id: string): Promise<void> {
@@ -86,6 +81,12 @@ async function confirmRemoval(id: string): Promise<void> {
     editingCampus.value = null
   }
 }
+
+onMounted(() => {
+  // Authentication errors belong to the login screen. Do not leak stale login
+  // state into a different campus context after the user navigates back here.
+  authStore.clearError()
+})
 </script>
 
 <template>
@@ -97,12 +98,12 @@ async function confirmRemoval(id: string): Promise<void> {
     </section>
 
     <div
-      v-if="storeErrorMessage || authErrorMessage"
+      v-if="storeErrorMessage"
       class="rounded-2xl border border-red-200 bg-red-50 p-4"
       role="alert"
       aria-live="assertive"
     >
-      <p class="text-sm text-red-900">{{ storeErrorMessage ?? authErrorMessage }}</p>
+      <p class="text-sm text-red-900">{{ storeErrorMessage }}</p>
       <button
         type="button"
         class="mt-3 min-h-touch rounded-xl border border-red-300 bg-white px-4 py-2 font-medium text-red-800"

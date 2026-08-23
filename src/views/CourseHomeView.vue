@@ -12,7 +12,7 @@ import LoadingState from "@/components/states/LoadingState.vue"
 import { resolveCourseHomeEntry } from "@/domain/courseHome/resolveCourseHome"
 import { createCourseToolCapabilities } from "@/domain/courseHome/toolCapabilities"
 import { CourseRouteContextError, parseCourseRouteContext } from "@/domain/courses/routeContext"
-import { useCampusStore } from "@/stores/campus"
+import { useCourseIntroductionStore } from "@/stores/courseIntroduction"
 import { useCoursesStore } from "@/stores/courses"
 import { useCourseToolAvailabilityStore } from "@/stores/courseToolAvailability"
 
@@ -25,7 +25,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const campusStore = useCampusStore()
+const courseIntroductionStore = useCourseIntroductionStore()
 const coursesStore = useCoursesStore()
 const toolAvailabilityStore = useCourseToolAvailabilityStore()
 
@@ -79,8 +79,11 @@ const blockingErrorDescription = computed(() => {
 async function loadCourseContext(force = false): Promise<void> {
   await coursesStore.loadOverview(force)
 
-  if (entry.value) {
-    await toolAvailabilityStore.load(entry.value, force)
+  if (entry.value && context.value) {
+    await Promise.all([
+      toolAvailabilityStore.load(entry.value, force),
+      courseIntroductionStore.load(context.value, force),
+    ])
   }
 }
 
@@ -108,9 +111,7 @@ onMounted(() => {
   <CourseUnavailableState v-else-if="unavailableKind" :kind="unavailableKind" />
 
   <div v-else class="space-y-5">
-    <CourseHeader :entry="entry" :campus-base-url="campusStore.selectedCampus?.baseUrl ?? null" />
-
-    <CourseOfflineCard :entry="entry" />
+    <CourseHeader :entry="entry" :introduction="courseIntroductionStore.introText" />
 
     <section aria-labelledby="course-tools-title">
       <div class="mb-3">
@@ -136,5 +137,7 @@ onMounted(() => {
         :description="t('courseHome.emptyToolsDescription')"
       />
     </section>
+
+    <CourseOfflineCard :entry="entry" />
   </div>
 </template>
