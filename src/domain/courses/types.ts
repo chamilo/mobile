@@ -34,6 +34,9 @@ export interface DirectCourseEnrollment {
   course: CourseSummary
   role: CourseRole
   progress: number | null
+  score?: number | null
+  bestScore?: number | null
+  timeSpentSeconds?: number | null
   completed: boolean
   certificateAvailable: boolean
   hasNewContent: boolean
@@ -49,6 +52,12 @@ export interface SessionCourseEnrollment {
   sessionCourseId: number
   sessionCourseIri: string
   course: CourseSummary
+  progress: number | null
+  score: number | null
+  bestScore: number | null
+  timeSpentSeconds: number | null
+  completed: boolean | null
+  certificateAvailable: boolean | null
   context: CourseNavigationContext
 }
 

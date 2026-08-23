@@ -4,18 +4,40 @@ import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
 import type { CourseHomeEntry } from "@/domain/courseHome/types"
-import { resolveCampusAssetUrl } from "@/domain/courses/resolveCampusAssetUrl"
 
-const props = defineProps<{
-  entry: CourseHomeEntry
-  campusBaseUrl: string | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    entry: CourseHomeEntry
+    introduction?: string
+  }>(),
+  {
+    introduction: "",
+  },
+)
 
 const { t } = useI18n()
 const router = useRouter()
-const imageUrl = computed(() =>
-  resolveCampusAssetUrl(props.entry.course.illustrationUrl, props.campusBaseUrl),
-)
+
+const introductionText = computed(() => {
+  const value = props.introduction.trim()
+  if (!value) return null
+
+  const withSpacing = value
+    .replace(/<br\s*\/?\s*>/giu, " ")
+    .replace(/<\/?(?:p|div|li|h[1-6]|section|article)\b[^>]*>/giu, " ")
+
+  if (typeof DOMParser === "undefined") {
+    return (
+      withSpacing
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim() || null
+    )
+  }
+
+  const document = new DOMParser().parseFromString(withSpacing, "text/html")
+  return document.body.textContent?.replace(/\s+/g, " ").trim() || null
+})
 
 async function goBackToCourses(): Promise<void> {
   await router.push({ name: "courses" })
@@ -23,45 +45,37 @@ async function goBackToCourses(): Promise<void> {
 </script>
 
 <template>
-  <header class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="relative min-h-36 overflow-hidden bg-chamilo-50">
-      <img
-        v-if="imageUrl"
-        :src="imageUrl"
-        :alt="entry.course.title"
-        class="absolute inset-0 size-full object-cover"
-        referrerpolicy="no-referrer"
-      />
-      <div v-else class="absolute inset-0 bg-gradient-to-br from-chamilo-50 to-chamilo-100" />
-      <div
-        class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent"
-      />
-
+  <div class="space-y-4">
+    <nav
+      class="flex min-h-touch items-center gap-2 text-sm"
+      :aria-label="t('courseHome.breadcrumbLabel')"
+    >
       <button
         type="button"
-        class="absolute left-3 top-3 z-20 flex size-11 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
-        :aria-label="t('courseHome.backToCourses')"
-        @click.stop="goBackToCourses"
+        class="rounded-lg px-2 py-2 font-semibold text-chamilo-700 hover:bg-chamilo-50 focus:outline-none focus:ring-2 focus:ring-chamilo-600"
+        @click="goBackToCourses"
       >
-        <i class="pi pi-arrow-left" aria-hidden="true" />
+        {{ t("courseHome.breadcrumbCourses") }}
       </button>
+      <i class="pi pi-chevron-right text-xs text-slate-400" aria-hidden="true" />
+      <span class="truncate text-slate-600">{{ t("courseHome.breadcrumbCurrent") }}</span>
+    </nav>
 
-      <div class="relative flex min-h-36 flex-col justify-end p-5 text-white">
-        <div class="mb-2 flex flex-wrap gap-2 text-xs font-semibold">
-          <span v-if="entry.course.code" class="rounded-full bg-black/35 px-2.5 py-1">
-            {{ entry.course.code }}
-          </span>
-          <span class="rounded-full bg-black/35 px-2.5 py-1">
-            {{ t(`courses.roles.${entry.role}`) }}
-          </span>
-        </div>
-        <h1 class="text-xl font-semibold leading-7">
-          {{ entry.course.title }}
-        </h1>
-      </div>
-    </div>
+    <section
+      v-if="introductionText"
+      class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      aria-labelledby="course-introduction-title"
+    >
+      <h2 id="course-introduction-title" class="text-sm font-semibold text-slate-900">
+        {{ t("courseHome.introduction") }}
+      </h2>
+      <p class="mt-2 text-sm leading-6 text-slate-700">{{ introductionText }}</p>
+    </section>
 
-    <div class="space-y-3 p-4">
+    <section
+      v-if="entry.sessionTitle || entry.progress !== null"
+      class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+    >
       <div v-if="entry.sessionTitle" class="flex items-start gap-3 text-sm text-slate-700">
         <i class="pi pi-calendar mt-0.5 text-chamilo-700" aria-hidden="true" />
         <div>
@@ -77,13 +91,20 @@ async function goBackToCourses(): Promise<void> {
           <span>{{ t("courses.progress") }}</span>
           <span class="font-semibold">{{ entry.progress }}%</span>
         </div>
-        <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+        <div
+          class="h-2 overflow-hidden rounded-full bg-slate-100"
+          role="progressbar"
+          :aria-label="t('courses.progress')"
+          :aria-valuenow="entry.progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
           <div
             class="h-full rounded-full bg-chamilo-600"
             :style="{ width: `${entry.progress}%` }"
           />
         </div>
       </div>
-    </div>
-  </header>
+    </section>
+  </div>
 </template>

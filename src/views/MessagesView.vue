@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 
@@ -7,11 +7,14 @@ import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import type { MessageBox, MobileMessage } from "@/domain/messages/types"
+import { useConnectivityStore } from "@/stores/connectivity"
 import { useMessagesStore } from "@/stores/messages"
 
 const { t } = useI18n()
 const messagesStore = useMessagesStore()
+const connectivityStore = useConnectivityStore()
 const { listStatus, mutationStatus, currentBox, items, errorCode } = storeToRefs(messagesStore)
+const { deviceOnline } = storeToRefs(connectivityStore)
 const search = ref("")
 const unreadOnly = ref(false)
 const starredOnly = ref(false)
@@ -20,6 +23,12 @@ const errorMessage = computed(() =>
   errorCode.value ? t(`messages.errors.${errorCode.value}`) : t("messages.errors.server"),
 )
 const isBusy = computed(() => listStatus.value === "loading" || mutationStatus.value === "loading")
+const isOfflineLoadError = computed(
+  () =>
+    listStatus.value === "error" &&
+    !deviceOnline.value &&
+    (errorCode.value === "network" || errorCode.value === "timeout"),
+)
 
 function formatDate(value: string): string {
   const date = new Date(value)
@@ -52,6 +61,17 @@ async function removeMessage(message: MobileMessage): Promise<void> {
 
   await messagesStore.remove(message.id)
 }
+
+watch(deviceOnline, (online, wasOnline) => {
+  if (
+    online &&
+    wasOnline === false &&
+    listStatus.value === "error" &&
+    (errorCode.value === "network" || errorCode.value === "timeout")
+  ) {
+    void load()
+  }
+})
 
 onMounted(() => load("inbox"))
 </script>
@@ -134,7 +154,7 @@ onMounted(() => load("inbox"))
           <button
             type="button"
             class="min-h-touch text-sm font-semibold text-chamilo-700"
-            :disabled="isBusy"
+            :disabled="isBusy || !deviceOnline"
             @click="load()"
           >
             {{ t("messages.applyFilters") }}
@@ -144,6 +164,23 @@ onMounted(() => load("inbox"))
     </section>
 
     <LoadingState v-if="listStatus === 'loading'" :label="t('messages.loading')" />
+
+    <section
+      v-else-if="isOfflineLoadError"
+      class="rounded-2xl border border-amber-200 bg-amber-50 p-5"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="flex items-start gap-3">
+        <i class="pi pi-wifi mt-0.5 text-amber-700" aria-hidden="true" />
+        <div>
+          <h2 class="font-semibold text-amber-950">{{ t("messages.offlineTitle") }}</h2>
+          <p class="mt-1 text-sm leading-6 text-amber-900">
+            {{ t("messages.offlineDescription") }}
+          </p>
+        </div>
+      </div>
+    </section>
 
     <ErrorState
       v-else-if="listStatus === 'error'"

@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest"
 import { mount, RouterLinkStub } from "@vue/test-utils"
 import { createPinia } from "pinia"
+import { describe, expect, it } from "vitest"
 
 import CourseCard from "@/components/courses/CourseCard.vue"
 import { i18n } from "@/i18n"
@@ -21,6 +21,9 @@ const directEnrollment = {
   },
   role: "student" as const,
   progress: 45,
+  score: 72.5,
+  bestScore: 80,
+  timeSpentSeconds: 3600,
   completed: false,
   certificateAvailable: false,
   hasNewContent: true,
@@ -37,7 +40,7 @@ const directEnrollment = {
 }
 
 describe("CourseCard", () => {
-  it("renders course progress and preserves the direct membership route", () => {
+  it("links only the course image and title while keeping progress non-interactive", () => {
     const wrapper = mount(CourseCard, {
       props: {
         enrollment: directEnrollment,
@@ -49,13 +52,23 @@ describe("CourseCard", () => {
       },
     })
 
+    const links = wrapper.findAllComponents(RouterLinkStub)
+
     expect(wrapper.text()).toContain("Mobile course")
     expect(wrapper.text()).toContain("45%")
-    expect(wrapper.findComponent(RouterLinkStub).props("to")).toEqual({
-      name: "course-home",
-      params: { courseId: "3" },
-      query: { source: "direct", membership: "9" },
-    })
+    expect(wrapper.text()).not.toContain("Open course")
+    expect(links).toHaveLength(2)
+    expect(
+      links.every(
+        (link) =>
+          JSON.stringify(link.props("to")) ===
+          JSON.stringify({
+            name: "course-home",
+            params: { courseId: "3" },
+            query: { source: "direct", membership: "9" },
+          }),
+      ),
+    ).toBe(true)
   })
 
   it("does not link a course blocked by requirements", () => {
@@ -71,6 +84,5 @@ describe("CourseCard", () => {
     })
 
     expect(wrapper.findComponent(RouterLinkStub).exists()).toBe(false)
-    expect(wrapper.get("button").attributes("disabled")).toBeDefined()
   })
 })

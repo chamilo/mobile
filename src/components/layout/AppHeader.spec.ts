@@ -7,6 +7,7 @@ describe("AppHeader", () => {
   it("renders the current page title and campus logo", () => {
     const wrapper = mount(AppHeader, {
       props: {
+        brandName: "Testing campus",
         title: "My courses",
         logoUrl: "https://campus.test/themes/chamilo/logo/header",
         logoAlt: "Campus logo",
@@ -24,6 +25,7 @@ describe("AppHeader", () => {
   it("shows CH when no campus logo is available", () => {
     const wrapper = mount(AppHeader, {
       props: {
+        brandName: "Chamilo Mobile",
         title: "Sign in",
         logoUrl: null,
         logoAlt: "Campus logo",
@@ -36,6 +38,7 @@ describe("AppHeader", () => {
   it("returns to CH when the image cannot be loaded", async () => {
     const wrapper = mount(AppHeader, {
       props: {
+        brandName: "Testing campus",
         title: "My courses",
         logoUrl: "https://campus.test/broken.svg",
         logoAlt: "Campus logo",

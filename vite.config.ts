@@ -92,7 +92,7 @@ function scormFixturePlugin(fixtureRoot: string): Plugin {
   }
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const environment = loadEnv(mode, process.cwd(), "")
   const proxyTarget = process.env.VITE_DEV_PROXY_TARGET || environment.VITE_DEV_PROXY_TARGET
   const proxyInsecure =
@@ -100,8 +100,18 @@ export default defineConfig(({ mode }) => {
   const fixtureRootValue =
     process.env.VITE_SCORM_FIXTURE_ROOT || environment.VITE_SCORM_FIXTURE_ROOT
   const fixtureRoot = fixtureRootValue ? resolve(fixtureRootValue) : ""
+  const packageMetadata = JSON.parse(
+    await readFile(fileURLToPath(new URL("./package.json", import.meta.url)), "utf8"),
+  ) as { version?: unknown }
+  const appVersion =
+    typeof packageMetadata.version === "string" && packageMetadata.version.trim()
+      ? packageMetadata.version.trim()
+      : "development"
 
   return {
+    define: {
+      "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
+    },
     plugins: [vue(), ...(fixtureRoot ? [scormFixturePlugin(fixtureRoot)] : [])],
     resolve: {
       alias: {
