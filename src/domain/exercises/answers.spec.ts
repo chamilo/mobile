@@ -6,6 +6,8 @@ import {
   createExerciseAnswerState,
   hasUnsupportedExerciseQuestions,
   isExerciseAnswerProvided,
+  isStructuralExerciseQuestion,
+  isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
 import type { ExerciseQuestion } from "@/domain/exercises/types"
 
@@ -72,5 +74,35 @@ describe("exercise answers", () => {
     state.choice = 4
 
     expect(isExerciseAnswerProvided(item, state)).toBe(true)
+  })
+
+  it("treats reading comprehension as an answerable unique-choice question", () => {
+    const item = question(21)
+    item.choices = [
+      { id: 41, answer: "First", position: 1 },
+      { id: 42, answer: "Second", position: 2 },
+    ]
+    item.reading = { speed: 175, text: "Read this passage." }
+    const state = createExerciseAnswerState(item)
+
+    expect(isStructuralExerciseQuestion(item)).toBe(false)
+    expect(isSupportedExerciseQuestion(item)).toBe(true)
+    expect(hasUnsupportedExerciseQuestions([item])).toBe(false)
+
+    state.choice = 42
+
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({ choice: 42 })
+  })
+
+  it("keeps media questions and page breaks structural", () => {
+    const media = question(15)
+    media.isContent = true
+    const pageBreak = question(31)
+    pageBreak.isContent = true
+
+    expect(isStructuralExerciseQuestion(media)).toBe(true)
+    expect(isStructuralExerciseQuestion(pageBreak)).toBe(true)
+    expect(hasUnsupportedExerciseQuestions([media, pageBreak])).toBe(false)
   })
 })

@@ -18,6 +18,7 @@ import {
   isExerciseAnswerProvided,
   isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
+import { resolveExerciseStructuralContext } from "@/domain/exercises/runtimePages"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
 import { useExercisesStore } from "@/stores/exercises"
@@ -57,6 +58,14 @@ const validExerciseId = computed(
 )
 const errorDescription = computed(() => t(`exercises.errors.${store.errorCode ?? "server"}`))
 const question = computed(() => store.currentQuestion)
+const structuralContext = computed(() =>
+  question.value
+    ? resolveExerciseStructuralContext(question.value, store.runtime?.runtimePages)
+    : { page: null, media: null, pageBreak: null },
+)
+const currentMediaContext = computed(() => structuralContext.value.media)
+const currentPageBreakContext = computed(() => structuralContext.value.pageBreak)
+const currentReading = computed(() => question.value?.reading ?? null)
 const currentAnswer = computed(() =>
   question.value ? (store.answers[question.value.id] ?? null) : null,
 )
@@ -451,6 +460,63 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
+        <section
+          v-if="currentPageBreakContext || currentMediaContext"
+          class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        >
+          <div
+            v-if="currentPageBreakContext"
+            class="rounded-xl border border-slate-200 bg-slate-50 p-4"
+          >
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {{ t("exercises.sectionContext") }}
+            </p>
+            <h2
+              v-if="currentPageBreakContext.title"
+              class="mt-1 text-base font-semibold text-slate-900"
+            >
+              {{ plainText(currentPageBreakContext.title) }}
+            </h2>
+            <p
+              v-if="currentPageBreakContext.description || currentPageBreakContext.content?.description"
+              class="mt-2 text-sm text-slate-700"
+            >
+              {{
+                plainText(
+                  currentPageBreakContext.description ||
+                    currentPageBreakContext.content?.description ||
+                    "",
+                )
+              }}
+            </p>
+          </div>
+
+          <div
+            v-if="currentMediaContext"
+            class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4"
+          >
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {{ t("exercises.mediaContext") }}
+            </p>
+            <h2
+              v-if="currentMediaContext.title"
+              class="mt-1 text-base font-semibold text-slate-900"
+            >
+              {{ plainText(currentMediaContext.title) }}
+            </h2>
+            <p
+              v-if="currentMediaContext.description || currentMediaContext.content?.description"
+              class="mt-2 text-sm text-slate-700"
+            >
+              {{
+                plainText(
+                  currentMediaContext.description || currentMediaContext.content?.description || "",
+                )
+              }}
+            </p>
+          </div>
+        </section>
+
         <section class="rounded-2xl bg-white p-4 shadow-sm">
           <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
             {{ question.typeLabel }}
@@ -458,9 +524,29 @@ onBeforeUnmount(() => {
           <h2 class="mt-1 text-lg font-semibold text-slate-900">
             {{ plainText(question.title) }}
           </h2>
-          <p v-if="question.description" class="mt-2 text-sm text-slate-600">
+          <p v-if="question.description && !currentReading" class="mt-2 text-sm text-slate-600">
             {{ plainText(question.description) }}
           </p>
+
+          <div
+            v-if="currentReading"
+            class="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4"
+          >
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {{ t("exercises.readingPassage") }}
+              </p>
+              <p v-if="currentReading.speed > 0" class="mt-1 text-xs text-slate-600">
+                {{ t("exercises.readingSpeed", { speed: currentReading.speed }) }}
+              </p>
+            </div>
+            <p
+              v-if="currentReading.text || question.description"
+              class="whitespace-pre-line text-sm leading-6 text-slate-800"
+            >
+              {{ plainText(currentReading.text || question.description) }}
+            </p>
+          </div>
 
           <ExerciseQuestionField
             v-if="currentAnswer"

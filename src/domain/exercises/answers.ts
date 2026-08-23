@@ -4,14 +4,14 @@ import type {
   SavedAnswerRow,
 } from "@/domain/exercises/types"
 
-const RADIO_TYPES = [1, 10, 17]
+const RADIO_TYPES = [1, 10, 17, 21]
 const CHECKBOX_TYPES = [2, 9, 14]
 const TRUE_FALSE_TYPES = [11, 12, 22]
 const FILL_BLANK_TYPES = [3, 27]
 const MATCHING_TYPES = [4, 19, 24, 25]
 const DROPDOWN_TYPES = [28, 29]
 const UNSUPPORTED_TYPES = [6, 8, 13, 20, 23, 26, 30]
-const STRUCTURAL_TYPES = [15, 21, 31]
+const STRUCTURAL_TYPES = [15, 31]
 
 export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolean {
   return question.isContent || STRUCTURAL_TYPES.includes(question.type)

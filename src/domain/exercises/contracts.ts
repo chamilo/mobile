@@ -2,12 +2,17 @@ import type {
   ExerciseAnswerResponse,
   ExerciseAttempt,
   ExerciseChoice,
+  ExerciseContentRuntime,
   ExerciseFinishResponse,
   ExerciseList,
   ExerciseListItem,
+  ExerciseMediaRuntime,
+  ExercisePageBreakRuntime,
   ExerciseQuestion,
+  ExerciseReadingRuntime,
   ExerciseResult,
   ExerciseRuntime,
+  ExerciseRuntimePage,
   SavedAnswerRow,
 } from "@/domain/exercises/types"
 
@@ -61,6 +66,74 @@ function nullableNumber(value: unknown): number | null {
 function numberArray(value: unknown): number[] {
   return Array.isArray(value)
     ? value.filter((item): item is number => Number.isInteger(item) && item > 0)
+    : []
+}
+
+function normalizeContent(value: unknown): ExerciseContentRuntime | null {
+  const item = optionalRecord(value)
+  if (!item) return null
+
+  return {
+    title: stringValue(item.title),
+    description: stringValue(item.description),
+  }
+}
+
+function normalizeMedia(value: unknown): ExerciseMediaRuntime | null {
+  const item = optionalRecord(value)
+  if (!item || !Number.isInteger(item.id) || numberValue(item.id) <= 0) return null
+
+  return {
+    id: numberValue(item.id),
+    title: stringValue(item.title),
+    description: stringValue(item.description),
+    type: numberValue(item.type),
+    typeLabel: stringValue(item.typeLabel),
+    content: normalizeContent(item.content),
+  }
+}
+
+function normalizeReading(value: unknown): ExerciseReadingRuntime | null {
+  const item = optionalRecord(value)
+  if (!item) return null
+
+  return {
+    speed: Math.max(0, numberValue(item.speed)),
+    text: stringValue(item.text),
+  }
+}
+
+function normalizePageBreak(value: unknown): ExercisePageBreakRuntime | null {
+  const item = optionalRecord(value)
+  if (!item) return null
+
+  return {
+    id: numberValue(item.id),
+    title: stringValue(item.title),
+    description: stringValue(item.description),
+    content: normalizeContent(item.content),
+  }
+}
+
+function normalizeRuntimePage(value: unknown): ExerciseRuntimePage | null {
+  const item = optionalRecord(value)
+  if (!item) return null
+
+  return {
+    index: Math.max(0, numberValue(item.index)),
+    number: Math.max(1, numberValue(item.number, 1)),
+    type: stringValue(item.type),
+    media: normalizeMedia(item.media),
+    pageBreak: normalizePageBreak(item.pageBreak),
+    questionIds: numberArray(item.questionIds),
+  }
+}
+
+function normalizeRuntimePages(value: unknown): ExerciseRuntimePage[] {
+  return Array.isArray(value)
+    ? value
+        .map(normalizeRuntimePage)
+        .filter((page): page is ExerciseRuntimePage => page !== null)
     : []
 }
 
@@ -196,6 +269,13 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
             : [],
         }
       : null,
+    parentId: Math.max(0, numberValue(item.parentId)),
+    parent: normalizeMedia(item.parent),
+    reading: normalizeReading(item.reading),
+    content: normalizeContent(item.content),
+    annotation: optionalRecord(item.annotation),
+    hotspot: optionalRecord(item.hotspot),
+    onlyoffice: optionalRecord(item.onlyoffice),
     isContent: booleanValue(item.isContent),
   }
 }
@@ -247,6 +327,7 @@ export function normalizeExerciseRuntime(value: unknown): ExerciseRuntime {
   const source = record(value, "The exercise runtime response is invalid.")
   const attempt = normalizeAttempt(source.attempt)
   const canSubmit = booleanValue(source.canSubmit)
+  const settings = optionalRecord(source.settings) ?? {}
   if (attempt && !Object.prototype.hasOwnProperty.call(record(source.attempt, ""), "canFinish")) {
     attempt.canFinish = canSubmit
   }
@@ -255,7 +336,7 @@ export function normalizeExerciseRuntime(value: unknown): ExerciseRuntime {
     exerciseId: positiveInteger(source.exerciseId, "The exercise id is invalid."),
     title: stringValue(source.title),
     description: stringValue(source.description),
-    settings: optionalRecord(source.settings) ?? {},
+    settings,
     questions: Array.isArray(source.questions)
       ? source.questions
           .map(normalizeQuestion)
@@ -273,6 +354,10 @@ export function normalizeExerciseRuntime(value: unknown): ExerciseRuntime {
     canStartAttempt: booleanValue(source.canStartAttempt),
     canSubmit,
     usesLegacySubmit: booleanValue(source.usesLegacySubmit),
+    runtimePages: normalizeRuntimePages(settings.runtimePages),
+    usesStructuralPages: booleanValue(settings.usesStructuralPages),
+    forceGroupedByMedia: booleanValue(settings.forceGroupedByMedia),
+    effectiveOneQuestionPerPage: booleanValue(settings.effectiveOneQuestionPerPage),
   }
 }
 

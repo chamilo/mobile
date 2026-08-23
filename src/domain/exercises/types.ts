@@ -76,6 +76,41 @@ export interface ExerciseCalculatedRuntime {
   variations: ExerciseCalculatedVariation[]
 }
 
+export interface ExerciseContentRuntime {
+  title: string
+  description: string
+}
+
+export interface ExerciseMediaRuntime {
+  id: number
+  title: string
+  description: string
+  type: number
+  typeLabel: string
+  content: ExerciseContentRuntime | null
+}
+
+export interface ExerciseReadingRuntime {
+  speed: number
+  text: string
+}
+
+export interface ExercisePageBreakRuntime {
+  id: number
+  title: string
+  description: string
+  content: ExerciseContentRuntime | null
+}
+
+export interface ExerciseRuntimePage {
+  index: number
+  number: number
+  type: string
+  media: ExerciseMediaRuntime | null
+  pageBreak: ExercisePageBreakRuntime | null
+  questionIds: number[]
+}
+
 export interface ExerciseQuestion {
   id: number
   title: string
@@ -95,6 +130,14 @@ export interface ExerciseQuestion {
   draggable: ExerciseDraggableRuntime | null
   dropdown: ExerciseDropdownRuntime | null
   calculated: ExerciseCalculatedRuntime | null
+  /** Optional for backward compatibility with cached runtimes created before structural parity. */
+  parentId?: number
+  parent?: ExerciseMediaRuntime | null
+  reading?: ExerciseReadingRuntime | null
+  content?: ExerciseContentRuntime | null
+  annotation?: Record<string, unknown> | null
+  hotspot?: Record<string, unknown> | null
+  onlyoffice?: Record<string, unknown> | null
   isContent: boolean
 }
 
@@ -138,6 +181,11 @@ export interface ExerciseRuntime {
   canStartAttempt: boolean
   canSubmit: boolean
   usesLegacySubmit: boolean
+  /** Normalized mirrors of structural settings, optional for old offline snapshots. */
+  runtimePages?: ExerciseRuntimePage[]
+  usesStructuralPages?: boolean
+  forceGroupedByMedia?: boolean
+  effectiveOneQuestionPerPage?: boolean
 }
 
 export interface ExerciseAnswerState {
