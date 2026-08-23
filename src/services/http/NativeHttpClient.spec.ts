@@ -41,6 +41,7 @@ describe("NativeHttpClient", () => {
       expect.objectContaining({
         method: "GET",
         url: "https://campus.example.org/api/me?active=true",
+        headers: undefined,
         connectTimeout: 2500,
         readTimeout: 2500,
         disableRedirects: true,
@@ -52,6 +53,63 @@ describe("NativeHttpClient", () => {
       headers: { "content-type": "application/json" },
       data: { ok: true },
     })
+  })
+
+  it("adds the selected campus Origin to state-changing native requests", async () => {
+    requestMock.mockResolvedValue({
+      status: 200,
+      data: { ok: true },
+      headers: { "Content-Type": "application/json" },
+      url: "https://campus.example.org/api/authentication_token",
+    })
+
+    const client = new NativeHttpClient("https://campus.example.org")
+    await client.request<{ ok: boolean }, { probe: boolean }>({
+      method: "POST",
+      path: "/api/authentication_token",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: { probe: true },
+    })
+
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Origin: "https://campus.example.org",
+        },
+      }),
+    )
+  })
+
+  it("replaces a caller-provided Origin with the selected campus Origin", async () => {
+    requestMock.mockResolvedValue({
+      status: 200,
+      data: { ok: true },
+      headers: {},
+      url: "https://campus.example.org/api/example",
+    })
+
+    const client = new NativeHttpClient("https://campus.example.org")
+    await client.request<{ ok: boolean }>({
+      method: "DELETE",
+      path: "/api/example",
+      headers: {
+        origin: "https://attacker.example",
+      },
+    })
+
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: {
+          Origin: "https://campus.example.org",
+        },
+      }),
+    )
   })
 
   it("decodes a native base64 blob response", async () => {
