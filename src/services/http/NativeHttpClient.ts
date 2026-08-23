@@ -39,6 +39,34 @@ function buildRequestUrl(baseUrl: URL, request: HttpRequest<unknown>): URL {
   return url
 }
 
+function buildRequestHeaders(
+  baseUrl: URL,
+  request: HttpRequest<unknown>,
+): Record<string, string> | undefined {
+  if (request.method === "GET") {
+    return request.headers
+  }
+
+  const headers = { ...(request.headers ?? {}) }
+
+  // Native HTTP clients can keep the campus session cookie but do not
+  // automatically send browser Origin/Referer headers. Chamilo's stateless
+  // same-origin CSRF protection therefore rejects a state-changing request
+  // such as /api/authentication_token when a previous session exists.
+  //
+  // The request path is already constrained to the selected campus origin, so
+  // always provide that canonical origin for native state-changing requests.
+  for (const headerName of Object.keys(headers)) {
+    if (headerName.toLowerCase() === "origin") {
+      delete headers[headerName]
+    }
+  }
+
+  headers.Origin = baseUrl.origin
+
+  return headers
+}
+
 function normalizeNativeError(error: unknown): HttpClientError {
   if (error instanceof HttpClientError) {
     return error
@@ -145,7 +173,7 @@ export class NativeHttpClient implements HttpClient {
     const options: HttpOptions = {
       method: request.method,
       url: url.toString(),
-      headers: request.headers,
+      headers: buildRequestHeaders(this.baseUrl, request),
       data: request.body,
       connectTimeout: timeoutMs,
       readTimeout: timeoutMs,
