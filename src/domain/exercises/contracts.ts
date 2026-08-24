@@ -1,6 +1,7 @@
 import type {
   ExerciseAnswerResponse,
   ExerciseAttempt,
+  ExerciseAttemptFile,
   ExerciseChoice,
   ExerciseContentRuntime,
   ExerciseFinishResponse,
@@ -15,6 +16,7 @@ import type {
   ExerciseResult,
   ExerciseRuntime,
   ExerciseRuntimePage,
+  ExerciseUploadAnswerResponse,
   SavedAnswerRow,
 } from "@/domain/exercises/types"
 
@@ -193,6 +195,29 @@ function normalizeChoices(value: unknown): ExerciseChoice[] {
     : []
 }
 
+function normalizeAttemptFile(value: unknown): ExerciseAttemptFile | null {
+  const item = optionalRecord(value)
+  if (!item || !Number.isInteger(item.id) || numberValue(item.id) <= 0) return null
+
+  return {
+    id: numberValue(item.id),
+    name: stringValue(item.name),
+    size: Math.max(0, numberValue(item.size)),
+    mimeType: stringValue(item.mimeType),
+    url: stringValue(item.url),
+    ...(stringValue(item.inlineUrl) ? { inlineUrl: stringValue(item.inlineUrl) } : {}),
+    ...(stringValue(item.onlyofficeEditorUrl)
+      ? { onlyofficeEditorUrl: stringValue(item.onlyofficeEditorUrl) }
+      : {}),
+  }
+}
+
+function normalizeAttemptFiles(value: unknown): ExerciseAttemptFile[] {
+  return Array.isArray(value)
+    ? value.map(normalizeAttemptFile).filter((item): item is ExerciseAttemptFile => item !== null)
+    : []
+}
+
 function normalizeSavedAnswers(value: unknown): Record<string, SavedAnswerRow[]> {
   const source = optionalRecord(value)
   if (!source) return {}
@@ -207,6 +232,8 @@ function normalizeSavedAnswers(value: unknown): Record<string, SavedAnswerRow[]>
             .map((row) => ({
               answer: stringValue(row.answer),
               position: nullableNumber(row.position),
+              secondsSpent: Math.max(0, numberValue(row.secondsSpent)),
+              files: normalizeAttemptFiles(row.files),
             }))
         : [],
     ]),
@@ -412,6 +439,23 @@ export function normalizeExerciseAnswerResponse(value: unknown): ExerciseAnswerR
   return {
     success: booleanValue(source.success),
     message: stringValue(source.message),
+    savedAnswer: normalizeSavedAnswers({ answer: source.savedAnswer }).answer ?? [],
+    answeredQuestionIds: numberArray(source.answeredQuestionIds),
+    reviewQuestionIds: numberArray(source.reviewQuestionIds),
+    answeredCount: numberValue(source.answeredCount),
+    canFinish: booleanValue(source.canFinish),
+  }
+}
+
+export function normalizeExerciseUploadAnswerResponse(
+  value: unknown,
+): ExerciseUploadAnswerResponse {
+  const source = record(value, "The exercise upload response is invalid.")
+
+  return {
+    success: booleanValue(source.success),
+    message: stringValue(source.message),
+    files: normalizeAttemptFiles(source.files),
     savedAnswer: normalizeSavedAnswers({ answer: source.savedAnswer }).answer ?? [],
     answeredQuestionIds: numberArray(source.answeredQuestionIds),
     reviewQuestionIds: numberArray(source.reviewQuestionIds),

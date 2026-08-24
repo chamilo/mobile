@@ -1,4 +1,4 @@
-import { computed, ref, toRaw } from "vue"
+import { computed, ref, shallowRef, toRaw } from "vue"
 import { defineStore } from "pinia"
 
 import type { CampusProfile } from "@/domain/campus/types"
@@ -84,6 +84,7 @@ export const useExercisesStore = defineStore("exercises", () => {
   const errorMessage = ref("")
   const savedQuestionIds = ref<number[]>([])
   const reviewQuestionIds = ref<number[]>([])
+  const pendingAnswerFiles = shallowRef<Record<number, File>>({})
 
   const answerableQuestions = computed(
     () =>
@@ -116,6 +117,17 @@ export const useExercisesStore = defineStore("exercises", () => {
   const canSubmitFinal = computed(
     () => canFinish.value && (!requiresAllAnswers.value || allAnswersSaved.value),
   )
+
+  function setPendingAnswerFile(questionId: number, file: File | null): void {
+    const next = { ...pendingAnswerFiles.value }
+    if (file) next[questionId] = file
+    else delete next[questionId]
+    pendingAnswerFiles.value = next
+  }
+
+  function isFileAnswerQuestion(type: number): boolean {
+    return type === 13 || type === 23
+  }
 
   function service(): ExerciseApiService {
     const campus = useCampusStore().selectedCampus
@@ -571,6 +583,84 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
+  async function saveCurrentFileAnswer(
+    context: CourseNavigationContext,
+    exerciseId: number,
+    navigationAction: string,
+  ): Promise<boolean> {
+    const question = currentQuestion.value
+    const attempt = runtime.value?.attempt
+    const answerState = question ? answers.value[question.id] : undefined
+    if (!question || !attempt || !answerState) return false
+
+    const pendingFile = pendingAnswerFiles.value[question.id]
+    if (pendingFile && shouldUsePreparedData()) {
+      setError(new ExerciseServiceError("network", "File answers require a connection to the campus."))
+      return false
+    }
+
+    if (question.type === 13 && pendingFile && !/\.(wav|ogg)$/i.test(pendingFile.name)) {
+      setError(new ExerciseServiceError("invalid_response", "Oral expression accepts WAV or OGG audio files."))
+      return false
+    }
+
+    if (pendingFile) {
+      const response = await service().uploadAnswer(context, exerciseId, attempt.attemptId, {
+        questionId: question.id,
+        file: pendingFile,
+        reviewLater: answerState.reviewLater,
+        secondsSpent: 0,
+        navigationAction,
+      })
+      if (!response.success) {
+        throw new ExerciseServiceError(
+          "invalid_response",
+          response.message || "The file answer could not be saved.",
+        )
+      }
+      answerState.uploadedFiles = response.files
+      setPendingAnswerFile(question.id, null)
+      const progress = mergeExerciseAnswerProgress(attempt, response)
+      savedQuestionIds.value = progress.savedQuestionIds
+      reviewQuestionIds.value = progress.reviewQuestionIds
+      attempt.canFinish = progress.canFinish
+      syncReviewAnswerState()
+      await saveOfflineState(context, exerciseId)
+      return true
+    }
+
+    if ((answerState.uploadedFiles?.length ?? 0) === 0) return false
+
+    const wasMarked = reviewQuestionIds.value.includes(question.id)
+    if (wasMarked !== answerState.reviewLater && shouldUsePreparedData()) {
+      setError(
+        new ExerciseServiceError(
+          "network",
+          "Changing the review flag for a file answer requires a connection to the campus.",
+        ),
+      )
+      return false
+    }
+
+    if (wasMarked !== answerState.reviewLater) {
+      const response = await service().updateReviewLater(
+        context,
+        exerciseId,
+        attempt.attemptId,
+        question.id,
+        answerState.reviewLater,
+      )
+      const progress = mergeExerciseAnswerProgress(attempt, response)
+      savedQuestionIds.value = progress.savedQuestionIds
+      reviewQuestionIds.value = progress.reviewQuestionIds
+      attempt.canFinish = progress.canFinish
+      syncReviewAnswerState()
+    }
+
+    await saveOfflineState(context, exerciseId)
+    return true
+  }
+
   async function saveCurrentAnswer(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -580,6 +670,19 @@ export const useExercisesStore = defineStore("exercises", () => {
     const attemptId = runtime.value?.attempt?.attemptId
     const answerState = question ? answers.value[question.id] : undefined
     if (!question || !attemptId || !answerState) return false
+
+    if (isFileAnswerQuestion(question.type)) {
+      saving.value = true
+      clearError()
+      try {
+        return await saveCurrentFileAnswer(context, exerciseId, navigationAction)
+      } catch (error) {
+        setError(error)
+        return false
+      } finally {
+        saving.value = false
+      }
+    }
 
     saving.value = true
     clearError()
@@ -781,6 +884,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     currentQuestionIndex.value = 0
     savedQuestionIds.value = []
     reviewQuestionIds.value = []
+    pendingAnswerFiles.value = {}
     clearError()
   }
 
@@ -808,6 +912,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     loadRuntime,
     startAttempt,
     saveCurrentAnswer,
+    setPendingAnswerFile,
     goToQuestion,
     finishAttempt,
     loadRuntimeImage,

@@ -1,6 +1,7 @@
 import { CapacitorHttp } from "@capacitor/core"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import type { HttpMultipartBody } from "@/services/http/HttpClient"
 import { NativeHttpClient } from "@/services/http/NativeHttpClient"
 
 vi.mock("@capacitor/core", async (importOriginal) => {
@@ -82,6 +83,61 @@ describe("NativeHttpClient", () => {
           "Content-Type": "application/json",
           Origin: "https://campus.example.org",
         },
+      }),
+    )
+  })
+
+  it("serializes multipart bodies using Capacitor native formData entries", async () => {
+    requestMock.mockResolvedValue({
+      status: 200,
+      data: { ok: true },
+      headers: { "Content-Type": "application/json" },
+      url: "https://campus.example.org/api/upload",
+    })
+    const body: HttpMultipartBody = {
+      type: "multipart",
+      fields: { questionId: "13", reviewLater: "false" },
+      files: [
+        {
+          fieldName: "file",
+          fileName: "answer.wav",
+          contentType: "audio/wav",
+          base64: "AQID",
+        },
+      ],
+    }
+
+    const client = new NativeHttpClient("https://campus.example.org")
+    await client.request({
+      method: "POST",
+      path: "/api/upload",
+      headers: {
+        Accept: "application/ld+json",
+        "Content-Type": "multipart/form-data",
+      },
+      body,
+    })
+
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "multipart/form-data",
+          Origin: "https://campus.example.org",
+        },
+        dataType: "formData",
+        data: [
+          { key: "questionId", value: "13", type: "string" },
+          { key: "reviewLater", value: "false", type: "string" },
+          {
+            key: "file",
+            value: "AQID",
+            type: "base64File",
+            contentType: "audio/wav",
+            fileName: "answer.wav",
+          },
+        ],
       }),
     )
   })

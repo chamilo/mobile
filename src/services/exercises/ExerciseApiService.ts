@@ -6,6 +6,7 @@ import {
   normalizeExerciseList,
   normalizeExerciseResult,
   normalizeExerciseRuntime,
+  normalizeExerciseUploadAnswerResponse,
   ExerciseContractError,
 } from "@/domain/exercises/contracts"
 import type {
@@ -15,8 +16,10 @@ import type {
   ExerciseList,
   ExerciseResult,
   ExerciseRuntime,
+  ExerciseUploadAnswerResponse,
 } from "@/domain/exercises/types"
 import type { HttpClient } from "@/services/http/HttpClient"
+import { createHttpMultipartBody } from "@/services/http/HttpMultipart"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
 export type ExerciseServiceErrorCode =
@@ -153,6 +156,74 @@ export class ExerciseApiService {
           "Content-Type": "application/ld+json",
         },
         body: { exerciseId, attemptId, ...payload },
+      })
+      return normalizeExerciseAnswerResponse(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async uploadAnswer(
+    context: CourseNavigationContext,
+    exerciseId: number,
+    attemptId: number,
+    payload: {
+      questionId: number
+      file: File
+      reviewLater: boolean
+      secondsSpent: number
+      navigationAction: string
+    },
+  ): Promise<ExerciseUploadAnswerResponse> {
+    try {
+      const body = await createHttpMultipartBody(
+        {
+          questionId: payload.questionId,
+          secondsSpent: payload.secondsSpent,
+          reviewLater: payload.reviewLater,
+          navigationAction: payload.navigationAction,
+        },
+        [{ fieldName: "file", file: payload.file }],
+      )
+      const response = await this.httpClient.request<unknown>({
+        method: "POST",
+        path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/upload-answer`,
+        query: contextQuery(context),
+        headers: { Accept: "application/ld+json" },
+        body,
+      })
+      return normalizeExerciseUploadAnswerResponse(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async updateReviewLater(
+    context: CourseNavigationContext,
+    exerciseId: number,
+    attemptId: number,
+    questionId: number,
+    reviewLater: boolean,
+  ): Promise<ExerciseAnswerResponse> {
+    try {
+      const response = await this.httpClient.request<unknown>({
+        method: "POST",
+        path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/answer`,
+        query: contextQuery(context),
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/ld+json",
+        },
+        body: {
+          exerciseId,
+          attemptId,
+          questionId,
+          answer: {},
+          reviewLater,
+          reviewLaterOnly: true,
+          secondsSpent: 0,
+          navigationAction: "",
+        },
       })
       return normalizeExerciseAnswerResponse(response.data)
     } catch (error) {

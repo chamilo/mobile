@@ -128,6 +128,10 @@ function updateCurrentAnswer(value: NonNullable<typeof currentAnswer.value>): vo
   if (question.value) store.answers[question.value.id] = value
 }
 
+function selectCurrentAnswerFile(file: File | null): void {
+  if (question.value) store.setPendingAnswerFile(question.value.id, file)
+}
+
 function stopTimer(): void {
   if (timer) clearInterval(timer)
   timer = null
@@ -555,6 +559,7 @@ onBeforeUnmount(() => {
             :model-value="currentAnswer"
             :disabled="store.saving || !isSupportedExerciseQuestion(question)"
             @update:model-value="updateCurrentAnswer"
+            @file-selected="selectCurrentAnswerFile"
           />
 
           <label

@@ -12,7 +12,8 @@ const MATCHING_TYPES = [4, 19, 24, 25]
 const DROPDOWN_TYPES = [28, 29]
 const HOTSPOT_TYPES = [6, 8, 26]
 const ANNOTATION_TYPES = [20]
-const UNSUPPORTED_TYPES = [13, 23, 30]
+const FILE_TYPES = [13, 23]
+const UNSUPPORTED_TYPES = [30]
 const STRUCTURAL_TYPES = [15, 31]
 
 export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolean {
@@ -22,6 +23,7 @@ export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolea
 export function isSupportedExerciseQuestion(question: ExerciseQuestion): boolean {
   if (HOTSPOT_TYPES.includes(question.type)) return Boolean(question.hotspot?.imageUrl)
   if (ANNOTATION_TYPES.includes(question.type)) return Boolean(question.annotation?.imageUrl)
+  if (FILE_TYPES.includes(question.type)) return true
 
   return (
     RADIO_TYPES.includes(question.type) ||
@@ -91,6 +93,7 @@ export function isExerciseAnswerProvided(
 
     return hasPath || hasText
   }
+  if (FILE_TYPES.includes(question.type)) return (state.uploadedFiles?.length ?? 0) > 0
   if (question.type === 16) return state.calculated.trim().length > 0
   if (question.type === 5) return state.text.trim().length > 0
 
@@ -114,6 +117,7 @@ export function createExerciseAnswerState(question: ExerciseQuestion): ExerciseA
     hotspotPoints: [],
     annotationPaths: [],
     annotationTexts: [],
+    uploadedFiles: [],
     reviewLater: false,
   }
 }
@@ -154,6 +158,8 @@ export function applySavedExerciseAnswer(
   rows: SavedAnswerRow[],
   state: ExerciseAnswerState,
 ): void {
+  state.uploadedFiles = rows.flatMap((row) => row.files ?? [])
+  if (FILE_TYPES.includes(question.type)) return
   if (RADIO_TYPES.includes(question.type)) {
     state.choice = Number(rows[0]?.answer || 0) || null
     return
@@ -301,6 +307,8 @@ export function answerKind(
   | "calculated"
   | "hotspot"
   | "annotation"
+  | "oral"
+  | "upload"
   | "text"
   | "unsupported" {
   if (RADIO_TYPES.includes(question.type)) return "radio"
@@ -312,6 +320,8 @@ export function answerKind(
   if (DROPDOWN_TYPES.includes(question.type)) return "dropdown"
   if (HOTSPOT_TYPES.includes(question.type)) return "hotspot"
   if (ANNOTATION_TYPES.includes(question.type)) return "annotation"
+  if (question.type === 13) return "oral"
+  if (question.type === 23) return "upload"
   if (question.type === 16) return "calculated"
   if (question.type === 5) return "text"
   return "unsupported"

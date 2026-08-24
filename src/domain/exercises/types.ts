@@ -176,9 +176,21 @@ export interface ExerciseQuestion {
   isContent: boolean
 }
 
+export interface ExerciseAttemptFile {
+  id: number
+  name: string
+  size: number
+  mimeType: string
+  url: string
+  inlineUrl?: string
+  onlyofficeEditorUrl?: string
+}
+
 export interface SavedAnswerRow {
   answer: string
   position: number | null
+  secondsSpent?: number
+  files?: ExerciseAttemptFile[]
 }
 
 export interface ExerciseAttempt {
@@ -238,12 +250,24 @@ export interface ExerciseAnswerState {
   hotspotPoints: ExercisePoint[]
   annotationPaths: ExerciseAnnotationPath[]
   annotationTexts: ExerciseAnnotationText[]
+  uploadedFiles?: ExerciseAttemptFile[]
   reviewLater: boolean
 }
 
 export interface ExerciseAnswerResponse {
   success: boolean
   message: string
+  savedAnswer: SavedAnswerRow[]
+  answeredQuestionIds: number[]
+  reviewQuestionIds: number[]
+  answeredCount: number
+  canFinish: boolean
+}
+
+export interface ExerciseUploadAnswerResponse {
+  success: boolean
+  message: string
+  files: ExerciseAttemptFile[]
   savedAnswer: SavedAnswerRow[]
   answeredQuestionIds: number[]
   reviewQuestionIds: number[]

@@ -1,6 +1,11 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios"
 
-import type { HttpClient, HttpRequest, HttpResponse } from "@/services/http/HttpClient"
+import {
+  isHttpMultipartBody,
+  type HttpClient,
+  type HttpRequest,
+  type HttpResponse,
+} from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
 const DEFAULT_TIMEOUT_MS = 10_000
@@ -50,6 +55,45 @@ function normalizeAxiosError(error: unknown): HttpClientError {
   return new HttpClientError("network", "The campus could not be reached.", undefined, error)
 }
 
+function decodeBase64(value: string): ArrayBuffer {
+  const binary = globalThis.atob(value)
+  const buffer = new ArrayBuffer(binary.length)
+  const bytes = new Uint8Array(buffer)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return buffer
+}
+
+function multipartHeaders(
+  headers: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!headers) return undefined
+
+  const next = { ...headers }
+  for (const key of Object.keys(next)) {
+    if (key.toLowerCase() === "content-type") delete next[key]
+  }
+  return next
+}
+
+function toBrowserRequestBody(body: unknown): unknown {
+  if (!isHttpMultipartBody(body)) return body
+
+  const formData = new FormData()
+  for (const [key, value] of Object.entries(body.fields)) {
+    formData.append(key, value)
+  }
+  for (const file of body.files) {
+    formData.append(
+      file.fieldName,
+      new File([decodeBase64(file.base64)], file.fileName, { type: file.contentType }),
+    )
+  }
+
+  return formData
+}
+
 export class BrowserHttpClient implements HttpClient {
   private readonly baseUrl: URL
 
@@ -69,12 +113,13 @@ export class BrowserHttpClient implements HttpClient {
     }
 
     const url = new URL(request.path.replace(/^\/+/, ""), this.baseUrl)
-    const config: AxiosRequestConfig<TBody> = {
+    const multipart = isHttpMultipartBody(request.body)
+    const config: AxiosRequestConfig = {
       method: request.method,
       url: url.toString(),
-      headers: request.headers,
+      headers: multipart ? multipartHeaders(request.headers) : request.headers,
       params: request.query,
-      data: request.body,
+      data: toBrowserRequestBody(request.body),
       timeout: request.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       signal: request.signal,
       validateStatus: (status) => status >= 200 && status < 300,

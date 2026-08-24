@@ -4,6 +4,7 @@ import {
   ExerciseContractError,
   normalizeExerciseList,
   normalizeExerciseRuntime,
+  normalizeExerciseUploadAnswerResponse,
 } from "@/domain/exercises/contracts"
 
 describe("exercise contracts", () => {
@@ -193,6 +194,94 @@ describe("exercise contracts", () => {
       hotspotType: "square",
     })
     expect(question?.onlyoffice).toMatchObject({ editorUrl: "/plugin/onlyoffice/editor" })
+  })
+
+  it("normalizes saved attempt files and the upload-answer response", () => {
+    const runtime = normalizeExerciseRuntime({
+      exerciseId: 7,
+      title: "Upload quiz",
+      questions: [
+        {
+          id: 23,
+          title: "Upload a file",
+          type: 23,
+          typeLabel: "Upload answer",
+        },
+      ],
+      attempt: {
+        attemptId: 99,
+        savedAnswers: {
+          23: [
+            {
+              answer: "",
+              position: null,
+              secondsSpent: 9,
+              files: [
+                {
+                  id: 501,
+                  name: "answer.pdf",
+                  size: 2048,
+                  mimeType: "application/pdf",
+                  url: "/r/attempt-file/501",
+                  inlineUrl: "/r/attempt-file/501?inline=1",
+                },
+              ],
+            },
+          ],
+        },
+      },
+    })
+
+    expect(runtime.attempt?.savedAnswers["23"]?.[0]).toMatchObject({
+      secondsSpent: 9,
+      files: [
+        {
+          id: 501,
+          name: "answer.pdf",
+          size: 2048,
+          mimeType: "application/pdf",
+          url: "/r/attempt-file/501",
+        },
+      ],
+    })
+
+    const response = normalizeExerciseUploadAnswerResponse({
+      success: true,
+      message: "Saved",
+      files: [
+        {
+          id: 601,
+          name: "answer.wav",
+          size: 4096,
+          mimeType: "audio/wav",
+          url: "/r/attempt-file/601",
+        },
+      ],
+      savedAnswer: [
+        {
+          answer: "",
+          position: null,
+          files: [
+            {
+              id: 601,
+              name: "answer.wav",
+              size: 4096,
+              mimeType: "audio/wav",
+              url: "/r/attempt-file/601",
+            },
+          ],
+        },
+      ],
+      answeredQuestionIds: [13],
+      reviewQuestionIds: [13],
+      answeredCount: 1,
+      canFinish: false,
+    })
+
+    expect(response.success).toBe(true)
+    expect(response.files[0]?.name).toBe("answer.wav")
+    expect(response.savedAnswer[0]?.files?.[0]?.id).toBe(601)
+    expect(response.answeredQuestionIds).toEqual([13])
   })
 
   it("rejects a runtime without a valid exercise id", () => {

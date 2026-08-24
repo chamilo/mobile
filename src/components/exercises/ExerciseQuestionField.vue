@@ -2,7 +2,9 @@
 import { computed } from "vue"
 import { useI18n } from "vue-i18n"
 
+import ExerciseFileQuestionField from "@/components/exercises/ExerciseFileQuestionField.vue"
 import ExerciseImageQuestionField from "@/components/exercises/ExerciseImageQuestionField.vue"
+import ExerciseRichAnswerContent from "@/components/exercises/ExerciseRichAnswerContent.vue"
 import { answerKind } from "@/domain/exercises/answers"
 import type { ExerciseAnswerState, ExerciseQuestion } from "@/domain/exercises/types"
 
@@ -14,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:modelValue": [value: ExerciseAnswerState]
+  "file-selected": [file: File | null]
 }>()
 
 const { t } = useI18n()
@@ -103,7 +106,12 @@ const orderedItems = computed(() => {
           class="mt-1"
           @change="update({ choice: choice.id })"
         />
-        <span>{{ plainText(choice.answer) }}</span>
+        <ExerciseRichAnswerContent
+          v-if="question.type === 17"
+          :html="choice.answer"
+          :fallback-image-alt="t('exercises.answerImage')"
+        />
+        <span v-else>{{ plainText(choice.answer) }}</span>
       </label>
     </div>
 
@@ -272,6 +280,14 @@ const orderedItems = computed(() => {
       :model-value="modelValue"
       :disabled="disabled"
       @update:model-value="emit('update:modelValue', $event)"
+    />
+
+    <ExerciseFileQuestionField
+      v-else-if="kind === 'oral' || kind === 'upload'"
+      :question="question"
+      :files="modelValue.uploadedFiles ?? []"
+      :disabled="disabled"
+      @file-selected="emit('file-selected', $event)"
     />
 
     <label v-else-if="kind === 'calculated'" class="block">

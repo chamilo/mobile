@@ -4,11 +4,12 @@ import {
   type HttpResponse as CapacitorHttpResponse,
 } from "@capacitor/core"
 
-import type {
-  HttpClient,
-  HttpRequest,
-  HttpResponse,
-  HttpResponseType,
+import {
+  isHttpMultipartBody,
+  type HttpClient,
+  type HttpRequest,
+  type HttpResponse,
+  type HttpResponseType,
 } from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
@@ -49,6 +50,18 @@ function buildRequestHeaders(
 
   const headers = { ...(request.headers ?? {}) }
 
+  if (isHttpMultipartBody(request.body)) {
+    for (const headerName of Object.keys(headers)) {
+      if (headerName.toLowerCase() === "content-type") {
+        delete headers[headerName]
+      }
+    }
+
+    // Capacitor's Android native HTTP layer requires a multipart Content-Type
+    // before it writes a formData body. Without a boundary it generates one.
+    headers["Content-Type"] = "multipart/form-data"
+  }
+
   // Native HTTP clients can keep the campus session cookie but do not
   // automatically send browser Origin/Referer headers. Chamilo's stateless
   // same-origin CSRF protection therefore rejects a state-changing request
@@ -65,6 +78,26 @@ function buildRequestHeaders(
   headers.Origin = baseUrl.origin
 
   return headers
+}
+
+function buildNativeRequestBody(body: unknown): { data: unknown; dataType?: "formData" } {
+  if (!isHttpMultipartBody(body)) {
+    return { data: body }
+  }
+
+  return {
+    data: [
+      ...Object.entries(body.fields).map(([key, value]) => ({ key, value, type: "string" })),
+      ...body.files.map((file) => ({
+        key: file.fieldName,
+        value: file.base64,
+        type: "base64File",
+        contentType: file.contentType,
+        fileName: file.fileName,
+      })),
+    ],
+    dataType: "formData",
+  }
 }
 
 function normalizeNativeError(error: unknown): HttpClientError {
@@ -170,11 +203,13 @@ export class NativeHttpClient implements HttpClient {
     const url = buildRequestUrl(this.baseUrl, request)
     const timeoutMs = request.timeoutMs ?? DEFAULT_TIMEOUT_MS
     const responseType = request.responseType ?? "json"
+    const nativeBody = buildNativeRequestBody(request.body)
     const options: HttpOptions = {
       method: request.method,
       url: url.toString(),
       headers: buildRequestHeaders(this.baseUrl, request),
-      data: request.body,
+      data: nativeBody.data,
+      ...(nativeBody.dataType ? { dataType: nativeBody.dataType } : {}),
       connectTimeout: timeoutMs,
       readTimeout: timeoutMs,
       disableRedirects: true,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  answerKind,
   applySavedExerciseAnswer,
   buildExerciseAnswerPayload,
   createExerciseAnswerState,
@@ -59,8 +60,10 @@ describe("exercise answers", () => {
     expect(state.matching).toEqual({ 10: 30, 20: 40 })
   })
 
-  it("detects question types that need the campus runtime fallback", () => {
-    expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(true)
+  it("detects question types that still need the campus runtime fallback", () => {
+    expect(hasUnsupportedExerciseQuestions([question(13)])).toBe(false)
+    expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(false)
+    expect(hasUnsupportedExerciseQuestions([question(30)])).toBe(true)
     expect(hasUnsupportedExerciseQuestions([question(1)])).toBe(false)
   })
 
@@ -93,6 +96,49 @@ describe("exercise answers", () => {
 
     expect(isExerciseAnswerProvided(item, state)).toBe(true)
     expect(buildExerciseAnswerPayload(item, state)).toEqual({ choice: 42 })
+  })
+
+  it("keeps unique-answer-image questions on the verified unique-choice contract", () => {
+    const item = question(17)
+    item.choices = [
+      { id: 61, answer: '<img src="/r/question/file/61" alt="First image">', position: 1 },
+      { id: 62, answer: '<img src="/r/question/file/62" alt="Second image">', position: 2 },
+    ]
+    const state = createExerciseAnswerState(item)
+
+    expect(answerKind(item)).toBe("radio")
+    expect(isSupportedExerciseQuestion(item)).toBe(true)
+
+    state.choice = 62
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({ choice: 62 })
+
+    const restored = createExerciseAnswerState(item)
+    applySavedExerciseAnswer(item, [{ answer: "62", position: 0 }], restored)
+    expect(restored.choice).toBe(62)
+  })
+
+  it("matches the LMS Vue single-select contract for dropdown question types 28 and 29", () => {
+    for (const type of [28, 29]) {
+      const item = question(type)
+      item.dropdown = {
+        options: [
+          { id: 71, answer: "First", position: 1 },
+          { id: 72, answer: "Second", position: 2 },
+        ],
+      }
+      const state = createExerciseAnswerState(item)
+
+      expect(answerKind(item)).toBe("dropdown")
+      expect(isSupportedExerciseQuestion(item)).toBe(true)
+
+      state.dropdown = 72
+      expect(isExerciseAnswerProvided(item, state)).toBe(true)
+      expect(buildExerciseAnswerPayload(item, state)).toEqual({ dropdown: 72 })
+
+      const restored = createExerciseAnswerState(item)
+      applySavedExerciseAnswer(item, [{ answer: "72", position: 0 }], restored)
+      expect(restored.dropdown).toBe(72)
+    }
   })
 
   it("keeps media questions and page breaks structural", () => {
@@ -193,9 +239,42 @@ describe("image exercise answers", () => {
     expect(restored.annotationTexts).toEqual(state.annotationTexts)
   })
 
-  it("keeps oral, upload and OnlyOffice questions on the campus fallback", () => {
-    expect(hasUnsupportedExerciseQuestions([question(13)])).toBe(true)
-    expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(true)
+  it("restores saved files for oral and upload answers", () => {
+    for (const type of [13, 23]) {
+      const item = question(type)
+      const state = createExerciseAnswerState(item)
+
+      expect(isSupportedExerciseQuestion(item)).toBe(true)
+      expect(isExerciseAnswerProvided(item, state)).toBe(false)
+
+      applySavedExerciseAnswer(
+        item,
+        [
+          {
+            answer: "",
+            position: null,
+            files: [
+              {
+                id: 44,
+                name: type === 13 ? "answer.wav" : "report.pdf",
+                size: 1024,
+                mimeType: type === 13 ? "audio/wav" : "application/pdf",
+                url: "/r/attempt-file/44",
+              },
+            ],
+          },
+        ],
+        state,
+      )
+
+      expect(state.uploadedFiles).toHaveLength(1)
+      expect(state.uploadedFiles?.[0]?.id).toBe(44)
+      expect(isExerciseAnswerProvided(item, state)).toBe(true)
+      expect(buildExerciseAnswerPayload(item, state)).toEqual({})
+    }
+  })
+
+  it("keeps OnlyOffice on the campus fallback while image questions stay supported", () => {
     expect(hasUnsupportedExerciseQuestions([question(30)])).toBe(true)
 
     const hotspotTypes = [6, 8, 26].map((type) => {

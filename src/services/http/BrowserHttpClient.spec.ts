@@ -2,6 +2,7 @@ import { AxiosError, AxiosHeaders, type AxiosInstance, type AxiosResponse } from
 import { describe, expect, it, vi } from "vitest"
 
 import { BrowserHttpClient } from "@/services/http/BrowserHttpClient"
+import type { HttpMultipartBody } from "@/services/http/HttpClient"
 import { HttpClientError } from "@/services/http/HttpClientError"
 
 function createAxiosInstanceMock(response: Partial<AxiosResponse> = {}): AxiosInstance {
@@ -33,6 +34,46 @@ describe("BrowserHttpClient", () => {
         timeout: 10_000,
       }),
     )
+  })
+
+  it("converts transport-neutral multipart bodies to FormData and lets the browser set the boundary", async () => {
+    const axiosInstance = createAxiosInstanceMock({
+      request: { responseURL: "https://campus.example.org/api/upload" },
+    })
+    const client = new BrowserHttpClient("https://campus.example.org", axiosInstance)
+    const body: HttpMultipartBody = {
+      type: "multipart",
+      fields: { questionId: "23", reviewLater: "false" },
+      files: [
+        {
+          fieldName: "file",
+          fileName: "answer.txt",
+          contentType: "text/plain",
+          base64: "SGVsbG8=",
+        },
+      ],
+    }
+
+    await client.request({
+      method: "POST",
+      path: "/api/upload",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "multipart/form-data",
+      },
+      body,
+    })
+
+    const request = vi.mocked(axiosInstance.request).mock.calls[0]?.[0]
+    expect(request?.headers).toEqual({ Accept: "application/json" })
+    expect(request?.data).toBeInstanceOf(FormData)
+
+    const formData = request?.data as FormData
+    expect(formData.get("questionId")).toBe("23")
+    const uploaded = formData.get("file")
+    expect(uploaded).toBeInstanceOf(File)
+    expect((uploaded as File).name).toBe("answer.txt")
+    expect(await (uploaded as File).text()).toBe("Hello")
   })
 
   it("rejects absolute request paths", async () => {
