@@ -19,6 +19,7 @@ import {
   isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
 import { resolveExerciseStructuralContext } from "@/domain/exercises/runtimePages"
+import type { ExerciseAttemptFile } from "@/domain/exercises/types"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
 import { useExercisesStore } from "@/stores/exercises"
@@ -130,6 +131,15 @@ function updateCurrentAnswer(value: NonNullable<typeof currentAnswer.value>): vo
 
 function selectCurrentAnswerFile(file: File | null): void {
   if (question.value) store.setPendingAnswerFile(question.value.id, file)
+}
+
+async function prepareOfficeDocument(): Promise<void> {
+  if (!context.value || question.value?.type !== 30) return
+  await store.saveCurrentAnswer(context.value, numericExerciseId.value, "prepare")
+}
+
+async function openOfficeDocument(file: ExerciseAttemptFile): Promise<void> {
+  await store.openAnswerFile(file)
 }
 
 function stopTimer(): void {
@@ -560,6 +570,8 @@ onBeforeUnmount(() => {
             :disabled="store.saving || !isSupportedExerciseQuestion(question)"
             @update:model-value="updateCurrentAnswer"
             @file-selected="selectCurrentAnswerFile"
+            @prepare-office="prepareOfficeDocument"
+            @open-office-file="openOfficeDocument"
           />
 
           <label

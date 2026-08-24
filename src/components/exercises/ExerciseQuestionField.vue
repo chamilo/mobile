@@ -4,9 +4,14 @@ import { useI18n } from "vue-i18n"
 
 import ExerciseFileQuestionField from "@/components/exercises/ExerciseFileQuestionField.vue"
 import ExerciseImageQuestionField from "@/components/exercises/ExerciseImageQuestionField.vue"
+import ExerciseOfficeQuestionField from "@/components/exercises/ExerciseOfficeQuestionField.vue"
 import ExerciseRichAnswerContent from "@/components/exercises/ExerciseRichAnswerContent.vue"
 import { answerKind } from "@/domain/exercises/answers"
-import type { ExerciseAnswerState, ExerciseQuestion } from "@/domain/exercises/types"
+import type {
+  ExerciseAnswerState,
+  ExerciseAttemptFile,
+  ExerciseQuestion,
+} from "@/domain/exercises/types"
 
 const props = defineProps<{
   question: ExerciseQuestion
@@ -17,6 +22,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:modelValue": [value: ExerciseAnswerState]
   "file-selected": [file: File | null]
+  "prepare-office": []
+  "open-office-file": [file: ExerciseAttemptFile]
 }>()
 
 const { t } = useI18n()
@@ -288,6 +295,16 @@ const orderedItems = computed(() => {
       :files="modelValue.uploadedFiles ?? []"
       :disabled="disabled"
       @file-selected="emit('file-selected', $event)"
+    />
+
+    <ExerciseOfficeQuestionField
+      v-else-if="kind === 'office'"
+      :question="question"
+      :files="modelValue.uploadedFiles ?? []"
+      :disabled="disabled"
+      @file-selected="emit('file-selected', $event)"
+      @prepare="emit('prepare-office')"
+      @open-file="emit('open-office-file', $event)"
     />
 
     <label v-else-if="kind === 'calculated'" class="block">

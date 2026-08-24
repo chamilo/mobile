@@ -38,6 +38,31 @@ describe("ExerciseRuntimeResourceService", () => {
     })
   })
 
+  it("loads a same-campus answer file through the authenticated HttpClient contract", async () => {
+    const http = httpClientMock()
+    const blob = new Blob(["document"], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    })
+    vi.mocked(http.request).mockResolvedValue({ status: 200, headers: {}, data: blob })
+
+    const service = new ExerciseRuntimeResourceService(http, "https://campus.example.org")
+    const result = await service.loadFile(
+      "/api/exercise/runtime/7/attempt/9/file/15/download?cid=3&sid=0",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+    expect(result).toBe(blob)
+    expect(http.request).toHaveBeenCalledWith({
+      method: "GET",
+      path: "/api/exercise/runtime/7/attempt/9/file/15/download",
+      query: { cid: "3", sid: "0" },
+      headers: {
+        Accept: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      },
+      responseType: "blob",
+    })
+  })
+
   it("rejects an image URL from another origin", async () => {
     const service = new ExerciseRuntimeResourceService(
       httpClientMock(),

@@ -155,7 +155,12 @@ describe("exercise contracts", () => {
               { id: 101, answer: "Zone B", position: 2, hotspotType: "circle" },
             ],
           },
-          onlyoffice: { editorUrl: "/plugin/onlyoffice/editor" },
+          onlyoffice: {
+            templateName: "worksheet.docx",
+            templateUrl: "/api/exercise/template/81",
+            editorUrl: "/plugin/onlyoffice/editor",
+            manualCorrection: true,
+          },
           isContent: false,
         },
       ],
@@ -193,7 +198,12 @@ describe("exercise contracts", () => {
       position: 1,
       hotspotType: "square",
     })
-    expect(question?.onlyoffice).toMatchObject({ editorUrl: "/plugin/onlyoffice/editor" })
+    expect(question?.onlyoffice).toEqual({
+      templateName: "worksheet.docx",
+      templateUrl: "/api/exercise/template/81",
+      editorUrl: "/plugin/onlyoffice/editor",
+      manualCorrection: true,
+    })
   })
 
   it("normalizes saved attempt files and the upload-answer response", () => {

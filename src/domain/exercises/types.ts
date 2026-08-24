@@ -130,6 +130,13 @@ export interface ExerciseReadingRuntime {
   text: string
 }
 
+export interface ExerciseOnlyofficeRuntime {
+  templateName: string
+  templateUrl: string
+  editorUrl: string
+  manualCorrection: boolean
+}
+
 export interface ExercisePageBreakRuntime {
   id: number
   title: string
@@ -172,7 +179,7 @@ export interface ExerciseQuestion {
   content?: ExerciseContentRuntime | null
   annotation?: ExerciseImageRuntime | null
   hotspot?: ExerciseHotspotRuntime | null
-  onlyoffice?: Record<string, unknown> | null
+  onlyoffice?: ExerciseOnlyofficeRuntime | null
   isContent: boolean
 }
 

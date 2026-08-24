@@ -9,6 +9,7 @@ import type {
   ExerciseImageRuntime,
   ExerciseList,
   ExerciseListItem,
+  ExerciseOnlyofficeRuntime,
   ExerciseMediaRuntime,
   ExercisePageBreakRuntime,
   ExerciseQuestion,
@@ -104,6 +105,18 @@ function normalizeReading(value: unknown): ExerciseReadingRuntime | null {
   return {
     speed: Math.max(0, numberValue(item.speed)),
     text: stringValue(item.text),
+  }
+}
+
+function normalizeOnlyoffice(value: unknown): ExerciseOnlyofficeRuntime | null {
+  const item = optionalRecord(value)
+  if (!item) return null
+
+  return {
+    templateName: stringValue(item.templateName),
+    templateUrl: stringValue(item.templateUrl),
+    editorUrl: stringValue(item.editorUrl),
+    manualCorrection: booleanValue(item.manualCorrection),
   }
 }
 
@@ -341,7 +354,7 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
     content: normalizeContent(item.content),
     annotation: normalizeImageRuntime(item.annotation),
     hotspot: normalizeHotspotRuntime(item.hotspot),
-    onlyoffice: optionalRecord(item.onlyoffice),
+    onlyoffice: normalizeOnlyoffice(item.onlyoffice),
     isContent: booleanValue(item.isContent),
   }
 }

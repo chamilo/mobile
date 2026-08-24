@@ -63,7 +63,14 @@ describe("exercise answers", () => {
   it("detects question types that still need the campus runtime fallback", () => {
     expect(hasUnsupportedExerciseQuestions([question(13)])).toBe(false)
     expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(false)
-    expect(hasUnsupportedExerciseQuestions([question(30)])).toBe(true)
+    const office = question(30)
+    office.onlyoffice = {
+      templateName: "worksheet.docx",
+      templateUrl: "/api/exercise/template/30",
+      editorUrl: "/plugin/Onlyoffice/editor.php",
+      manualCorrection: true,
+    }
+    expect(hasUnsupportedExerciseQuestions([office])).toBe(false)
     expect(hasUnsupportedExerciseQuestions([question(1)])).toBe(false)
   })
 
@@ -274,8 +281,45 @@ describe("image exercise answers", () => {
     }
   })
 
-  it("keeps OnlyOffice on the campus fallback while image questions stay supported", () => {
-    expect(hasUnsupportedExerciseQuestions([question(30)])).toBe(true)
+  it("supports prepared Office answers while image questions stay supported", () => {
+    const office = question(30)
+    office.onlyoffice = {
+      templateName: "worksheet.docx",
+      templateUrl: "/api/exercise/template/30",
+      editorUrl: "/plugin/Onlyoffice/editor.php",
+      manualCorrection: true,
+    }
+    const officeState = createExerciseAnswerState(office)
+
+    expect(answerKind(office)).toBe("office")
+    expect(isSupportedExerciseQuestion(office)).toBe(true)
+    expect(isExerciseAnswerProvided(office, officeState)).toBe(false)
+    expect(buildExerciseAnswerPayload(office, officeState)).toEqual({ onlyoffice: true })
+
+    applySavedExerciseAnswer(
+      office,
+      [
+        {
+          answer: "onlyoffice:77",
+          position: 0,
+          files: [
+            {
+              id: 77,
+              name: "worksheet.docx",
+              size: 8192,
+              mimeType:
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              url: "/api/exercise/runtime/7/attempt/9/file/77/download?cid=3",
+            },
+          ],
+        },
+      ],
+      officeState,
+    )
+
+    expect(officeState.uploadedFiles?.[0]?.id).toBe(77)
+    expect(isExerciseAnswerProvided(office, officeState)).toBe(true)
+    expect(hasUnsupportedExerciseQuestions([office])).toBe(false)
 
     const hotspotTypes = [6, 8, 26].map((type) => {
       const item = question(type)

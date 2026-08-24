@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core"
 import { computed, ref, shallowRef, toRaw } from "vue"
 import { defineStore } from "pinia"
 
@@ -14,12 +15,18 @@ import {
 } from "@/domain/exercises/answers"
 import type {
   ExerciseAnswerState,
+  ExerciseAttemptFile,
   ExerciseList,
   ExerciseResult,
   ExerciseRuntime,
 } from "@/domain/exercises/types"
 import { mergeExerciseAnswerProgress } from "@/domain/exercises/progress"
+import {
+  isSupportedOfficeAnswerFile,
+  matchesOfficeAnswerTemplate,
+} from "@/domain/exercises/officeAnswer"
 import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
+import { createDocumentBlobPresenter } from "@/services/documents/DocumentBlobPresenter"
 import {
   ExerciseApiService,
   ExerciseServiceError,
@@ -126,7 +133,7 @@ export const useExercisesStore = defineStore("exercises", () => {
   }
 
   function isFileAnswerQuestion(type: number): boolean {
-    return type === 13 || type === 23
+    return type === 13 || type === 23 || type === 30
   }
 
   function service(): ExerciseApiService {
@@ -600,8 +607,95 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
 
     if (question.type === 13 && pendingFile && !/\.(wav|ogg)$/i.test(pendingFile.name)) {
-      setError(new ExerciseServiceError("invalid_response", "Oral expression accepts WAV or OGG audio files."))
+      setError(
+        new ExerciseServiceError(
+          "invalid_response",
+          "Oral expression accepts WAV or OGG audio files.",
+        ),
+      )
       return false
+    }
+
+    if (question.type === 30 && pendingFile) {
+      const templateName = question.onlyoffice?.templateName ?? ""
+      if (!isSupportedOfficeAnswerFile(pendingFile.name)) {
+        setError(
+          new ExerciseServiceError(
+            "invalid_response",
+            "Office document answers must be DOC, DOCX, XLS or XLSX files.",
+          ),
+        )
+        return false
+      }
+      if (!matchesOfficeAnswerTemplate(pendingFile.name, templateName)) {
+        setError(
+          new ExerciseServiceError(
+            "invalid_response",
+            "The completed Office document must use the same format as the template.",
+          ),
+        )
+        return false
+      }
+    }
+
+    if (question.type === 30 && !pendingFile && (answerState.uploadedFiles?.length ?? 0) === 0) {
+      if (navigationAction !== "prepare") return false
+
+      if (shouldUsePreparedData()) {
+        setError(
+          new ExerciseServiceError(
+            "network",
+            "Preparing an Office document answer requires a connection to the campus.",
+          ),
+        )
+        return false
+      }
+
+      const response = await service().saveAnswer(context, exerciseId, attempt.attemptId, {
+        questionId: question.id,
+        answer: { onlyoffice: true },
+        reviewLater: answerState.reviewLater,
+        secondsSpent: 0,
+        navigationAction,
+      })
+      if (!response.success) {
+        throw new ExerciseServiceError(
+          "invalid_response",
+          response.message || "The Office document answer could not be prepared.",
+        )
+      }
+
+      const refreshedRuntime = await service().getRuntime(context, exerciseId)
+      if (refreshedRuntime.attempt?.attemptId !== attempt.attemptId) {
+        throw new ExerciseServiceError(
+          "invalid_response",
+          "The campus returned a different exercise attempt after preparing the Office document.",
+        )
+      }
+
+      const savedRows = refreshedRuntime.attempt.savedAnswers[String(question.id)] ?? []
+      applySavedExerciseAnswer(question, savedRows, answerState)
+      if ((answerState.uploadedFiles?.length ?? 0) === 0) {
+        throw new ExerciseServiceError(
+          "invalid_response",
+          "The prepared Office document was not returned by the campus.",
+        )
+      }
+
+      if (runtime.value?.attempt) {
+        runtime.value.attempt.savedAnswers[String(question.id)] = cloneForOfflineStorage(savedRows)
+        runtime.value.attempt.canFinish = refreshedRuntime.attempt.canFinish
+      }
+      const refreshedQuestion = refreshedRuntime.questions.find((item) => item.id === question.id)
+      if (refreshedQuestion?.onlyoffice) question.onlyoffice = refreshedQuestion.onlyoffice
+      savedQuestionIds.value = Object.entries(refreshedRuntime.attempt.savedAnswers)
+        .filter(([, rows]) => rows.length > 0)
+        .map(([questionId]) => Number(questionId))
+        .filter((questionId) => questionId > 0)
+      reviewQuestionIds.value = [...refreshedRuntime.attempt.reviewQuestionIds]
+      syncReviewAnswerState()
+      await saveOfflineState(context, exerciseId)
+      return true
     }
 
     if (pendingFile) {
@@ -828,6 +922,45 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
+  async function openAnswerFile(file: ExerciseAttemptFile): Promise<boolean> {
+    const campus = useCampusStore().selectedCampus
+    if (!campus || shouldUsePreparedData()) {
+      setError(
+        new ExerciseServiceError(
+          "network",
+          "Opening an Office document answer requires a connection to the campus.",
+        ),
+      )
+      return false
+    }
+
+    clearError()
+    try {
+      const blob = await new ExerciseRuntimeResourceService(
+        createAuthenticatedHttpClient(campus),
+        campus.baseUrl,
+      ).loadFile(file.url, file.mimeType || "application/octet-stream")
+      const presenter = createDocumentBlobPresenter()
+
+      if (Capacitor.isNativePlatform()) {
+        await presenter.open(blob, file.name || "office-answer")
+      } else {
+        await presenter.download(blob, file.name || "office-answer")
+      }
+
+      return true
+    } catch (error) {
+      setError(
+        new ExerciseServiceError(
+          "server",
+          "The Office document could not be opened or downloaded.",
+          error,
+        ),
+      )
+      return false
+    }
+  }
+
   async function loadRuntimeImage(resourceUrl: string): Promise<Blob | null> {
     const campus = useCampusStore().selectedCampus
     if (!campus) return null
@@ -915,6 +1048,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     setPendingAnswerFile,
     goToQuestion,
     finishAttempt,
+    openAnswerFile,
     loadRuntimeImage,
     loadResult,
     resetRuntime,

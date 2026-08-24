@@ -37,9 +37,9 @@ export class ExerciseRuntimeResourceService {
     private readonly campusBaseUrl: string,
   ) {}
 
-  async loadImage(resourceUrl: string): Promise<Blob> {
+  async loadFile(resourceUrl: string, accept = "application/octet-stream"): Promise<Blob> {
     if (!resourceUrl.trim()) {
-      throw new ExerciseRuntimeResourceError("The exercise image URL is missing.")
+      throw new ExerciseRuntimeResourceError("The exercise resource URL is missing.")
     }
 
     const request = buildSameCampusRequest(this.campusBaseUrl, resourceUrl)
@@ -47,10 +47,14 @@ export class ExerciseRuntimeResourceService {
       method: "GET",
       path: request.path,
       query: request.query,
-      headers: { Accept: "image/*" },
+      headers: { Accept: accept },
       responseType: "blob",
     })
 
     return response.data
+  }
+
+  async loadImage(resourceUrl: string): Promise<Blob> {
+    return this.loadFile(resourceUrl, "image/*")
   }
 }

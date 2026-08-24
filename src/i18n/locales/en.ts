@@ -784,6 +784,22 @@ export default {
     removeSelectedFile: "Remove selected file",
     audioRecordingUnavailable: "Audio recording is not available on this device or microphone access was denied.",
     audioRecordingFailed: "The audio recording could not be created. Try again or choose a WAV/OGG file.",
+    office: {
+      title: "Office document answer",
+      template: "Template: {name}",
+      help:
+        "Prepare your personal copy, open it in an Office app, save the edited document on your device, then choose that completed file here.",
+      requiresConnection:
+        "Preparing, opening and uploading this document requires a connection to the campus.",
+      prepare: "Prepare document",
+      prepared: "Prepared document",
+      open: "Open in Office app",
+      chooseCompleted: "Choose the completed document",
+      invalidFile: "Choose a DOC, DOCX, XLS or XLSX file.",
+      formatMismatch: "The completed document must use the same file format as the template.",
+      fileReady: "This completed document will replace the prepared copy when you save or continue.",
+      fileSize: "{size} KB",
+    },
     reviewLater: "Review this question later",
     reviewAnswers: "Review answers",
     reviewAnswersDescription:
