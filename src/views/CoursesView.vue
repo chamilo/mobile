@@ -263,17 +263,17 @@ onMounted(async () => {
       />
     </template>
 
-    <section class="rounded-2xl bg-white p-4 shadow-sm">
+    <section class="rounded-2xl bg-chamilo-900 p-4 text-white shadow-sm">
       <div class="flex items-start justify-between gap-4">
         <div class="min-w-0">
-          <p class="text-sm text-slate-500">{{ t("courses.signedInAs") }}</p>
-          <p class="mt-1 truncate font-semibold text-slate-900">{{ profile?.fullName }}</p>
-          <p class="truncate text-sm text-slate-600">{{ selectedCampus?.displayName }}</p>
+          <p class="text-sm text-chamilo-100">{{ t("courses.signedInAs") }}</p>
+          <p class="mt-1 truncate font-semibold text-white">{{ profile?.fullName }}</p>
+          <p class="truncate text-sm text-chamilo-100">{{ selectedCampus?.displayName }}</p>
         </div>
 
         <button
           type="button"
-          class="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-slate-200 text-chamilo-700 transition hover:bg-chamilo-50 disabled:opacity-60"
+          class="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-white/20 text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:opacity-60"
           :aria-label="t('courses.refresh')"
           :disabled="status === 'loading' || isRefreshing"
           @click="load(true)"
