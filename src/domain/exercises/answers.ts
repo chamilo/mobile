@@ -10,7 +10,9 @@ const TRUE_FALSE_TYPES = [11, 12, 22]
 const FILL_BLANK_TYPES = [3, 27]
 const MATCHING_TYPES = [4, 19, 24, 25]
 const DROPDOWN_TYPES = [28, 29]
-const UNSUPPORTED_TYPES = [6, 8, 13, 20, 23, 26, 30]
+const HOTSPOT_TYPES = [6, 8, 26]
+const ANNOTATION_TYPES = [20]
+const UNSUPPORTED_TYPES = [13, 23, 30]
 const STRUCTURAL_TYPES = [15, 31]
 
 export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolean {
@@ -18,6 +20,9 @@ export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolea
 }
 
 export function isSupportedExerciseQuestion(question: ExerciseQuestion): boolean {
+  if (HOTSPOT_TYPES.includes(question.type)) return Boolean(question.hotspot?.imageUrl)
+  if (ANNOTATION_TYPES.includes(question.type)) return Boolean(question.annotation?.imageUrl)
+
   return (
     RADIO_TYPES.includes(question.type) ||
     CHECKBOX_TYPES.includes(question.type) ||
@@ -74,6 +79,18 @@ export function isExerciseAnswerProvided(
     return state.order.length > 0 && state.order.length === (question.draggable?.items.length ?? 0)
   }
   if (DROPDOWN_TYPES.includes(question.type)) return state.dropdown !== null
+  if (HOTSPOT_TYPES.includes(question.type)) {
+    const points = state.hotspotPoints ?? []
+    if (question.type === 8) return points.length >= 3
+
+    return points.length >= Math.max(1, question.hotspot?.maxClicks ?? 1)
+  }
+  if (ANNOTATION_TYPES.includes(question.type)) {
+    const hasPath = (state.annotationPaths ?? []).some((path) => path.points.length >= 2)
+    const hasText = (state.annotationTexts ?? []).some((item) => item.text.trim().length > 0)
+
+    return hasPath || hasText
+  }
   if (question.type === 16) return state.calculated.trim().length > 0
   if (question.type === 5) return state.text.trim().length > 0
 
@@ -94,6 +111,9 @@ export function createExerciseAnswerState(question: ExerciseQuestion): ExerciseA
     calculatedAnswerId:
       question.calculated?.answerId ?? question.calculated?.variations[0]?.id ?? null,
     text: "",
+    hotspotPoints: [],
+    annotationPaths: [],
+    annotationTexts: [],
     reviewLater: false,
   }
 }
@@ -114,6 +134,13 @@ export function buildExerciseAnswerPayload(
   if (MATCHING_TYPES.includes(question.type)) return { matching: state.matching }
   if (question.type === 18) return { order: state.order }
   if (DROPDOWN_TYPES.includes(question.type)) return { dropdown: state.dropdown }
+  if (HOTSPOT_TYPES.includes(question.type)) return { points: state.hotspotPoints ?? [] }
+  if (ANNOTATION_TYPES.includes(question.type)) {
+    return {
+      paths: state.annotationPaths ?? [],
+      texts: state.annotationTexts ?? [],
+    }
+  }
   if (question.type === 16) {
     return { calculated: state.calculated, answerId: state.calculatedAnswerId }
   }
@@ -186,6 +213,72 @@ export function applySavedExerciseAnswer(
     state.dropdown = Number(rows[0]?.answer || 0) || null
     return
   }
+  if (HOTSPOT_TYPES.includes(question.type)) {
+    const points = String(rows[0]?.answer ?? "")
+      .split("|")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        let answerId = 0
+        let coordinate = item
+        if (item.includes(":")) {
+          const parts = item.split(":", 2)
+          answerId = Number(parts[0] ?? 0)
+          coordinate = parts[1] ?? ""
+        }
+        const [rawX, rawY] = coordinate.split(";", 2)
+        const x = Number(rawX)
+        const y = Number(rawY)
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+
+        return {
+          x: Math.max(0, Math.round(x)),
+          y: Math.max(0, Math.round(y)),
+          ...(answerId > 0 ? { answerId } : {}),
+        }
+      })
+      .filter((point): point is NonNullable<typeof point> => point !== null)
+
+    state.hotspotPoints = points
+    return
+  }
+  if (ANNOTATION_TYPES.includes(question.type)) {
+    const paths: ExerciseAnswerState["annotationPaths"] = []
+    const texts: ExerciseAnswerState["annotationTexts"] = []
+
+    for (const item of String(rows[0]?.answer ?? "").split("|")) {
+      const parts = item.split(")(")
+      const type = parts.shift()?.trim()
+      if (type === "P") {
+        const points = parts
+          .map((coordinate) => {
+            const [rawX, rawY] = coordinate.split(";", 2)
+            const x = Number(rawX)
+            const y = Number(rawY)
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+            return { x: Math.max(0, Math.round(x)), y: Math.max(0, Math.round(y)) }
+          })
+          .filter((point): point is NonNullable<typeof point> => point !== null)
+        if (points.length >= 2) paths.push({ points })
+      } else if (type === "T") {
+        const text = String(parts[0] ?? "").trim()
+        const [rawX, rawY] = String(parts[1] ?? "").split(";", 2)
+        const x = Number(rawX)
+        const y = Number(rawY)
+        if (text && Number.isFinite(x) && Number.isFinite(y)) {
+          texts.push({
+            text,
+            x: Math.max(0, Math.round(x)),
+            y: Math.max(0, Math.round(y)),
+          })
+        }
+      }
+    }
+
+    state.annotationPaths = paths
+    state.annotationTexts = texts
+    return
+  }
   if (question.type === 16) {
     const [answerId, ...value] = String(rows[0]?.answer || "").split(":")
     state.calculatedAnswerId = Number(answerId) || state.calculatedAnswerId
@@ -206,6 +299,8 @@ export function answerKind(
   | "ordering"
   | "dropdown"
   | "calculated"
+  | "hotspot"
+  | "annotation"
   | "text"
   | "unsupported" {
   if (RADIO_TYPES.includes(question.type)) return "radio"
@@ -215,6 +310,8 @@ export function answerKind(
   if (MATCHING_TYPES.includes(question.type)) return "matching"
   if (question.type === 18) return "ordering"
   if (DROPDOWN_TYPES.includes(question.type)) return "dropdown"
+  if (HOTSPOT_TYPES.includes(question.type)) return "hotspot"
+  if (ANNOTATION_TYPES.includes(question.type)) return "annotation"
   if (question.type === 16) return "calculated"
   if (question.type === 5) return "text"
   return "unsupported"

@@ -76,6 +76,41 @@ export interface ExerciseCalculatedRuntime {
   variations: ExerciseCalculatedVariation[]
 }
 
+export interface ExerciseImageRuntime {
+  imageName: string
+  imageUrl: string
+}
+
+export interface ExerciseHotspotZone {
+  id: number
+  answer: string
+  position: number
+  hotspotType: string
+}
+
+export interface ExerciseHotspotRuntime extends ExerciseImageRuntime {
+  maxClicks: number
+  combination: boolean
+  delineation: boolean
+  zones: ExerciseHotspotZone[]
+}
+
+export interface ExercisePoint {
+  x: number
+  y: number
+  answerId?: number
+}
+
+export interface ExerciseAnnotationPath {
+  points: ExercisePoint[]
+}
+
+export interface ExerciseAnnotationText {
+  text: string
+  x: number
+  y: number
+}
+
 export interface ExerciseContentRuntime {
   title: string
   description: string
@@ -135,8 +170,8 @@ export interface ExerciseQuestion {
   parent?: ExerciseMediaRuntime | null
   reading?: ExerciseReadingRuntime | null
   content?: ExerciseContentRuntime | null
-  annotation?: Record<string, unknown> | null
-  hotspot?: Record<string, unknown> | null
+  annotation?: ExerciseImageRuntime | null
+  hotspot?: ExerciseHotspotRuntime | null
   onlyoffice?: Record<string, unknown> | null
   isContent: boolean
 }
@@ -200,6 +235,9 @@ export interface ExerciseAnswerState {
   calculated: string
   calculatedAnswerId: number | null
   text: string
+  hotspotPoints: ExercisePoint[]
+  annotationPaths: ExerciseAnnotationPath[]
+  annotationTexts: ExerciseAnnotationText[]
   reviewLater: boolean
 }
 

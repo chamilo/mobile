@@ -786,6 +786,23 @@ export default {
     answerAllBeforeFinish: "Save an answer for every question before finishing the exercise.",
     finish: "Finish exercise",
     finishing: "Finishing...",
+    imageQuestion: {
+      loading: "Loading the interactive image...",
+      loadError: "The interactive question image could not be loaded. Check your connection and retry.",
+      imageAlt: "Interactive question image",
+      interactionLayer: "Interactive answer area",
+      hotspotHelp: "Tap the image to place {total} answer point(s). {remaining} remaining.",
+      delineationHelp: "Tap around the target area to create a polygon with at least three points.",
+      annotationDrawHelp: "Draw directly on the image with your finger, stylus or pointer.",
+      annotationTextHelp: "Enter a label, then tap the image where the label should be placed.",
+      drawMode: "Draw",
+      textMode: "Add text",
+      annotationText: "Annotation text",
+      undoPoint: "Undo point",
+      undoPath: "Undo drawing",
+      undoText: "Undo text",
+      clear: "Clear",
+    },
     unsupportedQuestion:
       "This question type requires the full campus player. Use Open on campus to continue.",
     unsupportedAttempt:

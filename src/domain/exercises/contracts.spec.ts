@@ -139,8 +139,21 @@ describe("exercise contracts", () => {
             text: "Reading text",
           },
           content: null,
-          annotation: { image: { url: "/resource/annotation.png" } },
-          hotspot: { image: { url: "/resource/hotspot.png" } },
+          annotation: {
+            imageName: "annotation.png",
+            imageUrl: "/resource/annotation.png?cid=3&sid=0",
+          },
+          hotspot: {
+            imageName: "hotspot.png",
+            imageUrl: "/resource/hotspot.png?cid=3&sid=0",
+            maxClicks: 2,
+            combination: true,
+            delineation: false,
+            zones: [
+              { id: 100, answer: "Zone A", position: 1, hotspotType: "square", coordinates: "10;10|40;40", score: 1 },
+              { id: 101, answer: "Zone B", position: 2, hotspotType: "circle" },
+            ],
+          },
           onlyoffice: { editorUrl: "/plugin/onlyoffice/editor" },
           isContent: false,
         },
@@ -158,8 +171,27 @@ describe("exercise contracts", () => {
     expect(question?.parentId).toBe(80)
     expect(question?.parent?.content?.description).toBe("Media content")
     expect(question?.reading).toEqual({ speed: 175, text: "Reading text" })
-    expect(question?.annotation).toMatchObject({ image: { url: "/resource/annotation.png" } })
-    expect(question?.hotspot).toMatchObject({ image: { url: "/resource/hotspot.png" } })
+    expect(question?.annotation).toEqual({
+      imageName: "annotation.png",
+      imageUrl: "/resource/annotation.png?cid=3&sid=0",
+    })
+    expect(question?.hotspot).toMatchObject({
+      imageName: "hotspot.png",
+      imageUrl: "/resource/hotspot.png?cid=3&sid=0",
+      maxClicks: 2,
+      combination: true,
+      delineation: false,
+      zones: [
+        { id: 100, answer: "Zone A", position: 1, hotspotType: "square" },
+        { id: 101, answer: "Zone B", position: 2, hotspotType: "circle" },
+      ],
+    })
+    expect(question?.hotspot?.zones[0]).toEqual({
+      id: 100,
+      answer: "Zone A",
+      position: 1,
+      hotspotType: "square",
+    })
     expect(question?.onlyoffice).toMatchObject({ editorUrl: "/plugin/onlyoffice/editor" })
   })
 

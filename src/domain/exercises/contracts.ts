@@ -4,6 +4,8 @@ import type {
   ExerciseChoice,
   ExerciseContentRuntime,
   ExerciseFinishResponse,
+  ExerciseHotspotRuntime,
+  ExerciseImageRuntime,
   ExerciseList,
   ExerciseListItem,
   ExerciseMediaRuntime,
@@ -135,6 +137,43 @@ function normalizeRuntimePages(value: unknown): ExerciseRuntimePage[] {
         .map(normalizeRuntimePage)
         .filter((page): page is ExerciseRuntimePage => page !== null)
     : []
+}
+
+function normalizeImageRuntime(value: unknown): ExerciseImageRuntime | null {
+  const item = optionalRecord(value)
+  if (!item) return null
+
+  return {
+    imageName: stringValue(item.imageName),
+    imageUrl: stringValue(item.imageUrl),
+  }
+}
+
+function normalizeHotspotRuntime(value: unknown): ExerciseHotspotRuntime | null {
+  const item = optionalRecord(value)
+  if (!item) return null
+
+  const zones = Array.isArray(item.zones)
+    ? item.zones
+        .map((zone) => optionalRecord(zone))
+        .filter((zone): zone is Record<string, unknown> => zone !== null)
+        .map((zone) => ({
+          id: numberValue(zone.id),
+          answer: stringValue(zone.answer),
+          position: numberValue(zone.position),
+          hotspotType: stringValue(zone.hotspotType),
+        }))
+        .filter((zone) => Number.isInteger(zone.id) && zone.id > 0)
+    : []
+
+  return {
+    imageName: stringValue(item.imageName),
+    imageUrl: stringValue(item.imageUrl),
+    maxClicks: Math.max(1, numberValue(item.maxClicks, 1)),
+    combination: booleanValue(item.combination),
+    delineation: booleanValue(item.delineation),
+    zones,
+  }
 }
 
 function normalizeChoice(value: unknown): ExerciseChoice | null {
@@ -273,8 +312,8 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
     parent: normalizeMedia(item.parent),
     reading: normalizeReading(item.reading),
     content: normalizeContent(item.content),
-    annotation: optionalRecord(item.annotation),
-    hotspot: optionalRecord(item.hotspot),
+    annotation: normalizeImageRuntime(item.annotation),
+    hotspot: normalizeHotspotRuntime(item.hotspot),
     onlyoffice: optionalRecord(item.onlyoffice),
     isContent: booleanValue(item.isContent),
   }

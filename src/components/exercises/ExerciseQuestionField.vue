@@ -2,6 +2,7 @@
 import { computed } from "vue"
 import { useI18n } from "vue-i18n"
 
+import ExerciseImageQuestionField from "@/components/exercises/ExerciseImageQuestionField.vue"
 import { answerKind } from "@/domain/exercises/answers"
 import type { ExerciseAnswerState, ExerciseQuestion } from "@/domain/exercises/types"
 
@@ -264,6 +265,14 @@ const orderedItems = computed(() => {
         </option>
       </select>
     </label>
+
+    <ExerciseImageQuestionField
+      v-else-if="kind === 'hotspot' || kind === 'annotation'"
+      :question="question"
+      :model-value="modelValue"
+      :disabled="disabled"
+      @update:model-value="emit('update:modelValue', $event)"
+    />
 
     <label v-else-if="kind === 'calculated'" class="block">
       <span class="text-sm font-medium text-slate-700">

@@ -25,6 +25,7 @@ import {
   ExerciseServiceError,
   type ExerciseServiceErrorCode,
 } from "@/services/exercises/ExerciseApiService"
+import { ExerciseRuntimeResourceService } from "@/services/exercises/ExerciseRuntimeResourceService"
 import {
   offlineCoreFlowRepository,
   type OfflineCoreFlowRepository,
@@ -724,6 +725,20 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
+  async function loadRuntimeImage(resourceUrl: string): Promise<Blob | null> {
+    const campus = useCampusStore().selectedCampus
+    if (!campus) return null
+
+    try {
+      return await new ExerciseRuntimeResourceService(
+        createAuthenticatedHttpClient(campus),
+        campus.baseUrl,
+      ).loadImage(resourceUrl)
+    } catch {
+      return null
+    }
+  }
+
   async function loadResult(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -795,6 +810,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     saveCurrentAnswer,
     goToQuestion,
     finishAttempt,
+    loadRuntimeImage,
     loadResult,
     resetRuntime,
     clearError,

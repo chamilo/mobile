@@ -106,3 +106,117 @@ describe("exercise answers", () => {
     expect(hasUnsupportedExerciseQuestions([media, pageBreak])).toBe(false)
   })
 })
+
+describe("image exercise answers", () => {
+  it("builds and restores hotspot point payloads", () => {
+    const item = question(6)
+    item.hotspot = {
+      imageName: "zones.png",
+      imageUrl: "/r/question/file?mode=view",
+      maxClicks: 2,
+      combination: false,
+      delineation: false,
+      zones: [],
+    }
+    const state = createExerciseAnswerState(item)
+    state.hotspotPoints = [
+      { x: 120, y: 80 },
+      { x: 250, y: 190 },
+    ]
+
+    expect(isSupportedExerciseQuestion(item)).toBe(true)
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({
+      points: [
+        { x: 120, y: 80 },
+        { x: 250, y: 190 },
+      ],
+    })
+
+    const restored = createExerciseAnswerState(item)
+    applySavedExerciseAnswer(item, [{ answer: "120;80|250;190", position: 0 }], restored)
+    expect(restored.hotspotPoints).toEqual(state.hotspotPoints)
+  })
+
+  it("requires at least three points for hotspot delineation", () => {
+    const item = question(8)
+    item.hotspot = {
+      imageName: "delineation.png",
+      imageUrl: "/r/question/file?mode=view",
+      maxClicks: 1,
+      combination: false,
+      delineation: true,
+      zones: [],
+    }
+    const state = createExerciseAnswerState(item)
+    state.hotspotPoints = [
+      { x: 10, y: 10 },
+      { x: 80, y: 10 },
+    ]
+    expect(isExerciseAnswerProvided(item, state)).toBe(false)
+
+    state.hotspotPoints.push({ x: 50, y: 70 })
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+  })
+
+  it("builds and restores annotation paths and text", () => {
+    const item = question(20)
+    item.annotation = {
+      imageName: "annotation.png",
+      imageUrl: "/r/question/file?mode=view",
+    }
+    const state = createExerciseAnswerState(item)
+    state.annotationPaths = [
+      {
+        points: [
+          { x: 10, y: 20 },
+          { x: 30, y: 40 },
+        ],
+      },
+    ]
+    state.annotationTexts = [{ text: "Label", x: 50, y: 60 }]
+
+    expect(isSupportedExerciseQuestion(item)).toBe(true)
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({
+      paths: state.annotationPaths,
+      texts: state.annotationTexts,
+    })
+
+    const restored = createExerciseAnswerState(item)
+    applySavedExerciseAnswer(
+      item,
+      [{ answer: "P)(10;20)(30;40|T)(Label)(50;60", position: 0 }],
+      restored,
+    )
+    expect(restored.annotationPaths).toEqual(state.annotationPaths)
+    expect(restored.annotationTexts).toEqual(state.annotationTexts)
+  })
+
+  it("keeps oral, upload and OnlyOffice questions on the campus fallback", () => {
+    expect(hasUnsupportedExerciseQuestions([question(13)])).toBe(true)
+    expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(true)
+    expect(hasUnsupportedExerciseQuestions([question(30)])).toBe(true)
+
+    const hotspotTypes = [6, 8, 26].map((type) => {
+      const item = question(type)
+      item.hotspot = {
+        imageName: "question.png",
+        imageUrl: "/r/question/file?mode=view",
+        maxClicks: 1,
+        combination: type === 26,
+        delineation: type === 8,
+        zones: [],
+      }
+      return item
+    })
+    const annotation = question(20)
+    annotation.annotation = {
+      imageName: "annotation.png",
+      imageUrl: "/r/question/file?mode=view",
+    }
+
+    expect(hasUnsupportedExerciseQuestions([...hotspotTypes, annotation])).toBe(false)
+    expect(hasUnsupportedExerciseQuestions([question(6)])).toBe(true)
+  })
+})
