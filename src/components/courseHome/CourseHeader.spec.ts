@@ -64,6 +64,11 @@ describe("CourseHeader", () => {
     expect(wrapper.text()).toContain("Course home")
     expect(wrapper.text()).toContain("July session")
     expect(wrapper.text()).toContain("55%")
+    expect(wrapper.text()).not.toContain("Progress")
+
+    const progressbar = wrapper.get('[role="progressbar"]')
+    expect(progressbar.attributes("aria-valuenow")).toBe("55")
+    expect(progressbar.element.previousElementSibling?.tagName).toBe("NAV")
 
     await wrapper.get("nav button").trigger("click")
     await flushPromises()

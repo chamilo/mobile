@@ -61,6 +61,27 @@ async function goBackToCourses(): Promise<void> {
       <span class="truncate text-slate-600">{{ t("courseHome.breadcrumbCurrent") }}</span>
     </nav>
 
+    <div
+      v-if="entry.progress !== null"
+      class="relative h-6 overflow-hidden rounded-full bg-slate-100"
+      role="progressbar"
+      :aria-label="t('courses.progress')"
+      :aria-valuenow="entry.progress"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div
+        class="absolute inset-y-0 left-0 bg-chamilo-200 transition-[width]"
+        :style="{ width: `${entry.progress}%` }"
+        aria-hidden="true"
+      />
+      <span
+        class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-slate-800"
+      >
+        {{ entry.progress }}%
+      </span>
+    </div>
+
     <section
       v-if="introductionText"
       class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -73,36 +94,16 @@ async function goBackToCourses(): Promise<void> {
     </section>
 
     <section
-      v-if="entry.sessionTitle || entry.progress !== null"
-      class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      v-if="entry.sessionTitle"
+      class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
     >
-      <div v-if="entry.sessionTitle" class="flex items-start gap-3 text-sm text-slate-700">
+      <div class="flex items-start gap-3 text-sm text-slate-700">
         <i class="pi pi-calendar mt-0.5 text-chamilo-700" aria-hidden="true" />
         <div>
           <p class="font-semibold text-slate-900">{{ entry.sessionTitle }}</p>
           <p v-if="entry.sessionPeriod" class="mt-0.5 text-xs text-slate-500">
             {{ t(`courseHome.sessionPeriods.${entry.sessionPeriod}`) }}
           </p>
-        </div>
-      </div>
-
-      <div v-if="entry.progress !== null" class="space-y-2">
-        <div class="flex items-center justify-between text-xs text-slate-600">
-          <span>{{ t("courses.progress") }}</span>
-          <span class="font-semibold">{{ entry.progress }}%</span>
-        </div>
-        <div
-          class="h-2 overflow-hidden rounded-full bg-slate-100"
-          role="progressbar"
-          :aria-label="t('courses.progress')"
-          :aria-valuenow="entry.progress"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div
-            class="h-full rounded-full bg-chamilo-600"
-            :style="{ width: `${entry.progress}%` }"
-          />
         </div>
       </div>
     </section>
