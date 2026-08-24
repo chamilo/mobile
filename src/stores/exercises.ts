@@ -482,7 +482,7 @@ export const useExercisesStore = defineStore("exercises", () => {
           .loadExerciseRuntime(identity.campusId, identity.userId, context, exerciseId)
           .catch(() => null)
         const preparedForStorage = selectExerciseRuntimeForPreparedStorage(
-          runtime.value,
+          loaded,
           existingPrepared,
         )
 
