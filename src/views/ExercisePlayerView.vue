@@ -61,6 +61,7 @@ const reviewSummaryVisible = ref(false)
 const hotspotImageSrc = ref<string | null>(null)
 const hotspotImageLoading = ref(false)
 const hotspotImageError = ref(false)
+const pendingAnswerFiles = ref<Record<number, File | null>>({})
 let hotspotImageObjectUrl: string | null = null
 let hotspotImageLoadSequence = 0
 let timer: ReturnType<typeof setInterval> | null = null
@@ -110,6 +111,9 @@ const displayQuestion = computed(() =>
 )
 const currentAnswer = computed(() =>
   question.value ? (store.answers[question.value.id] ?? null) : null,
+)
+const pendingCurrentFile = computed(() =>
+  question.value ? (pendingAnswerFiles.value[question.value.id] ?? null) : null,
 )
 const progress = computed(() =>
   store.answerableQuestions.length
@@ -166,6 +170,21 @@ function plainText(value: string): string {
 
 function updateCurrentAnswer(value: NonNullable<typeof currentAnswer.value>): void {
   if (question.value) store.answers[question.value.id] = value
+}
+
+function selectCurrentAnswerFile(file: File | null): void {
+  if (!question.value) return
+  pendingAnswerFiles.value = {
+    ...pendingAnswerFiles.value,
+    [question.value.id]: file,
+  }
+  store.clearError()
+}
+
+function clearPendingAnswerFile(questionId: number): void {
+  const next = { ...pendingAnswerFiles.value }
+  delete next[questionId]
+  pendingAnswerFiles.value = next
 }
 
 function releaseHotspotImage(): void {
@@ -235,16 +254,17 @@ async function load(): Promise<void> {
   reviewFlowStarted.value = false
   reviewSummaryVisible.value = false
   confirmedSavedAnswers.value = false
+  pendingAnswerFiles.value = {}
   await store.loadRuntime(context.value, numericExerciseId.value, learningPathContext.value)
   startTimer()
 }
 
 async function start(): Promise<void> {
   if (!context.value) return
-  if (
-    await store.startAttempt(context.value, numericExerciseId.value, learningPathContext.value)
-  )
+  if (await store.startAttempt(context.value, numericExerciseId.value, learningPathContext.value)) {
+    pendingAnswerFiles.value = {}
     startTimer()
+  }
 }
 
 async function go(index: number): Promise<void> {
@@ -254,36 +274,44 @@ async function go(index: number): Promise<void> {
       store.currentQuestionIndex = index
     }
   } else {
-    await store.goToQuestion(
+    const questionId = question.value?.id ?? 0
+    const saved = await store.goToQuestion(
       context.value,
       numericExerciseId.value,
       index,
       learningPathContext.value,
+      pendingCurrentFile.value,
     )
+    if (saved && questionId > 0) clearPendingAnswerFile(questionId)
   }
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 async function save(): Promise<void> {
-  if (context.value) {
-    await store.saveCurrentAnswer(
-      context.value,
-      numericExerciseId.value,
-      "none",
-      learningPathContext.value,
-    )
-  }
+  if (!context.value) return
+  const questionId = question.value?.id ?? 0
+  const saved = await store.saveCurrentAnswer(
+    context.value,
+    numericExerciseId.value,
+    "none",
+    learningPathContext.value,
+    pendingCurrentFile.value,
+  )
+  if (saved && questionId > 0) clearPendingAnswerFile(questionId)
 }
 
 async function finish(): Promise<void> {
   if (!context.value) return
+  const questionId = question.value?.id ?? 0
   const attemptId = await store.finishAttempt(
     context.value,
     numericExerciseId.value,
     confirmedSavedAnswers.value,
     learningPathContext.value,
+    pendingCurrentFile.value,
   )
   if (attemptId) {
+    if (questionId > 0) clearPendingAnswerFile(questionId)
     stopTimer()
     await router.push(
       buildExerciseResultRoute(
@@ -304,13 +332,16 @@ async function requestFinish(): Promise<void> {
   }
   if (!context.value) return
   if (hasFinalReview.value && !reviewSummaryVisible.value) {
+    const questionId = question.value?.id ?? 0
     const saved = await store.saveCurrentAnswer(
       context.value,
       numericExerciseId.value,
       "finish",
       learningPathContext.value,
+      pendingCurrentFile.value,
     )
     if (!saved) return
+    if (questionId > 0) clearPendingAnswerFile(questionId)
 
     reviewFlowStarted.value = true
     reviewSummaryVisible.value = true
@@ -327,6 +358,7 @@ function restartPreview(): void {
   store.answers = Object.fromEntries(
     store.answerableQuestions.map((item) => [item.id, createExerciseAnswerState(item)]),
   )
+  pendingAnswerFiles.value = {}
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
@@ -340,16 +372,19 @@ function openReviewQuestion(index: number): void {
 
 async function returnToReview(): Promise<void> {
   if (!context.value) return
+  const questionId = question.value?.id ?? 0
   if (
     !(await store.saveCurrentAnswer(
       context.value,
       numericExerciseId.value,
       "none",
       learningPathContext.value,
+      pendingCurrentFile.value,
     ))
   ) {
     return
   }
+  if (questionId > 0) clearPendingAnswerFile(questionId)
 
   reviewSummaryVisible.value = true
   window.scrollTo({ top: 0, behavior: "smooth" })
@@ -610,8 +645,10 @@ onBeforeUnmount(() => {
             :hotspot-image-src="hotspotImageSrc"
             :hotspot-image-loading="hotspotImageLoading"
             :hotspot-image-error="hotspotImageError"
+            :pending-file-name="pendingCurrentFile?.name ?? null"
             @update:model-value="updateCurrentAnswer"
             @retry-hotspot-image="loadHotspotImage"
+            @select-answer-file="selectCurrentAnswerFile"
           />
 
           <label

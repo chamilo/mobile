@@ -139,9 +139,20 @@ export interface ExerciseQuestion {
   isContent: boolean
 }
 
+export interface ExerciseAttemptFile {
+  id: number
+  name: string
+  size: number
+  mimeType: string
+  url: string
+  inlineUrl: string | null
+}
+
 export interface SavedAnswerRow {
   answer: string
   position: number | null
+  secondsSpent?: number
+  files?: ExerciseAttemptFile[]
 }
 
 export interface ExerciseAttempt {
@@ -194,6 +205,7 @@ export interface ExerciseAnswerState {
   calculatedAnswerId: number | null
   text: string
   hotspotPoints: ExerciseHotspotPoint[]
+  uploadedFiles: ExerciseAttemptFile[]
   reviewLater: boolean
 }
 
@@ -205,6 +217,7 @@ export interface ExerciseAnswerResponse {
   reviewQuestionIds: number[]
   answeredCount: number
   canFinish: boolean
+  files: ExerciseAttemptFile[]
 }
 
 export interface ExerciseFinishResponse {

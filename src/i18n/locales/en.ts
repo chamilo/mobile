@@ -773,7 +773,8 @@ export default {
     hotspot: {
       loadingImage: "Loading hotspot image...",
       imageError: "The hotspot image could not be loaded from this campus.",
-      pointInstructions: "Tap the image to select {count} point. | Tap the image to select {count} points.",
+      pointInstructions:
+        "Tap the image to select {count} point. | Tap the image to select {count} points.",
       delineationInstructions:
         "Tap around the target area to draw its outline. Add at least three vertices.",
       pointsSelected: "{selected} of {total} points selected",
@@ -782,6 +783,17 @@ export default {
       minimumVertices: "Add at least three vertices before saving this answer.",
       undoPoint: "Undo point",
       reset: "Reset selection",
+    },
+    fileAnswer: {
+      chooseFile: "Choose answer file",
+      chooseAudio: "Choose an audio file",
+      selected: "Selected: {name}",
+      savedFiles: "Saved answer files",
+      oralFormats: "Oral expression accepts WAV or OGG audio.",
+      startRecording: "Record answer",
+      stopRecording: "Stop recording",
+      microphoneUnavailable:
+        "Microphone recording is unavailable or permission was denied. You can still choose a WAV or OGG file.",
     },
     reviewLater: "Review this question later",
     reviewAnswers: "Review answers",
@@ -814,6 +826,7 @@ export default {
       not_found: "The requested exercise or attempt no longer exists.",
       network: "The campus could not be reached. Check your connection and retry.",
       timeout: "The campus took too long to return the exercise.",
+      validation: "The exercise answer was rejected. Check the selected file and retry.",
       invalid_response: "The campus returned an invalid exercise response.",
       server: "The campus returned an unexpected exercise error.",
     },
@@ -942,7 +955,8 @@ export default {
       openingFile: "Opening...",
       downloadFile: "Download",
       downloadingFile: "Downloading...",
-      fileDownloadUnavailable: "The campus did not provide a downloadable file for this submission.",
+      fileDownloadUnavailable:
+        "The campus did not provide a downloadable file for this submission.",
       correctionAvailable: "Correction available",
       correction: "Correction: {title}",
       openCorrection: "Open correction",

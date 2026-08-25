@@ -2,7 +2,9 @@
 import { computed, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
+import ExerciseAudioRecorder from "@/components/exercises/ExerciseAudioRecorder.vue"
 import { answerKind } from "@/domain/exercises/answers"
+import { exerciseFileAccept } from "@/domain/exercises/fileAnswers"
 import {
   exerciseHotspotPointFromClientCoordinates,
   exerciseHotspotPointPercent,
@@ -16,18 +18,30 @@ const props = defineProps<{
   hotspotImageSrc?: string | null
   hotspotImageLoading?: boolean
   hotspotImageError?: boolean
+  pendingFileName?: string | null
 }>()
 
 const emit = defineEmits<{
   "update:modelValue": [value: ExerciseAnswerState]
   retryHotspotImage: []
+  selectAnswerFile: [file: File | null]
 }>()
 
 const { t } = useI18n()
 const kind = computed(() => answerKind(props.question))
+const answerFileInput = ref<HTMLInputElement | null>(null)
 
 function update(patch: Partial<ExerciseAnswerState>): void {
   emit("update:modelValue", { ...props.modelValue, ...patch })
+}
+
+function selectAnswerFile(event: Event): void {
+  const input = event.target as HTMLInputElement
+  emit("selectAnswerFile", input.files?.[0] ?? null)
+}
+
+function selectRecordedAudio(file: File): void {
+  emit("selectAnswerFile", file)
 }
 
 function plainText(value: string): string {
@@ -161,6 +175,13 @@ watch(
     resetHotspotImageGeometry()
   },
 )
+
+watch(
+  () => [props.question.id, props.pendingFileName],
+  () => {
+    if (!props.pendingFileName && answerFileInput.value) answerFileInput.value.value = ""
+  },
+)
 </script>
 
 <template>
@@ -173,10 +194,7 @@ watch(
         :aria-labelledby="`question-${question.id}-reading-title`"
       >
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <p
-            :id="`question-${question.id}-reading-title`"
-            class="font-medium text-slate-900"
-          >
+          <p :id="`question-${question.id}-reading-title`" class="font-medium text-slate-900">
             {{ t("exercises.readingPassage") }}
           </p>
           <span
@@ -365,7 +383,6 @@ watch(
       </li>
     </ol>
 
-
     <div v-else-if="kind === 'hotspot'" class="space-y-4">
       <p class="text-sm text-slate-700">
         {{
@@ -492,6 +509,56 @@ watch(
           {{ t("exercises.hotspot.reset") }}
         </button>
       </div>
+    </div>
+
+    <div v-else-if="kind === 'file' || kind === 'oral'" class="space-y-4">
+      <ExerciseAudioRecorder
+        v-if="kind === 'oral'"
+        :question-id="question.id"
+        :disabled="disabled"
+        @recorded="selectRecordedAudio"
+      />
+
+      <label class="block rounded-xl border border-slate-200 p-3">
+        <span class="text-sm font-medium text-slate-800">
+          {{
+            kind === "oral"
+              ? t("exercises.fileAnswer.chooseAudio")
+              : t("exercises.fileAnswer.chooseFile")
+          }}
+        </span>
+        <input
+          :key="`question-${question.id}-file`"
+          ref="answerFileInput"
+          :name="`question-${question.id}-file`"
+          type="file"
+          :accept="exerciseFileAccept(question.type)"
+          class="mt-2 block w-full text-sm text-slate-700"
+          :disabled="disabled"
+          @change="selectAnswerFile"
+        />
+      </label>
+
+      <div
+        v-if="pendingFileName"
+        class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900"
+      >
+        {{ t("exercises.fileAnswer.selected", { name: pendingFileName }) }}
+      </div>
+
+      <div
+        v-if="(modelValue.uploadedFiles?.length ?? 0) > 0"
+        class="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+      >
+        <p class="font-semibold">{{ t("exercises.fileAnswer.savedFiles") }}</p>
+        <p v-for="file in modelValue.uploadedFiles ?? []" :key="file.id">
+          {{ file.name }}
+        </p>
+      </div>
+
+      <p v-if="kind === 'oral'" class="text-xs text-slate-500">
+        {{ t("exercises.fileAnswer.oralFormats") }}
+      </p>
     </div>
 
     <label v-else-if="kind === 'dropdown'" class="block">
