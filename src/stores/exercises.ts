@@ -547,6 +547,10 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
+  async function loadHotspotImage(imageUrl: string): Promise<Blob> {
+    return service().getHotspotImage(imageUrl)
+  }
+
   async function startAttempt(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -833,6 +837,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     reviewQuestionIds,
     loadList,
     loadRuntime,
+    loadHotspotImage,
     startAttempt,
     saveCurrentAnswer,
     goToQuestion,

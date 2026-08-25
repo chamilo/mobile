@@ -3,6 +3,7 @@ import type {
   ExerciseAttempt,
   ExerciseChoice,
   ExerciseFinishResponse,
+  ExerciseHotspotZone,
   ExerciseList,
   ExerciseListItem,
   ExerciseQuestion,
@@ -81,6 +82,25 @@ function normalizeChoices(value: unknown): ExerciseChoice[] {
     : []
 }
 
+function normalizeHotspotZone(value: unknown): ExerciseHotspotZone | null {
+  const zone = optionalRecord(value)
+  if (!zone || !Number.isInteger(zone.id) || numberValue(zone.id) <= 0) return null
+
+  const hotspotType = stringValue(zone.hotspotType)
+  if (!["square", "circle", "poly", "delineation", "oar"].includes(hotspotType)) {
+    return null
+  }
+
+  return {
+    id: numberValue(zone.id),
+    answer: stringValue(zone.answer),
+    position: numberValue(zone.position),
+    hotspotType: hotspotType as ExerciseHotspotZone["hotspotType"],
+    score: nullableNumber(zone.score),
+    coordinates: nullableString(zone.coordinates),
+  }
+}
+
 function normalizeSavedAnswers(value: unknown): Record<string, SavedAnswerRow[]> {
   const source = optionalRecord(value)
   if (!source) return {}
@@ -137,6 +157,7 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
   const dropdown = optionalRecord(item.dropdown)
   const calculated = optionalRecord(item.calculated)
   const reading = optionalRecord(item.reading)
+  const hotspot = optionalRecord(item.hotspot)
 
   return {
     id: numberValue(item.id),
@@ -201,6 +222,20 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
       ? {
           speed: Math.max(0, numberValue(reading.speed)),
           text: stringValue(reading.text),
+        }
+      : null,
+    hotspot: hotspot
+      ? {
+          imageName: stringValue(hotspot.imageName),
+          imageUrl: stringValue(hotspot.imageUrl),
+          maxClicks: Math.max(1, numberValue(hotspot.maxClicks, 1)),
+          combination: booleanValue(hotspot.combination),
+          delineation: booleanValue(hotspot.delineation),
+          zones: Array.isArray(hotspot.zones)
+            ? hotspot.zones
+                .map(normalizeHotspotZone)
+                .filter((zone): zone is ExerciseHotspotZone => zone !== null)
+            : [],
         }
       : null,
     isContent: booleanValue(item.isContent),

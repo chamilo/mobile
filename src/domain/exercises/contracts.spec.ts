@@ -71,6 +71,63 @@ describe("exercise contracts", () => {
     expect(result.attempt?.reviewQuestionIds).toEqual([11])
   })
 
+  it("normalizes the verified hotspot runtime without requiring teacher coordinates", () => {
+    const result = normalizeExerciseRuntime({
+      exerciseId: 9,
+      title: "Hotspot quiz",
+      settings: {},
+      questions: [
+        {
+          id: 31,
+          title: "Select the areas",
+          type: 26,
+          typeLabel: "Hotspot combination",
+          hotspot: {
+            imageName: "body.png",
+            imageUrl: "/r/resource/31/view?cid=14&sid=0&gid=0",
+            maxClicks: 2,
+            combination: true,
+            delineation: false,
+            zones: [
+              { id: 101, answer: "Area A", position: 1, hotspotType: "circle" },
+              { id: 102, answer: "Area B", position: 2, hotspotType: "poly" },
+            ],
+          },
+        },
+      ],
+      canManage: false,
+      canStartAttempt: true,
+      legacyUrls: {},
+      attempt: null,
+    })
+
+    expect(result.questions[0].hotspot).toEqual({
+      imageName: "body.png",
+      imageUrl: "/r/resource/31/view?cid=14&sid=0&gid=0",
+      maxClicks: 2,
+      combination: true,
+      delineation: false,
+      zones: [
+        {
+          id: 101,
+          answer: "Area A",
+          position: 1,
+          hotspotType: "circle",
+          score: null,
+          coordinates: null,
+        },
+        {
+          id: 102,
+          answer: "Area B",
+          position: 2,
+          hotspotType: "poly",
+          score: null,
+          coordinates: null,
+        },
+      ],
+    })
+  })
+
   it("rejects a runtime without a valid exercise id", () => {
     expect(() => normalizeExerciseRuntime({ title: "Invalid" })).toThrow(ExerciseContractError)
   })

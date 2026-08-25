@@ -83,6 +83,30 @@ function mapError(error: unknown): ExerciseServiceError {
   return new ExerciseServiceError("server", error.message, error)
 }
 
+const SELECTED_CAMPUS_PLACEHOLDER = "https://selected-campus.invalid/"
+
+function exerciseAssetPath(value: string): string {
+  const raw = value.trim()
+  if (!raw || /^https?:\/\//i.test(raw) || raw.startsWith("//")) {
+    throw new ExerciseContractError("The exercise asset URL is not relative to the selected campus.")
+  }
+
+  try {
+    const base = new URL(SELECTED_CAMPUS_PLACEHOLDER)
+    const resolved = new URL(raw, base)
+
+    if (resolved.origin !== base.origin) {
+      throw new ExerciseContractError("The exercise asset URL is not relative to the selected campus.")
+    }
+
+    return `${resolved.pathname}${resolved.search}`
+  } catch (error) {
+    if (error instanceof ExerciseContractError) throw error
+
+    throw new ExerciseContractError("The exercise asset URL is invalid.")
+  }
+}
+
 export class ExerciseApiService {
   constructor(private readonly httpClient: HttpClient) {}
 
@@ -113,6 +137,26 @@ export class ExerciseApiService {
         headers: { Accept: "application/ld+json" },
       })
       return normalizeExerciseRuntime(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async getHotspotImage(imageUrl: string): Promise<Blob> {
+    try {
+      const response = await this.httpClient.request<Blob>({
+        method: "GET",
+        path: exerciseAssetPath(imageUrl),
+        headers: { Accept: "image/*" },
+        responseType: "blob",
+        timeoutMs: 60_000,
+      })
+
+      if (!(response.data instanceof Blob)) {
+        throw new ExerciseContractError("The exercise hotspot image response is invalid.")
+      }
+
+      return response.data
     } catch (error) {
       throw mapError(error)
     }

@@ -1,18 +1,26 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
 import { answerKind } from "@/domain/exercises/answers"
+import {
+  exerciseHotspotPointFromClientCoordinates,
+  exerciseHotspotPointPercent,
+} from "@/domain/exercises/hotspot"
 import type { ExerciseAnswerState, ExerciseQuestion } from "@/domain/exercises/types"
 
 const props = defineProps<{
   question: ExerciseQuestion
   modelValue: ExerciseAnswerState
   disabled?: boolean
+  hotspotImageSrc?: string | null
+  hotspotImageLoading?: boolean
+  hotspotImageError?: boolean
 }>()
 
 const emit = defineEmits<{
   "update:modelValue": [value: ExerciseAnswerState]
+  retryHotspotImage: []
 }>()
 
 const { t } = useI18n()
@@ -82,6 +90,77 @@ const orderedItems = computed(() => {
   const items = new Map((props.question.draggable?.items ?? []).map((item) => [item.id, item]))
   return props.modelValue.order.map((id) => items.get(id)).filter(Boolean)
 })
+
+const hotspotImage = ref<HTMLImageElement | null>(null)
+const hotspotNaturalWidth = ref(0)
+const hotspotNaturalHeight = ref(0)
+
+const hotspotPoints = computed(() => props.modelValue.hotspotPoints ?? [])
+const hotspotMaxClicks = computed(() => Math.max(1, props.question.hotspot?.maxClicks ?? 1))
+const hotspotDelineation = computed(() => props.question.hotspot?.delineation === true)
+const hotspotPointsRemaining = computed(() =>
+  hotspotDelineation.value
+    ? null
+    : Math.max(0, hotspotMaxClicks.value - hotspotPoints.value.length),
+)
+const hotspotPolylinePoints = computed(() =>
+  hotspotPoints.value.map((point) => `${point.x},${point.y}`).join(" "),
+)
+
+function resetHotspotImageGeometry(): void {
+  hotspotNaturalWidth.value = 0
+  hotspotNaturalHeight.value = 0
+}
+
+function handleHotspotImageLoad(event: Event): void {
+  const image = event.currentTarget as HTMLImageElement
+  hotspotImage.value = image
+  hotspotNaturalWidth.value = image.naturalWidth
+  hotspotNaturalHeight.value = image.naturalHeight
+}
+
+function handleHotspotPointer(event: PointerEvent): void {
+  if (props.disabled || !props.question.hotspot || !hotspotImage.value) return
+  if (event.pointerType === "mouse" && event.button !== 0) return
+  if (!hotspotDelineation.value && hotspotPoints.value.length >= hotspotMaxClicks.value) {
+    return
+  }
+
+  const image = hotspotImage.value
+  const rect = image.getBoundingClientRect()
+  const point = exerciseHotspotPointFromClientCoordinates(event.clientX, event.clientY, {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    naturalWidth: image.naturalWidth,
+    naturalHeight: image.naturalHeight,
+  })
+
+  if (!point) return
+
+  update({ hotspotPoints: [...hotspotPoints.value, point] })
+}
+
+function undoHotspotPoint(): void {
+  update({ hotspotPoints: hotspotPoints.value.slice(0, -1) })
+}
+
+function resetHotspotPoints(): void {
+  update({ hotspotPoints: [] })
+}
+
+function hotspotMarkerStyle(point: ExerciseAnswerState["hotspotPoints"][number]) {
+  return exerciseHotspotPointPercent(point, hotspotNaturalWidth.value, hotspotNaturalHeight.value)
+}
+
+watch(
+  () => [props.question.id, props.hotspotImageSrc],
+  () => {
+    hotspotImage.value = null
+    resetHotspotImageGeometry()
+  },
+)
 </script>
 
 <template>
@@ -285,6 +364,135 @@ const orderedItems = computed(() => {
         </button>
       </li>
     </ol>
+
+
+    <div v-else-if="kind === 'hotspot'" class="space-y-4">
+      <p class="text-sm text-slate-700">
+        {{
+          hotspotDelineation
+            ? t("exercises.hotspot.delineationInstructions")
+            : t("exercises.hotspot.pointInstructions", { count: hotspotMaxClicks })
+        }}
+      </p>
+
+      <div
+        v-if="hotspotImageLoading"
+        class="flex min-h-48 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600"
+        role="status"
+      >
+        {{ t("exercises.hotspot.loadingImage") }}
+      </div>
+
+      <div
+        v-else-if="hotspotImageError || !hotspotImageSrc"
+        class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+        role="alert"
+      >
+        <p>{{ t("exercises.hotspot.imageError") }}</p>
+        <button
+          type="button"
+          class="mt-3 min-h-touch rounded-xl border border-amber-700 bg-white px-4 font-semibold text-amber-900"
+          :disabled="disabled"
+          @click="emit('retryHotspotImage')"
+        >
+          {{ t("actions.retry") }}
+        </button>
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <div
+          class="relative inline-block max-w-full touch-manipulation overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+          :class="disabled ? 'cursor-default opacity-75' : 'cursor-crosshair'"
+          @pointerdown="handleHotspotPointer"
+        >
+          <img
+            ref="hotspotImage"
+            :src="hotspotImageSrc"
+            :alt="question.hotspot?.imageName || plainText(question.title)"
+            class="block max-h-[70vh] max-w-full select-none"
+            draggable="false"
+            @load="handleHotspotImageLoad"
+          />
+
+          <svg
+            v-if="hotspotNaturalWidth > 0 && hotspotNaturalHeight > 0 && hotspotDelineation"
+            class="pointer-events-none absolute inset-0 h-full w-full"
+            :viewBox="`0 0 ${hotspotNaturalWidth} ${hotspotNaturalHeight}`"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <polygon
+              v-if="hotspotPoints.length >= 3"
+              :points="hotspotPolylinePoints"
+              class="fill-chamilo-500/20 stroke-chamilo-700"
+              vector-effect="non-scaling-stroke"
+              stroke-width="2"
+            />
+            <polyline
+              v-else-if="hotspotPoints.length >= 2"
+              :points="hotspotPolylinePoints"
+              class="fill-none stroke-chamilo-700"
+              vector-effect="non-scaling-stroke"
+              stroke-width="2"
+            />
+          </svg>
+
+          <span
+            v-for="(point, index) in hotspotPoints"
+            :key="`${index}-${point.x}-${point.y}`"
+            class="pointer-events-none absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-chamilo-700 text-xs font-bold text-white shadow"
+            :style="hotspotMarkerStyle(point)"
+            aria-hidden="true"
+          >
+            {{ index + 1 }}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+        <span aria-live="polite">
+          {{
+            hotspotDelineation
+              ? t("exercises.hotspot.verticesSelected", { count: hotspotPoints.length })
+              : t("exercises.hotspot.pointsSelected", {
+                  selected: hotspotPoints.length,
+                  total: hotspotMaxClicks,
+                })
+          }}
+        </span>
+        <span v-if="hotspotPointsRemaining !== null && hotspotPointsRemaining > 0">
+          {{ t("exercises.hotspot.pointsRemaining", { count: hotspotPointsRemaining }) }}
+        </span>
+      </div>
+
+      <p
+        v-if="hotspotDelineation && hotspotPoints.length > 0 && hotspotPoints.length < 3"
+        class="rounded-xl bg-amber-50 p-3 text-sm text-amber-900"
+      >
+        {{ t("exercises.hotspot.minimumVertices") }}
+      </p>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          class="min-h-touch rounded-xl border border-slate-300 bg-white px-3 font-semibold text-slate-700 disabled:opacity-40"
+          :disabled="disabled || hotspotPoints.length === 0"
+          @click="undoHotspotPoint"
+        >
+          <i class="pi pi-undo mr-2" aria-hidden="true" />
+          {{ t("exercises.hotspot.undoPoint") }}
+        </button>
+        <button
+          type="button"
+          class="min-h-touch rounded-xl border border-slate-300 bg-white px-3 font-semibold text-slate-700 disabled:opacity-40"
+          :disabled="disabled || hotspotPoints.length === 0"
+          @click="resetHotspotPoints"
+        >
+          <i class="pi pi-refresh mr-2" aria-hidden="true" />
+          {{ t("exercises.hotspot.reset") }}
+        </button>
+      </div>
+    </div>
 
     <label v-else-if="kind === 'dropdown'" class="block">
       <span class="sr-only">{{ t("exercises.selectAnswer") }}</span>

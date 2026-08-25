@@ -89,6 +89,32 @@ export interface ExerciseReadingRuntime {
   text: string
 }
 
+export interface ExerciseHotspotPoint {
+  x: number
+  y: number
+  answerId?: number
+}
+
+export type ExerciseHotspotZoneType = "square" | "circle" | "poly" | "delineation" | "oar"
+
+export interface ExerciseHotspotZone {
+  id: number
+  answer: string
+  position: number
+  hotspotType: ExerciseHotspotZoneType
+  score: number | null
+  coordinates: string | null
+}
+
+export interface ExerciseHotspotRuntime {
+  imageName: string
+  imageUrl: string
+  maxClicks: number
+  combination: boolean
+  delineation: boolean
+  zones: ExerciseHotspotZone[]
+}
+
 export interface ExerciseQuestion {
   id: number
   title: string
@@ -109,6 +135,7 @@ export interface ExerciseQuestion {
   dropdown: ExerciseDropdownRuntime | null
   calculated: ExerciseCalculatedRuntime | null
   reading: ExerciseReadingRuntime | null
+  hotspot: ExerciseHotspotRuntime | null
   isContent: boolean
 }
 
@@ -166,6 +193,7 @@ export interface ExerciseAnswerState {
   calculated: string
   calculatedAnswerId: number | null
   text: string
+  hotspotPoints: ExerciseHotspotPoint[]
   reviewLater: boolean
 }
 

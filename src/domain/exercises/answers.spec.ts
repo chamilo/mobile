@@ -28,6 +28,7 @@ function question(type: number): ExerciseQuestion {
     dropdown: null,
     calculated: null,
     reading: null,
+    hotspot: null,
     isContent: false,
   }
 }
@@ -84,6 +85,68 @@ describe("exercise answers", () => {
 
     expect(isExerciseAnswerProvided(item, state)).toBe(true)
     expect(buildExerciseAnswerPayload(item, state)).toEqual({ choice: 102 })
+  })
+
+  it("supports saved and local hotspot points for regular and delineation questions", () => {
+    const hotspot = question(6)
+    hotspot.hotspot = {
+      imageName: "map.png",
+      imageUrl: "/r/resource/1/view?cid=14&sid=0&gid=0",
+      maxClicks: 2,
+      combination: false,
+      delineation: false,
+      zones: [],
+    }
+    const state = createExerciseAnswerState(hotspot)
+
+    applySavedExerciseAnswer(
+      hotspot,
+      [{ answer: "120;75|260;190", position: 0 }],
+      state,
+    )
+
+    expect(hasUnsupportedExerciseQuestions([hotspot])).toBe(false)
+    expect(
+      [6, 8, 26].every((type) => {
+        const candidate = question(type)
+        candidate.hotspot = {
+          imageName: "map.png",
+          imageUrl: "/r/resource/1/view?cid=14&sid=0&gid=0",
+          maxClicks: 2,
+          combination: type === 26,
+          delineation: type === 8,
+          zones: [],
+        }
+
+        return !hasUnsupportedExerciseQuestions([candidate])
+      }),
+    ).toBe(true)
+    expect(isExerciseAnswerProvided(hotspot, state)).toBe(true)
+    expect(buildExerciseAnswerPayload(hotspot, state)).toEqual({
+      points: [
+        { x: 120, y: 75 },
+        { x: 260, y: 190 },
+      ],
+    })
+
+    const delineation = question(8)
+    delineation.hotspot = {
+      imageName: "body.png",
+      imageUrl: "/r/resource/2/view?cid=14&sid=0&gid=0",
+      maxClicks: 1,
+      combination: false,
+      delineation: true,
+      zones: [],
+    }
+    const delineationState = createExerciseAnswerState(delineation)
+    delineationState.hotspotPoints = [
+      { x: 10, y: 10 },
+      { x: 80, y: 10 },
+    ]
+    expect(isExerciseAnswerProvided(delineation, delineationState)).toBe(false)
+
+    delineationState.hotspotPoints.push({ x: 40, y: 70 })
+    expect(isExerciseAnswerProvided(delineation, delineationState)).toBe(true)
   })
 
   it("recognizes a locally selected final answer before it is saved", () => {

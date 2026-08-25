@@ -1,3 +1,4 @@
+import { parseSavedExerciseHotspotPoints } from "@/domain/exercises/hotspot"
 import type {
   ExerciseAnswerState,
   ExerciseQuestion,
@@ -10,7 +11,8 @@ const TRUE_FALSE_TYPES = [11, 12, 22]
 const FILL_BLANK_TYPES = [3, 27]
 const MATCHING_TYPES = [4, 19, 24, 25]
 const DROPDOWN_TYPES = [28, 29]
-const UNSUPPORTED_TYPES = [6, 8, 13, 20, 23, 26, 30]
+const HOTSPOT_TYPES = [6, 8, 26]
+const UNSUPPORTED_TYPES = [13, 20, 23, 30]
 const STRUCTURAL_TYPES = [15, 31]
 
 export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolean {
@@ -25,6 +27,7 @@ export function isSupportedExerciseQuestion(question: ExerciseQuestion): boolean
     FILL_BLANK_TYPES.includes(question.type) ||
     MATCHING_TYPES.includes(question.type) ||
     question.type === 18 ||
+    (HOTSPOT_TYPES.includes(question.type) && Boolean(question.hotspot?.imageUrl)) ||
     DROPDOWN_TYPES.includes(question.type) ||
     question.type === 16 ||
     question.type === 5
@@ -73,6 +76,12 @@ export function isExerciseAnswerProvided(
   if (question.type === 18) {
     return state.order.length > 0 && state.order.length === (question.draggable?.items.length ?? 0)
   }
+  if (HOTSPOT_TYPES.includes(question.type)) {
+    const points = state.hotspotPoints ?? []
+    if (question.hotspot?.delineation) return points.length >= 3
+
+    return points.length >= Math.max(1, question.hotspot?.maxClicks ?? 1)
+  }
   if (DROPDOWN_TYPES.includes(question.type)) return state.dropdown !== null
   if (question.type === 16) return state.calculated.trim().length > 0
   if (question.type === 5) return state.text.trim().length > 0
@@ -94,6 +103,7 @@ export function createExerciseAnswerState(question: ExerciseQuestion): ExerciseA
     calculatedAnswerId:
       question.calculated?.answerId ?? question.calculated?.variations[0]?.id ?? null,
     text: "",
+    hotspotPoints: [],
     reviewLater: false,
   }
 }
@@ -113,6 +123,15 @@ export function buildExerciseAnswerPayload(
   if (FILL_BLANK_TYPES.includes(question.type)) return { blanks: state.blanks }
   if (MATCHING_TYPES.includes(question.type)) return { matching: state.matching }
   if (question.type === 18) return { order: state.order }
+  if (HOTSPOT_TYPES.includes(question.type)) {
+    return {
+      points: (state.hotspotPoints ?? []).map((point) => ({
+        x: point.x,
+        y: point.y,
+        ...(point.answerId ? { answerId: point.answerId } : {}),
+      })),
+    }
+  }
   if (DROPDOWN_TYPES.includes(question.type)) return { dropdown: state.dropdown }
   if (question.type === 16) {
     return { calculated: state.calculated, answerId: state.calculatedAnswerId }
@@ -182,6 +201,10 @@ export function applySavedExerciseAnswer(
       .filter((id) => id > 0)
     return
   }
+  if (HOTSPOT_TYPES.includes(question.type)) {
+    state.hotspotPoints = parseSavedExerciseHotspotPoints(rows)
+    return
+  }
   if (DROPDOWN_TYPES.includes(question.type)) {
     state.dropdown = Number(rows[0]?.answer || 0) || null
     return
@@ -205,6 +228,7 @@ export function answerKind(
   | "fill-blanks"
   | "matching"
   | "ordering"
+  | "hotspot"
   | "dropdown"
   | "calculated"
   | "text"
@@ -216,6 +240,7 @@ export function answerKind(
   if (FILL_BLANK_TYPES.includes(question.type)) return "fill-blanks"
   if (MATCHING_TYPES.includes(question.type)) return "matching"
   if (question.type === 18) return "ordering"
+  if (HOTSPOT_TYPES.includes(question.type)) return "hotspot"
   if (DROPDOWN_TYPES.includes(question.type)) return "dropdown"
   if (question.type === 16) return "calculated"
   if (question.type === 5) return "text"
