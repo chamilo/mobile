@@ -3,6 +3,8 @@ import type { RouteLocationRaw } from "vue-router"
 import type { CourseNavigationContext, CourseSource } from "@/domain/courses/types"
 import { buildExerciseLearningPathRouteQuery } from "@/domain/exercises/learningPathContext"
 import type { ExerciseLearningPathContext } from "@/domain/exercises/types"
+import { buildForumLearningPathRouteQuery } from "@/domain/forums/learningPathContext"
+import type { ForumLearningPathContext } from "@/domain/forums/learningPathContext"
 import type { SurveyOpenMode } from "@/domain/surveys/types"
 
 export class CourseRouteContextError extends Error {
@@ -266,6 +268,7 @@ export function buildForumThreadsRoute(
   context: CourseNavigationContext,
   forumId: number,
   forumTitle?: string,
+  learningPathContext?: ForumLearningPathContext | null,
 ): RouteLocationRaw {
   return {
     name: "forum-threads",
@@ -276,6 +279,7 @@ export function buildForumThreadsRoute(
     query: {
       ...buildContextQuery(context),
       ...(forumTitle ? { forumTitle } : {}),
+      ...buildForumLearningPathRouteQuery(learningPathContext),
     },
   }
 }
@@ -286,6 +290,7 @@ export function buildForumThreadRoute(
   threadId: number,
   forumTitle?: string,
   threadTitle?: string,
+  learningPathContext?: ForumLearningPathContext | null,
 ): RouteLocationRaw {
   return {
     name: "forum-thread",
@@ -298,6 +303,7 @@ export function buildForumThreadRoute(
       ...buildContextQuery(context),
       ...(forumTitle ? { forumTitle } : {}),
       ...(threadTitle ? { threadTitle } : {}),
+      ...buildForumLearningPathRouteQuery(learningPathContext),
     },
   }
 }

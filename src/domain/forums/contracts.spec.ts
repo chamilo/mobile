@@ -74,6 +74,29 @@ describe("forum contracts", () => {
     })
   })
 
+  it("preserves the learning-path group context in forum requests", () => {
+    const learningPathContext = {
+      origin: "learnpath" as const,
+      entry: "forum" as const,
+      learningPathId: 7,
+      learningPathItemId: 12,
+      learningPathTitle: "LP one",
+      groupId: 3,
+    }
+
+    expect(buildForumThreadsRequest(sessionContext, 8, learningPathContext).query).toMatchObject({
+      cid: 16,
+      sid: 4,
+      gid: 3,
+    })
+    expect(buildForumThreadRequest(sessionContext, 8, 12, learningPathContext).query).toEqual({
+      cid: 16,
+      forumId: 8,
+      sid: 4,
+      gid: 3,
+    })
+  })
+
   it("groups forums with their verified categories", () => {
     const result = normalizeForumCollection(
       {

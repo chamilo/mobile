@@ -8,9 +8,14 @@ import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import {
   buildForumThreadsRoute,
+  buildLearningPathDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import {
+  hasForumLearningPathRouteContext,
+  parseForumLearningPathRouteContext,
+} from "@/domain/forums/learningPathContext"
 import { useForumsStore } from "@/stores/forums"
 
 const props = defineProps<{
@@ -23,6 +28,12 @@ const props = defineProps<{
   membershipId: string | null
   sessionCourseId: string | null
   source: string | null
+  origin: string | null
+  learningPathEntry: string | null
+  learningPathId: string | null
+  learningPathItemId: string | null
+  learningPathTitle: string | null
+  groupId: string | null
 }>()
 
 const { t } = useI18n()
@@ -50,9 +61,33 @@ function positiveInteger(value: string): number | null {
 
 const parsedForumId = computed(() => positiveInteger(props.forumId))
 const parsedThreadId = computed(() => positiveInteger(props.threadId))
+const hasLearningPathRouteContext = computed(() => hasForumLearningPathRouteContext(props))
+const learningPathContext = computed(() => parseForumLearningPathRouteContext(props))
 const usableContext = computed(
-  () => context.value && parsedForumId.value !== null && parsedThreadId.value !== null,
+  () =>
+    context.value &&
+    parsedForumId.value !== null &&
+    parsedThreadId.value !== null &&
+    (!hasLearningPathRouteContext.value || learningPathContext.value !== null),
 )
+const backRoute = computed(() => {
+  if (!context.value || parsedForumId.value === null) return null
+
+  if (learningPathContext.value?.entry === "thread") {
+    return buildLearningPathDetailRoute(
+      context.value,
+      learningPathContext.value.learningPathId,
+      learningPathContext.value.learningPathTitle || undefined,
+    )
+  }
+
+  return buildForumThreadsRoute(
+    context.value,
+    parsedForumId.value,
+    store.thread.data?.forumTitle || props.forumTitle || undefined,
+    learningPathContext.value,
+  )
+})
 const canReply = computed(() => store.thread.data?.canReply === true)
 const errorDescription = computed(() => t(`forums.errors.${store.thread.errorCode ?? "server"}`))
 const writeErrorDescription = computed(() =>
@@ -60,9 +95,21 @@ const writeErrorDescription = computed(() =>
 )
 
 async function load(): Promise<void> {
-  if (context.value && parsedForumId.value !== null && parsedThreadId.value !== null) {
-    await store.loadThread(context.value, parsedForumId.value, parsedThreadId.value)
+  if (
+    !usableContext.value ||
+    !context.value ||
+    parsedForumId.value === null ||
+    parsedThreadId.value === null
+  ) {
+    return
   }
+
+  await store.loadThread(
+    context.value,
+    parsedForumId.value,
+    parsedThreadId.value,
+    learningPathContext.value,
+  )
 }
 
 function formatAttachmentSize(size: number | null): string {
@@ -90,6 +137,7 @@ function closeComposer(): void {
 
 async function submitReply(): Promise<void> {
   if (
+    !usableContext.value ||
     !context.value ||
     parsedForumId.value === null ||
     parsedThreadId.value === null ||
@@ -112,11 +160,17 @@ async function submitReply(): Promise<void> {
     return
   }
 
-  const result = await store.createReply(context.value, parsedForumId.value, parsedThreadId.value, {
-    title: replyTitle.value,
-    text: replyText.value,
-    postNotification: postNotification.value,
-  })
+  const result = await store.createReply(
+    context.value,
+    parsedForumId.value,
+    parsedThreadId.value,
+    {
+      title: replyTitle.value,
+      text: replyText.value,
+      postNotification: postNotification.value,
+    },
+    learningPathContext.value,
+  )
 
   if (!result) return
 
@@ -141,16 +195,18 @@ onMounted(load)
   <div v-else-if="context && parsedForumId !== null && parsedThreadId !== null" class="space-y-5">
     <RouterLink
       :to="
+        backRoute ??
         buildForumThreadsRoute(
           context,
           parsedForumId,
           store.thread.data?.forumTitle || props.forumTitle || undefined,
+          learningPathContext,
         )
       "
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ t("forums.backToThreads") }}
+      {{ learningPathContext?.entry === "thread" ? t("learningPaths.backToList") : t("forums.backToThreads") }}
     </RouterLink>
 
     <section class="rounded-2xl bg-white p-4 shadow-sm">

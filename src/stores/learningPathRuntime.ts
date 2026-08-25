@@ -6,9 +6,11 @@ import type { OfflineHttpWritePayload } from "@/domain/offline/types"
 import {
   buildLearningPathScormCommitRequest,
   isAssignmentLearningPathItem,
+  isForumLearningPathItem,
   isQuizLearningPathItem,
   isScormLearningPathItem,
   isSurveyLearningPathItem,
+  isThreadLearningPathItem,
   isSupportedLearningPathItem,
 } from "@/domain/learningPaths/contracts"
 import type {
@@ -226,6 +228,8 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
       isQuizLearningPathItem(previewItem) ||
       isSurveyLearningPathItem(previewItem) ||
       isAssignmentLearningPathItem(previewItem) ||
+      isForumLearningPathItem(previewItem) ||
+      isThreadLearningPathItem(previewItem) ||
       !previewRuntime.contentUrl
     ) {
       return null
@@ -443,7 +447,9 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
       if (
         isQuizLearningPathItem(previewItem) ||
         isSurveyLearningPathItem(previewItem) ||
-        isAssignmentLearningPathItem(previewItem)
+        isAssignmentLearningPathItem(previewItem) ||
+        isForumLearningPathItem(previewItem) ||
+        isThreadLearningPathItem(previewItem)
       ) {
         if (!useConnectivityStore().campusAvailable) {
           contentErrorCode.value = "network"
@@ -458,7 +464,9 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         const sameInteractiveType =
           (isQuizLearningPathItem(previewItem) && isQuizLearningPathItem(activeItem)) ||
           (isSurveyLearningPathItem(previewItem) && isSurveyLearningPathItem(activeItem)) ||
-          (isAssignmentLearningPathItem(previewItem) && isAssignmentLearningPathItem(activeItem))
+          (isAssignmentLearningPathItem(previewItem) && isAssignmentLearningPathItem(activeItem)) ||
+          (isForumLearningPathItem(previewItem) && isForumLearningPathItem(activeItem)) ||
+          (isThreadLearningPathItem(previewItem) && isThreadLearningPathItem(activeItem))
 
         if (!sameInteractiveType || !activeRuntime.contentUrl) {
           contentErrorCode.value = "unsupported"

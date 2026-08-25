@@ -29,6 +29,8 @@ const SUPPORTED_ITEM_TYPES = new Set([
   "survey",
   "student_publication",
   "assignments",
+  "forum",
+  "thread",
 ])
 const SCORM_ITEM_TYPES = new Set(["sco", "asset"])
 const COMPLETED_STATUSES = new Set(["completed", "passed", "succeeded", "browsed", "failed"])
@@ -313,6 +315,14 @@ export function isAssignmentLearningPathItem(
   if (!item) return false
 
   return ["student_publication", "assignments"].includes(item.itemType.toLowerCase())
+}
+
+export function isForumLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
+  return Boolean(item && item.itemType.toLowerCase() === "forum")
+}
+
+export function isThreadLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
+  return Boolean(item && item.itemType.toLowerCase() === "thread")
 }
 
 export function isSupportedLearningPathItem(
