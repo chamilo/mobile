@@ -29,9 +29,44 @@ describe("exercise runtime compatibility", () => {
     expect(exerciseRuntimeCompatibilityReason({ blockCategoryQuestions: true })).toBe(
       "blocked_categories",
     )
-    expect(exerciseRuntimeCompatibilityReason({ usesStructuralPages: true })).toBe(
+    expect(exerciseRuntimeCompatibilityReason({ usesStructuralPages: true }, [])).toBe(
       "structural_pages",
     )
+    expect(
+      exerciseRuntimeCompatibilityReason(
+        { usesStructuralPages: true },
+        [
+          {
+            index: 0,
+            number: 1,
+            type: "questions",
+            questionIds: [1],
+            media: null,
+            pageBreak: null,
+          },
+        ],
+      ),
+    ).toBeNull()
+    expect(
+      exerciseRuntimeCompatibilityReason(
+        { usesStructuralPages: true },
+        [
+          {
+            index: 0,
+            number: 1,
+            type: "media_group",
+            questionIds: [1],
+            media: {
+              id: 15,
+              title: "Reference",
+              description: '<img src="https://campus.example.org/r/resource/15/view">',
+            },
+            pageBreak: null,
+          },
+        ],
+        "https://campus.example.org",
+      ),
+    ).toBe("structural_pages")
   })
 
   it("falls back when a final review would conflict with prevent-backwards", () => {

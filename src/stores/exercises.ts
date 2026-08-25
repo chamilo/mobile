@@ -609,14 +609,15 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
-  async function saveCurrentAnswer(
+  async function saveQuestionAnswer(
     context: CourseNavigationContext,
     exerciseId: number,
+    questionId: number,
     navigationAction = "none",
     learningPathContext?: ExerciseLearningPathContext | null,
     file?: File | null,
   ): Promise<boolean> {
-    const question = currentQuestion.value
+    const question = answerableQuestions.value.find((item) => item.id === questionId)
     const attemptId = runtime.value?.attempt?.attemptId
     const answerState = question ? answers.value[question.id] : undefined
     if (!question || !attemptId || !answerState) return false
@@ -757,6 +758,26 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
+  async function saveCurrentAnswer(
+    context: CourseNavigationContext,
+    exerciseId: number,
+    navigationAction = "none",
+    learningPathContext?: ExerciseLearningPathContext | null,
+    file?: File | null,
+  ): Promise<boolean> {
+    const questionId = currentQuestion.value?.id
+    if (!questionId) return false
+
+    return saveQuestionAnswer(
+      context,
+      exerciseId,
+      questionId,
+      navigationAction,
+      learningPathContext,
+      file,
+    )
+  }
+
   async function goToQuestion(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -781,12 +802,17 @@ export const useExercisesStore = defineStore("exercises", () => {
     confirmedSavedAnswers: boolean,
     learningPathContext?: ExerciseLearningPathContext | null,
     file?: File | null,
+    skipCurrentSave = false,
   ): Promise<number | null> {
     const attemptId = runtime.value?.attempt?.attemptId
     if (!attemptId || hasUnsupportedQuestions.value) return null
     if (rejectOfflineLearningPathRuntime(learningPathContext)) return null
-    if (!(await saveCurrentAnswer(context, exerciseId, "finish", learningPathContext, file)))
+    if (
+      !skipCurrentSave &&
+      !(await saveCurrentAnswer(context, exerciseId, "finish", learningPathContext, file))
+    ) {
       return null
+    }
 
     finishing.value = true
     clearError()
@@ -916,6 +942,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     loadAnnotationImage,
     loadOfficeDocumentTemplate,
     startAttempt,
+    saveQuestionAnswer,
     saveCurrentAnswer,
     goToQuestion,
     finishAttempt,

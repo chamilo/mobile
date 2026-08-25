@@ -1,3 +1,8 @@
+import {
+  exerciseRuntimePagesRequireCampus,
+  type ExerciseRuntimePage,
+} from "@/domain/exercises/runtimePages"
+
 export type ExerciseRuntimeCompatibilityReason =
   | "immediate_feedback"
   | "timed_questions"
@@ -12,6 +17,8 @@ function numberSetting(settings: Record<string, unknown>, key: string): number {
 
 export function exerciseRuntimeCompatibilityReason(
   settings: Record<string, unknown>,
+  runtimePages: ExerciseRuntimePage[] = [],
+  campusBaseUrl: string | null = null,
 ): ExerciseRuntimeCompatibilityReason | null {
   const feedbackType = numberSetting(settings, "feedbackType")
   if ([1, 3, 4].includes(feedbackType)) return "immediate_feedback"
@@ -21,7 +28,15 @@ export function exerciseRuntimeCompatibilityReason(
   }
 
   if (settings.blockCategoryQuestions === true) return "blocked_categories"
-  if (settings.usesStructuralPages === true) return "structural_pages"
+
+  if (settings.usesStructuralPages === true) {
+    if (
+      runtimePages.length === 0 ||
+      exerciseRuntimePagesRequireCampus(runtimePages, campusBaseUrl)
+    ) {
+      return "structural_pages"
+    }
+  }
 
   if (
     settings.preventBackwards === true &&
