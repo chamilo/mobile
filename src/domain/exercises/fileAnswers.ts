@@ -1,13 +1,45 @@
-export const EXERCISE_FILE_ANSWER_TYPES = [13, 23] as const
+export const EXERCISE_FILE_ANSWER_TYPES = [13, 23, 30] as const
 export const ORAL_EXPRESSION_TYPE = 13
 export const UPLOAD_ANSWER_TYPE = 23
+export const OFFICE_DOCUMENT_TYPE = 30
+export const OFFICE_DOCUMENT_EXTENSIONS = ["doc", "docx", "xls", "xlsx"] as const
 
 export function isExerciseFileAnswerType(type: number): boolean {
   return EXERCISE_FILE_ANSWER_TYPES.includes(type as (typeof EXERCISE_FILE_ANSWER_TYPES)[number])
 }
 
-export function exerciseFileAccept(type: number): string | undefined {
-  return type === ORAL_EXPRESSION_TYPE ? ".wav,.ogg,audio/wav,audio/ogg" : undefined
+export function exerciseOfficeDocumentExtension(fileName: string): string | null {
+  const normalized = fileName.trim().toLowerCase()
+  const separator = normalized.lastIndexOf(".")
+  if (separator < 0 || separator === normalized.length - 1) return null
+
+  const extension = normalized.slice(separator + 1)
+  return OFFICE_DOCUMENT_EXTENSIONS.includes(
+    extension as (typeof OFFICE_DOCUMENT_EXTENSIONS)[number],
+  )
+    ? extension
+    : null
+}
+
+export function exerciseOfficeDocumentFileMatchesTemplate(
+  fileName: string,
+  templateName: string,
+): boolean {
+  const fileExtension = exerciseOfficeDocumentExtension(fileName)
+  const templateExtension = exerciseOfficeDocumentExtension(templateName)
+
+  if (!fileExtension) return false
+  return templateExtension ? fileExtension === templateExtension : true
+}
+
+export function exerciseFileAccept(type: number, templateName = ""): string | undefined {
+  if (type === ORAL_EXPRESSION_TYPE) return ".wav,.ogg,audio/wav,audio/ogg"
+  if (type !== OFFICE_DOCUMENT_TYPE) return undefined
+
+  const templateExtension = exerciseOfficeDocumentExtension(templateName)
+  return templateExtension
+    ? `.${templateExtension}`
+    : OFFICE_DOCUMENT_EXTENSIONS.map((extension) => `.${extension}`).join(",")
 }
 
 export async function encodeExerciseAnswerFile(file: File): Promise<{

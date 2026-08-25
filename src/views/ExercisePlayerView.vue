@@ -26,6 +26,7 @@ import {
   isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
 import { localizeExerciseQuestionContent } from "@/domain/exercises/presentation"
+import { createDocumentBlobPresenter } from "@/services/documents/DocumentBlobPresenter"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
@@ -53,6 +54,7 @@ const campusStore = useCampusStore()
 const connectivityStore = useConnectivityStore()
 const coursesStore = useCoursesStore()
 const store = useExercisesStore()
+const documentPresenter = createDocumentBlobPresenter()
 const confirmedSavedAnswers = ref(false)
 const remainingSeconds = ref<number | null>(null)
 const previewFinished = ref(false)
@@ -64,6 +66,8 @@ const annotationImageError = ref(false)
 const hotspotImageSrc = ref<string | null>(null)
 const hotspotImageLoading = ref(false)
 const hotspotImageError = ref(false)
+const officeTemplateLoading = ref(false)
+const officeTemplateError = ref(false)
 const pendingAnswerFiles = ref<Record<number, File | null>>({})
 let annotationImageObjectUrl: string | null = null
 let annotationImageLoadSequence = 0
@@ -262,6 +266,60 @@ async function loadHotspotImage(): Promise<void> {
   }
 }
 
+function resetOfficeTemplateState(): void {
+  officeTemplateLoading.value = false
+  officeTemplateError.value = false
+}
+
+async function getOfficeTemplateBlob(): Promise<{ blob: Blob; filename: string } | null> {
+  const onlyoffice = question.value?.onlyoffice
+  const templateUrl = onlyoffice?.templateUrl?.trim() ?? ""
+
+  officeTemplateError.value = false
+
+  if (!onlyoffice || !templateUrl) {
+    officeTemplateError.value = true
+    return null
+  }
+
+  officeTemplateLoading.value = true
+
+  try {
+    const blob = await store.loadOfficeDocumentTemplate(templateUrl)
+    return {
+      blob,
+      filename: onlyoffice.templateName.trim() || "office_document.docx",
+    }
+  } catch {
+    officeTemplateError.value = true
+    return null
+  } finally {
+    officeTemplateLoading.value = false
+  }
+}
+
+async function openOfficeTemplate(): Promise<void> {
+  const template = await getOfficeTemplateBlob()
+  if (!template) return
+
+  try {
+    await documentPresenter.open(template.blob, template.filename)
+  } catch {
+    officeTemplateError.value = true
+  }
+}
+
+async function downloadOfficeTemplate(): Promise<void> {
+  const template = await getOfficeTemplateBlob()
+  if (!template) return
+
+  try {
+    await documentPresenter.download(template.blob, template.filename)
+  } catch {
+    officeTemplateError.value = true
+  }
+}
+
 function stopTimer(): void {
   if (timer) clearInterval(timer)
   timer = null
@@ -439,6 +497,12 @@ watch(
 watch(
   () => [question.value?.id ?? null, question.value?.hotspot?.imageUrl ?? null],
   () => void loadHotspotImage(),
+  { immediate: true },
+)
+
+watch(
+  () => [question.value?.id ?? null, question.value?.onlyoffice?.templateUrl ?? null],
+  () => resetOfficeTemplateState(),
   { immediate: true },
 )
 
@@ -696,10 +760,14 @@ onBeforeUnmount(() => {
             :hotspot-image-src="hotspotImageSrc"
             :hotspot-image-loading="hotspotImageLoading"
             :hotspot-image-error="hotspotImageError"
+            :office-template-loading="officeTemplateLoading"
+            :office-template-error="officeTemplateError"
             :pending-file-name="pendingCurrentFile?.name ?? null"
             @update:model-value="updateCurrentAnswer"
             @retry-annotation-image="loadAnnotationImage"
             @retry-hotspot-image="loadHotspotImage"
+            @open-office-template="openOfficeTemplate"
+            @download-office-template="downloadOfficeTemplate"
             @select-answer-file="selectCurrentAnswerFile"
           />
 

@@ -89,6 +89,12 @@ export interface ExerciseReadingRuntime {
   text: string
 }
 
+export interface ExerciseOnlyofficeRuntime {
+  templateName: string
+  templateUrl: string
+  editorUrl: string
+  manualCorrection: boolean
+}
 
 export interface ExerciseAnnotationPoint {
   x: number
@@ -154,6 +160,7 @@ export interface ExerciseQuestion {
   dropdown: ExerciseDropdownRuntime | null
   calculated: ExerciseCalculatedRuntime | null
   reading: ExerciseReadingRuntime | null
+  onlyoffice: ExerciseOnlyofficeRuntime | null
   annotation: ExerciseAnnotationRuntime | null
   hotspot: ExerciseHotspotRuntime | null
   isContent: boolean

@@ -809,6 +809,20 @@ export default {
       microphoneUnavailable:
         "Microphone recording is unavailable or permission was denied. You can still choose a WAV or OGG file.",
     },
+    officeDocument: {
+      title: "Office document",
+      template: "Template: {name}",
+      instructions:
+        "Open or save the template, complete it in an Office-compatible app, save the completed copy, then choose that file below.",
+      openTemplate: "Open template",
+      saveTemplate: "Save template",
+      loadingTemplate: "Loading template...",
+      templateError: "The Office document template could not be loaded from this campus. Retry the action.",
+      chooseCompleted: "Choose completed document",
+      savedDocument: "Saved Office document",
+      sameFormat: "The completed document must use the same DOC, DOCX, XLS or XLSX format as the template.",
+      formatMismatch: "Choose a completed Office document with the same file format as the template.",
+    },
     reviewLater: "Review this question later",
     reviewAnswers: "Review answers",
     reviewAnswersDescription:
