@@ -5,6 +5,7 @@ import type { CourseNavigationContext } from "@/domain/courses/types"
 import type { OfflineHttpWritePayload } from "@/domain/offline/types"
 import {
   buildLearningPathScormCommitRequest,
+  isAssignmentLearningPathItem,
   isQuizLearningPathItem,
   isScormLearningPathItem,
   isSurveyLearningPathItem,
@@ -224,6 +225,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
       isScormLearningPathItem(previewItem) ||
       isQuizLearningPathItem(previewItem) ||
       isSurveyLearningPathItem(previewItem) ||
+      isAssignmentLearningPathItem(previewItem) ||
       !previewRuntime.contentUrl
     ) {
       return null
@@ -438,7 +440,11 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         }
       }
 
-      if (isQuizLearningPathItem(previewItem) || isSurveyLearningPathItem(previewItem)) {
+      if (
+        isQuizLearningPathItem(previewItem) ||
+        isSurveyLearningPathItem(previewItem) ||
+        isAssignmentLearningPathItem(previewItem)
+      ) {
         if (!useConnectivityStore().campusAvailable) {
           contentErrorCode.value = "network"
           contentStatus.value = "error"
@@ -451,7 +457,8 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
           activeRuntime.items.find(({ id }) => id === activeRuntime.currentItemId) ?? null
         const sameInteractiveType =
           (isQuizLearningPathItem(previewItem) && isQuizLearningPathItem(activeItem)) ||
-          (isSurveyLearningPathItem(previewItem) && isSurveyLearningPathItem(activeItem))
+          (isSurveyLearningPathItem(previewItem) && isSurveyLearningPathItem(activeItem)) ||
+          (isAssignmentLearningPathItem(previewItem) && isAssignmentLearningPathItem(activeItem))
 
         if (!sameInteractiveType || !activeRuntime.contentUrl) {
           contentErrorCode.value = "unsupported"

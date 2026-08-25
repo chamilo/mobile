@@ -16,6 +16,7 @@ import {
   AssignmentServiceError,
 } from "@/services/assignments/AssignmentApiService"
 import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
+import { createDocumentBlobPresenter } from "@/services/documents/DocumentBlobPresenter"
 import { offlineCoreFlowRepository } from "@/services/offline/OfflineCoreFlowRepository"
 import {
   isOfflineNow,
@@ -29,6 +30,7 @@ import { useOfflineSyncStore } from "@/stores/offlineSync"
 
 export type AssignmentLoadStatus = "idle" | "loading" | "ready" | "error"
 export type AssignmentStoreErrorCode = AssignmentErrorCode | "campus_required"
+export type AssignmentFileAction = "open" | "download"
 
 interface AssignmentListState {
   status: AssignmentLoadStatus
@@ -52,6 +54,13 @@ interface AssignmentManagementState {
   status: AssignmentLoadStatus
   action: "update" | "delete" | null
   submissionId: number | null
+  errorCode: AssignmentStoreErrorCode | null
+}
+
+interface AssignmentDeliveryState {
+  status: AssignmentLoadStatus
+  action: AssignmentFileAction | null
+  key: string | null
   errorCode: AssignmentStoreErrorCode | null
 }
 
@@ -88,11 +97,23 @@ function managementInitialState(): AssignmentManagementState {
   }
 }
 
+function deliveryInitialState(): AssignmentDeliveryState {
+  return {
+    status: "idle",
+    action: null,
+    key: null,
+    errorCode: null,
+  }
+}
+
+const blobPresenter = createDocumentBlobPresenter()
+
 export const useAssignmentsStore = defineStore("assignments", () => {
   const list = reactive<AssignmentListState>(listInitialState())
   const detail = reactive<AssignmentDetailState>(detailInitialState())
   const write = reactive<AssignmentWriteState>(writeInitialState())
   const management = reactive<AssignmentManagementState>(managementInitialState())
+  const delivery = reactive<AssignmentDeliveryState>(deliveryInitialState())
 
   function service(): AssignmentApiService | null {
     const campus = useCampusStore().selectedCampus
@@ -316,6 +337,62 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     }
   }
 
+  async function deliverFile(
+    downloadUrl: string,
+    fallbackFilename: string,
+    action: AssignmentFileAction,
+    key: string,
+  ): Promise<boolean> {
+    const api = service()
+
+    if (!api) {
+      delivery.status = "error"
+      delivery.action = action
+      delivery.key = key
+      delivery.errorCode = "campus_required"
+      return false
+    }
+
+    delivery.status = "loading"
+    delivery.action = action
+    delivery.key = key
+    delivery.errorCode = null
+
+    try {
+      const file = await api.getFile(downloadUrl, fallbackFilename)
+
+      if (action === "open") {
+        await blobPresenter.open(file.blob, file.filename)
+      } else {
+        await blobPresenter.download(file.blob, file.filename)
+      }
+
+      delivery.status = "ready"
+      delivery.errorCode = null
+      return true
+    } catch (error) {
+      delivery.errorCode = error instanceof AssignmentServiceError ? error.code : "server"
+      delivery.status = "error"
+      return false
+    }
+  }
+
+  async function openFile(
+    downloadUrl: string,
+    fallbackFilename: string,
+    key: string,
+  ): Promise<boolean> {
+    return deliverFile(downloadUrl, fallbackFilename, "open", key)
+  }
+
+  async function downloadFile(
+    downloadUrl: string,
+    fallbackFilename: string,
+    key: string,
+  ): Promise<boolean> {
+    return deliverFile(downloadUrl, fallbackFilename, "download", key)
+  }
+
   async function updateSubmission(
     submissionId: number,
     input: AssignmentSubmissionUpdateInput,
@@ -429,6 +506,10 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     Object.assign(management, managementInitialState())
   }
 
+  function resetDelivery(): void {
+    Object.assign(delivery, deliveryInitialState())
+  }
+
   function resetWrite(): void {
     Object.assign(write, writeInitialState())
   }
@@ -438,6 +519,7 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     Object.assign(detail, detailInitialState())
     Object.assign(write, writeInitialState())
     Object.assign(management, managementInitialState())
+    Object.assign(delivery, deliveryInitialState())
   }
 
   return {
@@ -445,13 +527,17 @@ export const useAssignmentsStore = defineStore("assignments", () => {
     detail,
     write,
     management,
+    delivery,
     loadAssignments,
     loadAssignment,
     submit,
+    openFile,
+    downloadFile,
     updateSubmission,
     deleteSubmission,
     resetWrite,
     resetManagement,
+    resetDelivery,
     reset,
   }
 })

@@ -9,12 +9,14 @@ import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import type {
   AssignmentAvailabilityStatus,
+  AssignmentComment,
   AssignmentSubmission,
   AssignmentSubmissionKind,
   AssignmentSubmissionManagementReason,
 } from "@/domain/assignments/types"
 import {
   buildAssignmentsRoute,
+  buildLearningPathDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
@@ -25,6 +27,8 @@ const props = defineProps<{
   courseId: string
   assignmentId: string
   assignmentTitle: string | null
+  learningPathId?: string | null
+  learningPathTitle?: string | null
   sessionId: string | null
   membershipId: string | null
   sessionCourseId: string | null
@@ -60,6 +64,27 @@ const parsedAssignmentId = computed(() => {
   return Number.isInteger(value) && value > 0 ? value : null
 })
 
+const parsedLearningPathId = computed(() => {
+  if (!props.learningPathId) return null
+
+  const value = Number(props.learningPathId)
+  return Number.isInteger(value) && value > 0 ? value : null
+})
+
+const backRoute = computed(() => {
+  if (!context.value) return { name: "courses" }
+
+  if (parsedLearningPathId.value) {
+    return buildLearningPathDetailRoute(
+      context.value,
+      parsedLearningPathId.value,
+      props.learningPathTitle || undefined,
+    )
+  }
+
+  return buildAssignmentsRoute(context.value)
+})
+
 const usableContext = computed(() => context.value && parsedAssignmentId.value !== null)
 const canCreateStudentSubmission = computed(() =>
   Boolean(
@@ -77,6 +102,10 @@ const writeErrorDescription = computed(() =>
 
 const managementErrorDescription = computed(() =>
   t(`assignments.errors.${store.management.errorCode ?? "server"}`),
+)
+
+const deliveryErrorDescription = computed(() =>
+  t(`assignments.errors.${store.delivery.errorCode ?? "server"}`),
 )
 
 const canSubmitBase = computed(() => {
@@ -228,6 +257,86 @@ function managementReasonLabel(reason: AssignmentSubmissionManagementReason | nu
   return t(`assignments.manage.reasons.${reason ?? "unavailable"}`)
 }
 
+function submissionFileKey(submissionId: number): string {
+  return `submission:${submissionId}:file`
+}
+
+function correctionFileKey(submissionId: number): string {
+  return `submission:${submissionId}:correction`
+}
+
+function commentFileKey(commentId: number): string {
+  return `comment:${commentId}:file`
+}
+
+function isDelivering(key: string, action: "open" | "download"): boolean {
+  return (
+    store.delivery.status === "loading" &&
+    store.delivery.key === key &&
+    store.delivery.action === action
+  )
+}
+
+async function openSubmissionFile(submission: AssignmentSubmission): Promise<void> {
+  if (!submission.downloadUrl) return
+
+  await store.openFile(
+    submission.downloadUrl,
+    `submission-${submission.id}`,
+    submissionFileKey(submission.id),
+  )
+}
+
+async function downloadSubmissionFile(submission: AssignmentSubmission): Promise<void> {
+  if (!submission.downloadUrl) return
+
+  await store.downloadFile(
+    submission.downloadUrl,
+    `submission-${submission.id}`,
+    submissionFileKey(submission.id),
+  )
+}
+
+async function openCorrectionFile(submission: AssignmentSubmission): Promise<void> {
+  if (!submission.correctionDownloadUrl) return
+
+  await store.openFile(
+    submission.correctionDownloadUrl,
+    submission.correctionTitle || `correction-${submission.id}`,
+    correctionFileKey(submission.id),
+  )
+}
+
+async function downloadCorrectionFile(submission: AssignmentSubmission): Promise<void> {
+  if (!submission.correctionDownloadUrl) return
+
+  await store.downloadFile(
+    submission.correctionDownloadUrl,
+    submission.correctionTitle || `correction-${submission.id}`,
+    correctionFileKey(submission.id),
+  )
+}
+
+async function openCommentFile(comment: AssignmentComment): Promise<void> {
+  if (!comment.downloadUrl) return
+
+  await store.openFile(
+    comment.downloadUrl,
+    comment.fileName || `feedback-${comment.id}`,
+    commentFileKey(comment.id),
+  )
+}
+
+async function downloadCommentFile(comment: AssignmentComment): Promise<void> {
+  if (!comment.downloadUrl) return
+
+  await store.downloadFile(
+    comment.downloadUrl,
+    comment.fileName || `feedback-${comment.id}`,
+    commentFileKey(comment.id),
+  )
+}
+
 function isManaging(submissionId: number, action: "update" | "delete"): boolean {
   return (
     store.management.status === "loading" &&
@@ -360,6 +469,7 @@ async function submitCurrent(): Promise<void> {
 onMounted(() => {
   store.resetWrite()
   store.resetManagement()
+  store.resetDelivery()
   void load()
 })
 </script>
@@ -369,11 +479,15 @@ onMounted(() => {
 
   <div v-else-if="context && parsedAssignmentId !== null" class="space-y-5">
     <RouterLink
-      :to="buildAssignmentsRoute(context)"
+      :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ t("assignments.backToAssignments") }}
+      {{
+        parsedLearningPathId
+          ? t("assignments.backToLearningPath")
+          : t("assignments.backToAssignments")
+      }}
     </RouterLink>
 
     <LoadingState
@@ -695,6 +809,14 @@ onMounted(() => {
         </div>
 
         <div
+          v-if="store.delivery.status === 'error'"
+          class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900"
+          role="alert"
+        >
+          {{ deliveryErrorDescription }}
+        </div>
+
+        <div
           v-if="managementSuccess"
           class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
           role="status"
@@ -742,28 +864,128 @@ onMounted(() => {
               {{ submission.description }}
             </p>
 
-            <div class="mt-3 flex flex-wrap gap-2 text-xs">
-              <span
-                v-if="submission.hasFile"
-                class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700"
-              >
-                {{ t("assignments.detail.fileSubmitted") }}
-              </span>
-              <span
-                v-if="submission.correctionTitle"
-                class="rounded-full bg-amber-100 px-2.5 py-1 font-semibold text-amber-900"
-              >
-                {{ t("assignments.detail.correctionAvailable") }}
-              </span>
+            <div v-if="submission.hasFile" class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div class="flex items-start gap-2">
+                <i class="pi pi-paperclip mt-0.5 text-slate-500" aria-hidden="true" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-slate-900">
+                    {{ t("assignments.detail.fileSubmitted") }}
+                  </p>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {{ t("assignments.detail.submittedFileDescription") }}
+                  </p>
+                </div>
+              </div>
+
+              <div v-if="submission.downloadUrl" class="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 disabled:opacity-50"
+                  :disabled="isDelivering(submissionFileKey(submission.id), 'open')"
+                  @click="openSubmissionFile(submission)"
+                >
+                  <i
+                    class="pi"
+                    :class="
+                      isDelivering(submissionFileKey(submission.id), 'open')
+                        ? 'pi-spin pi-spinner'
+                        : 'pi-eye'
+                    "
+                    aria-hidden="true"
+                  />
+                  {{
+                    isDelivering(submissionFileKey(submission.id), "open")
+                      ? t("assignments.detail.openingFile")
+                      : t("assignments.detail.openFile")
+                  }}
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  :disabled="isDelivering(submissionFileKey(submission.id), 'download')"
+                  @click="downloadSubmissionFile(submission)"
+                >
+                  <i
+                    class="pi"
+                    :class="
+                      isDelivering(submissionFileKey(submission.id), 'download')
+                        ? 'pi-spin pi-spinner'
+                        : 'pi-download'
+                    "
+                    aria-hidden="true"
+                  />
+                  {{
+                    isDelivering(submissionFileKey(submission.id), "download")
+                      ? t("assignments.detail.downloadingFile")
+                      : t("assignments.detail.downloadFile")
+                  }}
+                </button>
+              </div>
+              <p v-else class="mt-2 text-xs text-slate-500">
+                {{ t("assignments.detail.fileDownloadUnavailable") }}
+              </p>
             </div>
 
-            <p v-if="submission.correctionTitle" class="mt-3 break-words text-sm text-slate-700">
-              {{
-                t("assignments.detail.correction", {
-                  title: submission.correctionTitle,
-                })
-              }}
-            </p>
+            <div
+              v-if="submission.correctionTitle"
+              class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3"
+            >
+              <div class="flex items-start gap-2">
+                <i class="pi pi-check-circle mt-0.5 text-amber-700" aria-hidden="true" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-amber-950">
+                    {{ t("assignments.detail.correctionAvailable") }}
+                  </p>
+                  <p class="mt-1 break-words text-sm text-amber-900">
+                    {{
+                      t("assignments.detail.correction", {
+                        title: submission.correctionTitle,
+                      })
+                    }}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                v-if="submission.correctionDownloadUrl"
+                class="mt-3 grid grid-cols-2 gap-2"
+              >
+                <button
+                  type="button"
+                  class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 disabled:opacity-50"
+                  :disabled="isDelivering(correctionFileKey(submission.id), 'open')"
+                  @click="openCorrectionFile(submission)"
+                >
+                  <i
+                    class="pi"
+                    :class="
+                      isDelivering(correctionFileKey(submission.id), 'open')
+                        ? 'pi-spin pi-spinner'
+                        : 'pi-eye'
+                    "
+                    aria-hidden="true"
+                  />
+                  {{ t("assignments.detail.openCorrection") }}
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-amber-800 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  :disabled="isDelivering(correctionFileKey(submission.id), 'download')"
+                  @click="downloadCorrectionFile(submission)"
+                >
+                  <i
+                    class="pi"
+                    :class="
+                      isDelivering(correctionFileKey(submission.id), 'download')
+                        ? 'pi-spin pi-spinner'
+                        : 'pi-download'
+                    "
+                    aria-hidden="true"
+                  />
+                  {{ t("assignments.detail.downloadCorrection") }}
+                </button>
+              </div>
+            </div>
 
             <form
               v-if="editingSubmissionId === submission.id"
@@ -895,13 +1117,38 @@ onMounted(() => {
                   >
                     {{ comment.text }}
                   </p>
-                  <p v-if="comment.fileName" class="mt-2 break-words text-xs text-slate-500">
-                    {{
-                      t("assignments.detail.feedbackFile", {
-                        file: comment.fileName,
-                      })
-                    }}
-                  </p>
+                  <div
+                    v-if="comment.fileName"
+                    class="mt-3 rounded-lg border border-slate-200 bg-white p-2.5"
+                  >
+                    <p class="break-words text-xs font-semibold text-slate-700">
+                      {{
+                        t("assignments.detail.feedbackFile", {
+                          file: comment.fileName,
+                        })
+                      }}
+                    </p>
+                    <div v-if="comment.downloadUrl" class="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        class="inline-flex min-h-touch items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                        :disabled="isDelivering(commentFileKey(comment.id), 'open')"
+                        @click="openCommentFile(comment)"
+                      >
+                        <i class="pi pi-eye" aria-hidden="true" />
+                        {{ t("assignments.detail.openAttachment") }}
+                      </button>
+                      <button
+                        type="button"
+                        class="inline-flex min-h-touch items-center gap-2 rounded-lg bg-chamilo-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                        :disabled="isDelivering(commentFileKey(comment.id), 'download')"
+                        @click="downloadCommentFile(comment)"
+                      >
+                        <i class="pi pi-download" aria-hidden="true" />
+                        {{ t("assignments.detail.downloadAttachment") }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
