@@ -340,6 +340,18 @@ export const routes: RouteRecordRaw[] = [
       sessionCourseId:
         typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
       source: typeof route.query.source === "string" ? route.query.source : null,
+
+      origin: typeof route.query.origin === "string" ? route.query.origin : null,
+      learningPathId:
+        typeof route.query.learnpath_id === "string" ? route.query.learnpath_id : null,
+      learningPathItemId:
+        typeof route.query.learnpath_item_id === "string" ? route.query.learnpath_item_id : null,
+      learningPathItemViewId:
+        typeof route.query.learnpath_item_view_id === "string"
+          ? route.query.learnpath_item_view_id
+          : null,
+      learningPathTitle:
+        typeof route.query.learningPathTitle === "string" ? route.query.learningPathTitle : null,
     }),
     meta: {
       titleKey: "routes.exercisePlayer",
@@ -361,6 +373,18 @@ export const routes: RouteRecordRaw[] = [
       sessionCourseId:
         typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
       source: typeof route.query.source === "string" ? route.query.source : null,
+
+      origin: typeof route.query.origin === "string" ? route.query.origin : null,
+      learningPathId:
+        typeof route.query.learnpath_id === "string" ? route.query.learnpath_id : null,
+      learningPathItemId:
+        typeof route.query.learnpath_item_id === "string" ? route.query.learnpath_item_id : null,
+      learningPathItemViewId:
+        typeof route.query.learnpath_item_view_id === "string"
+          ? route.query.learnpath_item_view_id
+          : null,
+      learningPathTitle:
+        typeof route.query.learningPathTitle === "string" ? route.query.learningPathTitle : null,
     }),
     meta: {
       titleKey: "routes.exerciseResult",

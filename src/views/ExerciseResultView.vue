@@ -3,13 +3,22 @@ import { computed, onMounted } from "vue"
 import { useI18n } from "vue-i18n"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
+import { findCourseLanguage } from "@/domain/courses/courseLanguage"
 import {
   buildExercisesRoute,
+  buildLearningPathDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import {
+  hasExerciseLearningPathRouteContext,
+  parseExerciseLearningPathRouteContext,
+} from "@/domain/exercises/learningPathContext"
+import { useAuthStore } from "@/stores/auth"
+import { useCoursesStore } from "@/stores/courses"
 import { useExercisesStore } from "@/stores/exercises"
 
 const props = defineProps<{
@@ -20,9 +29,16 @@ const props = defineProps<{
   membershipId: string | null
   sessionCourseId: string | null
   source: string | null
+  origin: string | null
+  learningPathId: string | null
+  learningPathItemId: string | null
+  learningPathItemViewId: string | null
+  learningPathTitle: string | null
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const authStore = useAuthStore()
+const coursesStore = useCoursesStore()
 const store = useExercisesStore()
 const context = computed(() => {
   try {
@@ -34,6 +50,21 @@ const context = computed(() => {
 })
 const exerciseId = computed(() => Number(props.exerciseId))
 const attemptId = computed(() => Number(props.attemptId))
+const learningPathContext = computed(() => parseExerciseLearningPathRouteContext(props))
+const invalidLearningPathContext = computed(
+  () => hasExerciseLearningPathRouteContext(props) && !learningPathContext.value,
+)
+const backRoute = computed(() =>
+  context.value && learningPathContext.value
+    ? buildLearningPathDetailRoute(
+        context.value,
+        learningPathContext.value.learningPathId,
+        learningPathContext.value.learningPathTitle || undefined,
+      )
+    : context.value
+      ? buildExercisesRoute(context.value)
+      : { name: "courses" },
+)
 const validIds = computed(
   () =>
     Number.isInteger(exerciseId.value) &&
@@ -46,10 +77,26 @@ const scoreVisible = computed(
   () => typeof attempt.value.score === "number" && typeof attempt.value.maxScore === "number",
 )
 const errorDescription = computed(() => t(`exercises.errors.${store.errorCode ?? "server"}`))
+const contentLocale = computed(() => authStore.profile?.locale || locale.value)
+const contentFallbackLocales = computed(() => {
+  const courseLanguage = findCourseLanguage(coursesStore.overview, context.value)
+  return courseLanguage ? [courseLanguage] : []
+})
+
+function plainText(value: unknown): string {
+  return typeof value === "string"
+    ? translatedPlainText(value, contentLocale.value, contentFallbackLocales.value)
+    : ""
+}
 
 async function load(): Promise<void> {
-  if (context.value && validIds.value) {
-    await store.loadResult(context.value, exerciseId.value, attemptId.value)
+  if (context.value && validIds.value && !invalidLearningPathContext.value) {
+    await store.loadResult(
+      context.value,
+      exerciseId.value,
+      attemptId.value,
+      learningPathContext.value,
+    )
   }
 }
 
@@ -57,15 +104,19 @@ onMounted(load)
 </script>
 
 <template>
-  <CourseUnavailableState v-if="!context || !validIds" kind="missing" />
+  <CourseUnavailableState v-if="!context || !validIds || invalidLearningPathContext" kind="missing" />
 
   <div v-else class="space-y-5">
     <RouterLink
-      :to="buildExercisesRoute(context)"
+      :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ t("exercises.backToExercises") }}
+      {{
+        learningPathContext
+          ? learningPathContext.learningPathTitle || t("learningPaths.title")
+          : t("exercises.backToExercises")
+      }}
     </RouterLink>
 
     <LoadingState v-if="store.loading" :label="t('exercises.loadingResult')" />
@@ -84,7 +135,7 @@ onMounted(load)
           {{ t("exercises.result") }}
         </p>
         <h1 class="mt-2 text-xl font-semibold text-slate-900">
-          {{ store.result.title }}
+          {{ plainText(store.result.title) }}
         </h1>
         <div v-if="scoreVisible" class="mt-5">
           <p class="text-4xl font-bold text-chamilo-700">
@@ -109,7 +160,7 @@ onMounted(load)
         <ul class="mt-3 divide-y divide-slate-200">
           <li v-for="question in store.result.questions" :key="String(question.id)" class="py-3">
             <div class="flex items-start justify-between gap-3">
-              <span class="text-sm text-slate-800">{{ question.title }}</span>
+              <span class="text-sm text-slate-800">{{ plainText(question.title) }}</span>
               <span
                 v-if="typeof question.isCorrect === 'boolean'"
                 class="text-sm font-semibold"

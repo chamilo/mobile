@@ -4,22 +4,32 @@ import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import ExerciseQuestionField from "@/components/exercises/ExerciseQuestionField.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
+import { findCourseLanguage } from "@/domain/courses/courseLanguage"
 import {
   buildExerciseResultRoute,
   buildExercisesRoute,
+  buildLearningPathDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import {
+  hasExerciseLearningPathRouteContext,
+  parseExerciseLearningPathRouteContext,
+} from "@/domain/exercises/learningPathContext"
 import {
   createExerciseAnswerState,
   isExerciseAnswerProvided,
   isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
+import { localizeExerciseQuestionContent } from "@/domain/exercises/presentation"
+import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
+import { useCoursesStore } from "@/stores/courses"
 import { useExercisesStore } from "@/stores/exercises"
 
 const props = defineProps<{
@@ -29,12 +39,19 @@ const props = defineProps<{
   membershipId: string | null
   sessionCourseId: string | null
   source: string | null
+  origin: string | null
+  learningPathId: string | null
+  learningPathItemId: string | null
+  learningPathItemViewId: string | null
+  learningPathTitle: string | null
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
 const campusStore = useCampusStore()
 const connectivityStore = useConnectivityStore()
+const coursesStore = useCoursesStore()
 const store = useExercisesStore()
 const confirmedSavedAnswers = ref(false)
 const remainingSeconds = ref<number | null>(null)
@@ -55,8 +72,37 @@ const numericExerciseId = computed(() => Number(props.exerciseId))
 const validExerciseId = computed(
   () => Number.isInteger(numericExerciseId.value) && numericExerciseId.value > 0,
 )
+const learningPathContext = computed(() => parseExerciseLearningPathRouteContext(props))
+const invalidLearningPathContext = computed(
+  () => hasExerciseLearningPathRouteContext(props) && !learningPathContext.value,
+)
+const backRoute = computed(() =>
+  context.value && learningPathContext.value
+    ? buildLearningPathDetailRoute(
+        context.value,
+        learningPathContext.value.learningPathId,
+        learningPathContext.value.learningPathTitle || undefined,
+      )
+    : context.value
+      ? buildExercisesRoute(context.value)
+      : { name: "courses" },
+)
 const errorDescription = computed(() => t(`exercises.errors.${store.errorCode ?? "server"}`))
+const contentLocale = computed(() => authStore.profile?.locale || locale.value)
+const contentFallbackLocales = computed(() => {
+  const courseLanguage = findCourseLanguage(coursesStore.overview, context.value)
+  return courseLanguage ? [courseLanguage] : []
+})
 const question = computed(() => store.currentQuestion)
+const displayQuestion = computed(() =>
+  question.value
+    ? localizeExerciseQuestionContent(
+        question.value,
+        contentLocale.value,
+        contentFallbackLocales.value,
+      )
+    : null,
+)
 const currentAnswer = computed(() =>
   question.value ? (store.answers[question.value.id] ?? null) : null,
 )
@@ -110,9 +156,7 @@ const startBlockMessage = computed(() => {
 })
 
 function plainText(value: string): string {
-  const container = document.createElement("div")
-  container.innerHTML = value
-  return container.textContent ?? ""
+  return translatedPlainText(value, contentLocale.value, contentFallbackLocales.value)
 }
 
 function updateCurrentAnswer(value: NonNullable<typeof currentAnswer.value>): void {
@@ -146,18 +190,21 @@ function formatDuration(value: number): string {
 }
 
 async function load(): Promise<void> {
-  if (!context.value || !validExerciseId.value) return
+  if (!context.value || !validExerciseId.value || invalidLearningPathContext.value) return
   previewFinished.value = false
   reviewFlowStarted.value = false
   reviewSummaryVisible.value = false
   confirmedSavedAnswers.value = false
-  await store.loadRuntime(context.value, numericExerciseId.value)
+  await store.loadRuntime(context.value, numericExerciseId.value, learningPathContext.value)
   startTimer()
 }
 
 async function start(): Promise<void> {
   if (!context.value) return
-  if (await store.startAttempt(context.value, numericExerciseId.value)) startTimer()
+  if (
+    await store.startAttempt(context.value, numericExerciseId.value, learningPathContext.value)
+  )
+    startTimer()
 }
 
 async function go(index: number): Promise<void> {
@@ -167,13 +214,25 @@ async function go(index: number): Promise<void> {
       store.currentQuestionIndex = index
     }
   } else {
-    await store.goToQuestion(context.value, numericExerciseId.value, index)
+    await store.goToQuestion(
+      context.value,
+      numericExerciseId.value,
+      index,
+      learningPathContext.value,
+    )
   }
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 async function save(): Promise<void> {
-  if (context.value) await store.saveCurrentAnswer(context.value, numericExerciseId.value)
+  if (context.value) {
+    await store.saveCurrentAnswer(
+      context.value,
+      numericExerciseId.value,
+      "none",
+      learningPathContext.value,
+    )
+  }
 }
 
 async function finish(): Promise<void> {
@@ -182,10 +241,18 @@ async function finish(): Promise<void> {
     context.value,
     numericExerciseId.value,
     confirmedSavedAnswers.value,
+    learningPathContext.value,
   )
   if (attemptId) {
     stopTimer()
-    await router.push(buildExerciseResultRoute(context.value, numericExerciseId.value, attemptId))
+    await router.push(
+      buildExerciseResultRoute(
+        context.value,
+        numericExerciseId.value,
+        attemptId,
+        learningPathContext.value,
+      ),
+    )
   }
 }
 
@@ -197,7 +264,12 @@ async function requestFinish(): Promise<void> {
   }
   if (!context.value) return
   if (hasFinalReview.value && !reviewSummaryVisible.value) {
-    const saved = await store.saveCurrentAnswer(context.value, numericExerciseId.value, "finish")
+    const saved = await store.saveCurrentAnswer(
+      context.value,
+      numericExerciseId.value,
+      "finish",
+      learningPathContext.value,
+    )
     if (!saved) return
 
     reviewFlowStarted.value = true
@@ -228,7 +300,16 @@ function openReviewQuestion(index: number): void {
 
 async function returnToReview(): Promise<void> {
   if (!context.value) return
-  if (!(await store.saveCurrentAnswer(context.value, numericExerciseId.value))) return
+  if (
+    !(await store.saveCurrentAnswer(
+      context.value,
+      numericExerciseId.value,
+      "none",
+      learningPathContext.value,
+    ))
+  ) {
+    return
+  }
 
   reviewSummaryVisible.value = true
   window.scrollTo({ top: 0, behavior: "smooth" })
@@ -247,15 +328,22 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <CourseUnavailableState v-if="!context || !validExerciseId" kind="missing" />
+  <CourseUnavailableState
+    v-if="!context || !validExerciseId || invalidLearningPathContext"
+    kind="missing"
+  />
 
   <div v-else class="space-y-5">
     <RouterLink
-      :to="buildExercisesRoute(context)"
+      :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ t("exercises.backToExercises") }}
+      {{
+        learningPathContext
+          ? learningPathContext.learningPathTitle || t("learningPaths.title")
+          : t("exercises.backToExercises")
+      }}
     </RouterLink>
 
     <LoadingState v-if="store.loading" :label="t('exercises.loadingRuntime')" />
@@ -465,7 +553,7 @@ onBeforeUnmount(() => {
           <ExerciseQuestionField
             v-if="currentAnswer"
             class="mt-5"
-            :question="question"
+            :question="displayQuestion ?? question"
             :model-value="currentAnswer"
             :disabled="store.saving || !isSupportedExerciseQuestion(question)"
             @update:model-value="updateCurrentAnswer"

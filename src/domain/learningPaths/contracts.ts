@@ -19,7 +19,7 @@ export interface LearningPathRuntimeRequest {
   query: Record<string, string | number>
 }
 
-const SUPPORTED_ITEM_TYPES = new Set(["document", "video", "readout_text", "sco", "asset"])
+const SUPPORTED_ITEM_TYPES = new Set(["document", "video", "readout_text", "sco", "asset", "quiz"])
 const SCORM_ITEM_TYPES = new Set(["sco", "asset"])
 const COMPLETED_STATUSES = new Set(["completed", "passed", "succeeded", "browsed", "failed"])
 
@@ -287,6 +287,10 @@ export function normalizeLearningPathRuntime(value: unknown): LearningPathRuntim
 
 export function isScormLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
   return Boolean(item && SCORM_ITEM_TYPES.has(item.itemType.toLowerCase()))
+}
+
+export function isQuizLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
+  return Boolean(item && item.itemType.toLowerCase() === "quiz")
 }
 
 export function isSupportedLearningPathItem(

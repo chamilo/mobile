@@ -7,6 +7,7 @@ import {
   buildLearningPathScormPackageRequest,
   isCompletedLearningPathStatus,
   isOpenableLearningPathItem,
+  isQuizLearningPathItem,
   isScormLearningPathItem,
   isSupportedLearningPathItem,
   normalizeLearningPathRuntime,
@@ -123,12 +124,27 @@ describe("learning path runtime contract", () => {
         packageEntryPath: "../index.html",
         packageFingerprint: "not-a-fingerprint",
       },
-      items: [{ id: 12, title: "Quiz", itemType: "quiz", available: true, isSection: false }],
+      items: [{ id: 12, title: "Forum", itemType: "forum", available: true, isSection: false }],
     })
 
     expect(runtime.contentUrl).toBeNull()
     expect(runtime.scorm.packageEntryPath).toBe("")
     expect(runtime.scorm.packageFingerprint).toBe("")
     expect(isSupportedLearningPathItem(runtime.items[0])).toBe(false)
+  })
+
+  it("treats an available quiz as a native mobile learning path item", () => {
+    const runtime = normalizeLearningPathRuntime({
+      lpId: 7,
+      runtimeSupported: true,
+      currentItemId: 12,
+      contentUrl:
+        "/resources/exercise/40/15/player?origin=learnpath&learnpath_id=7&learnpath_item_id=12",
+      items: [{ id: 12, title: "Quiz", itemType: "quiz", available: true, isSection: false }],
+    })
+
+    expect(isQuizLearningPathItem(runtime.items[0])).toBe(true)
+    expect(isSupportedLearningPathItem(runtime.items[0])).toBe(true)
+    expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(true)
   })
 })

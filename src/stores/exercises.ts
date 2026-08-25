@@ -3,6 +3,7 @@ import { defineStore } from "pinia"
 
 import type { CampusProfile } from "@/domain/campus/types"
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import { buildExerciseLearningPathApiQuery } from "@/domain/exercises/learningPathContext"
 import type { OfflineHttpWritePayload } from "@/domain/offline/types"
 import {
   applySavedExerciseAnswer,
@@ -14,6 +15,7 @@ import {
 } from "@/domain/exercises/answers"
 import type {
   ExerciseAnswerState,
+  ExerciseLearningPathContext,
   ExerciseList,
   ExerciseResult,
   ExerciseRuntime,
@@ -387,11 +389,25 @@ export const useExercisesStore = defineStore("exercises", () => {
     if (ordered.length > 0) runtime.value.questions = [...ordered, ...structural]
   }
 
-  function contextQuery(context: CourseNavigationContext): Record<string, number> {
+  function contextQuery(
+    context: CourseNavigationContext,
+    learningPathContext?: ExerciseLearningPathContext | null,
+  ): Record<string, string | number> {
     return {
       cid: context.courseId,
       ...(context.sessionId ? { sid: context.sessionId } : {}),
+      ...buildExerciseLearningPathApiQuery(learningPathContext),
     }
+  }
+
+  function rejectOfflineLearningPathRuntime(
+    learningPathContext?: ExerciseLearningPathContext | null,
+  ): boolean {
+    if (!learningPathContext || useConnectivityStore().campusAvailable) return false
+
+    errorCode.value = "network"
+    errorMessage.value = "Learning path exercises require a campus connection."
+    return true
   }
 
   function queuedExerciseWrites(exerciseId: number, attemptId: number) {
@@ -456,19 +472,26 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
-  async function loadRuntime(context: CourseNavigationContext, exerciseId: number): Promise<void> {
+  async function loadRuntime(
+    context: CourseNavigationContext,
+    exerciseId: number,
+    learningPathContext?: ExerciseLearningPathContext | null,
+  ): Promise<void> {
     loading.value = true
     clearError()
     result.value = null
 
     try {
-      if (shouldUsePreparedData()) {
+      if (rejectOfflineLearningPathRuntime(learningPathContext)) return
+
+      if (!learningPathContext && shouldUsePreparedData()) {
         if (await restoreOfflineState(context, exerciseId)) return
         if (await restorePreparedRuntime(context, exerciseId)) return
       }
 
-      const loaded = await service().getRuntime(context, exerciseId)
+      const loaded = await service().getRuntime(context, exerciseId, learningPathContext)
       if (
+        !learningPathContext &&
         !useConnectivityStore().campusAvailable &&
         (await restorePreparedRuntime(context, exerciseId))
       ) {
@@ -477,7 +500,7 @@ export const useExercisesStore = defineStore("exercises", () => {
 
       runtime.value = loaded
       const identity = currentOfflineIdentity()
-      if (identity && useConnectivityStore().campusAvailable) {
+      if (!learningPathContext && identity && useConnectivityStore().campusAvailable) {
         const existingPrepared = await exerciseCoreFlowRepository
           .loadExerciseRuntime(identity.campusId, identity.userId, context, exerciseId)
           .catch(() => null)
@@ -505,12 +528,15 @@ export const useExercisesStore = defineStore("exercises", () => {
         ),
       )
       initializeAnswers()
-      applyQueuedExerciseState(exerciseId)
-      await saveOfflineState(context, exerciseId)
+      if (!learningPathContext) {
+        applyQueuedExerciseState(exerciseId)
+        await saveOfflineState(context, exerciseId)
+      }
     } catch (error) {
       const restored =
-        (await restoreOfflineState(context, exerciseId)) ||
-        (await restorePreparedRuntime(context, exerciseId))
+        !learningPathContext &&
+        ((await restoreOfflineState(context, exerciseId)) ||
+          (await restorePreparedRuntime(context, exerciseId)))
 
       if (!restored) {
         runtime.value = null
@@ -524,8 +550,11 @@ export const useExercisesStore = defineStore("exercises", () => {
   async function startAttempt(
     context: CourseNavigationContext,
     exerciseId: number,
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<boolean> {
-    if (shouldUsePreparedData()) {
+    if (rejectOfflineLearningPathRuntime(learningPathContext)) return false
+
+    if (!learningPathContext && shouldUsePreparedData()) {
       errorCode.value = "network"
       errorMessage.value =
         "Connect to the campus and prepare this exercise before using it offline."
@@ -535,7 +564,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     saving.value = true
     clearError()
     try {
-      const attempt = await service().startAttempt(context, exerciseId)
+      const attempt = await service().startAttempt(context, exerciseId, learningPathContext)
       if (!attempt.success || attempt.usesLegacyRuntime) {
         throw new ExerciseServiceError(
           "invalid_response",
@@ -549,7 +578,7 @@ export const useExercisesStore = defineStore("exercises", () => {
       currentQuestionIndex.value = Math.max(0, attempt.currentQuestionIndex)
       initializeAnswers()
       const identity = currentOfflineIdentity()
-      if (identity) {
+      if (!learningPathContext && identity) {
         await exerciseCoreFlowRepository
           .saveExerciseRuntime(
             identity.campusId,
@@ -560,7 +589,7 @@ export const useExercisesStore = defineStore("exercises", () => {
           )
           .catch(() => undefined)
       }
-      await saveOfflineState(context, exerciseId)
+      if (!learningPathContext) await saveOfflineState(context, exerciseId)
       return true
     } catch (error) {
       setError(error)
@@ -574,11 +603,13 @@ export const useExercisesStore = defineStore("exercises", () => {
     context: CourseNavigationContext,
     exerciseId: number,
     navigationAction = "none",
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<boolean> {
     const question = currentQuestion.value
     const attemptId = runtime.value?.attempt?.attemptId
     const answerState = question ? answers.value[question.id] : undefined
     if (!question || !attemptId || !answerState) return false
+    if (rejectOfflineLearningPathRuntime(learningPathContext)) return false
 
     saving.value = true
     clearError()
@@ -599,7 +630,7 @@ export const useExercisesStore = defineStore("exercises", () => {
         request: {
           method: "POST",
           path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/answer`,
-          query: contextQuery(context),
+          query: contextQuery(context, learningPathContext),
           headers: {
             Accept: "application/ld+json",
             "Content-Type": "application/ld+json",
@@ -617,15 +648,21 @@ export const useExercisesStore = defineStore("exercises", () => {
           : reviewQuestionIds.value.filter((id) => id !== question.id)
         if (runtime.value?.attempt) runtime.value.attempt.canFinish = true
         syncReviewAnswerState()
-        await saveOfflineState(context, exerciseId)
+        if (!learningPathContext) await saveOfflineState(context, exerciseId)
       }
       return queued && !uncertainDelivery
     }
 
     try {
-      if (shouldUsePreparedData()) return await queueAnswer()
+      if (!learningPathContext && shouldUsePreparedData()) return await queueAnswer()
 
-      const response = await service().saveAnswer(context, exerciseId, attemptId, answerPayload)
+      const response = await service().saveAnswer(
+        context,
+        exerciseId,
+        attemptId,
+        answerPayload,
+        learningPathContext,
+      )
       if (!response.success) {
         throw new ExerciseServiceError(
           "invalid_response",
@@ -638,10 +675,10 @@ export const useExercisesStore = defineStore("exercises", () => {
       reviewQuestionIds.value = progress.reviewQuestionIds
       runtime.value.attempt.canFinish = progress.canFinish
       syncReviewAnswerState()
-      await saveOfflineState(context, exerciseId)
+      if (!learningPathContext) await saveOfflineState(context, exerciseId)
       return true
     } catch (error) {
-      if (isUncertainDeliveryError(error)) await queueAnswer(true)
+      if (!learningPathContext && isUncertainDeliveryError(error)) await queueAnswer(true)
       setError(error)
       return false
     } finally {
@@ -653,12 +690,13 @@ export const useExercisesStore = defineStore("exercises", () => {
     context: CourseNavigationContext,
     exerciseId: number,
     index: number,
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<void> {
     if (index < 0 || index >= answerableQuestions.value.length) return
     const action = index > currentQuestionIndex.value ? "next" : "previous"
-    if (await saveCurrentAnswer(context, exerciseId, action)) {
+    if (await saveCurrentAnswer(context, exerciseId, action, learningPathContext)) {
       currentQuestionIndex.value = index
-      await saveOfflineState(context, exerciseId)
+      if (!learningPathContext) await saveOfflineState(context, exerciseId)
     }
   }
 
@@ -666,10 +704,12 @@ export const useExercisesStore = defineStore("exercises", () => {
     context: CourseNavigationContext,
     exerciseId: number,
     confirmedSavedAnswers: boolean,
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<number | null> {
     const attemptId = runtime.value?.attempt?.attemptId
     if (!attemptId || hasUnsupportedQuestions.value) return null
-    if (!(await saveCurrentAnswer(context, exerciseId, "finish"))) return null
+    if (rejectOfflineLearningPathRuntime(learningPathContext)) return null
+    if (!(await saveCurrentAnswer(context, exerciseId, "finish", learningPathContext))) return null
 
     finishing.value = true
     clearError()
@@ -682,7 +722,7 @@ export const useExercisesStore = defineStore("exercises", () => {
         request: {
           method: "POST",
           path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/finish`,
-          query: contextQuery(context),
+          query: contextQuery(context, learningPathContext),
           headers: {
             Accept: "application/ld+json",
             "Content-Type": "application/ld+json",
@@ -692,19 +732,20 @@ export const useExercisesStore = defineStore("exercises", () => {
       })
       if (queued && !uncertainDelivery && runtime.value?.attempt) {
         runtime.value.attempt.status = "pending_sync"
-        await saveOfflineState(context, exerciseId)
+        if (!learningPathContext) await saveOfflineState(context, exerciseId)
       }
       return queued && !uncertainDelivery ? attemptId : null
     }
 
     try {
-      if (shouldUsePreparedData()) return await queueFinish()
+      if (!learningPathContext && shouldUsePreparedData()) return await queueFinish()
 
       const response = await service().finishAttempt(
         context,
         exerciseId,
         attemptId,
         confirmedSavedAnswers,
+        learningPathContext,
       )
       if (!response.success) {
         throw new ExerciseServiceError(
@@ -713,10 +754,10 @@ export const useExercisesStore = defineStore("exercises", () => {
         )
       }
       if (runtime.value?.attempt) runtime.value.attempt.status = response.status
-      await saveOfflineState(context, exerciseId)
+      if (!learningPathContext) await saveOfflineState(context, exerciseId)
       return attemptId
     } catch (error) {
-      if (isUncertainDeliveryError(error)) await queueFinish(true)
+      if (!learningPathContext && isUncertainDeliveryError(error)) await queueFinish(true)
       setError(error)
       return null
     } finally {
@@ -728,13 +769,14 @@ export const useExercisesStore = defineStore("exercises", () => {
     context: CourseNavigationContext,
     exerciseId: number,
     attemptId: number,
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<void> {
     loading.value = true
     clearError()
     try {
-      result.value = await service().getResult(context, exerciseId, attemptId)
+      result.value = await service().getResult(context, exerciseId, attemptId, learningPathContext)
     } catch (error) {
-      const pendingFinish = queuedExerciseWrites(exerciseId, attemptId).some(
+      const pendingFinish = !learningPathContext && queuedExerciseWrites(exerciseId, attemptId).some(
         (operation) =>
           operation.type === "http_write" &&
           (operation.payload as OfflineHttpWritePayload).category === "exercise_finish",

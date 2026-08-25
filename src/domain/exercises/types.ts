@@ -1,3 +1,11 @@
+export interface ExerciseLearningPathContext {
+  origin: "learnpath"
+  learningPathId: number
+  learningPathItemId: number
+  learningPathItemViewId: number
+  learningPathTitle: string
+}
+
 export type ExerciseRuntimeStatus = "idle" | "loading" | "ready" | "saving" | "error"
 
 export interface ExerciseLatestAttempt {
