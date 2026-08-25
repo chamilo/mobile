@@ -761,6 +761,9 @@ export default {
     offlineAttemptNotPrepared:
       "This exercise does not have a prepared attempt on this device. Connect to the campus and update the offline course before opening it again.",
     questionProgress: "Question {current} of {total}",
+    pageProgress: "Page {current} of {total}",
+    section: "Section",
+    mediaContext: "Reference content",
     answer: "Answer",
     selectAnswer: "Select an answer",
     certainty: "Degree of certainty",

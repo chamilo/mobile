@@ -5,7 +5,8 @@ import { useRouter } from "vue-router"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
 import { translatedPlainText } from "@/domain/content/translatedHtml"
-import ExerciseQuestionField from "@/components/exercises/ExerciseQuestionField.vue"
+import ExerciseRuntimeQuestionCard from "@/components/exercises/ExerciseRuntimeQuestionCard.vue"
+import ExerciseStructuralHtml from "@/components/exercises/ExerciseStructuralHtml.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import { findCourseLanguage } from "@/domain/courses/courseLanguage"
@@ -31,7 +32,12 @@ import {
   isExerciseQuestionTitleVisible,
 } from "@/domain/exercises/runtimeCompatibility"
 import { localizeExerciseQuestionContent } from "@/domain/exercises/presentation"
-import { createDocumentBlobPresenter } from "@/services/documents/DocumentBlobPresenter"
+import type { ExerciseAnswerState } from "@/domain/exercises/types"
+import {
+  normalizeExerciseRuntimePages,
+  sanitizeExerciseStructuralHtml,
+  usesExerciseRuntimePages,
+} from "@/domain/exercises/runtimePages"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
@@ -59,25 +65,13 @@ const campusStore = useCampusStore()
 const connectivityStore = useConnectivityStore()
 const coursesStore = useCoursesStore()
 const store = useExercisesStore()
-const documentPresenter = createDocumentBlobPresenter()
 const confirmedSavedAnswers = ref(false)
 const remainingSeconds = ref<number | null>(null)
 const previewFinished = ref(false)
 const reviewFlowStarted = ref(false)
 const reviewSummaryVisible = ref(false)
-const annotationImageSrc = ref<string | null>(null)
-const annotationImageLoading = ref(false)
-const annotationImageError = ref(false)
-const hotspotImageSrc = ref<string | null>(null)
-const hotspotImageLoading = ref(false)
-const hotspotImageError = ref(false)
-const officeTemplateLoading = ref(false)
-const officeTemplateError = ref(false)
 const pendingAnswerFiles = ref<Record<number, File | null>>({})
-let annotationImageObjectUrl: string | null = null
-let annotationImageLoadSequence = 0
-let hotspotImageObjectUrl: string | null = null
-let hotspotImageLoadSequence = 0
+const currentRuntimePageIndex = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 
 const context = computed(() => {
@@ -113,25 +107,64 @@ const contentFallbackLocales = computed(() => {
   const courseLanguage = findCourseLanguage(coursesStore.overview, context.value)
   return courseLanguage ? [courseLanguage] : []
 })
-const question = computed(() => store.currentQuestion)
-const displayQuestion = computed(() =>
-  question.value
-    ? localizeExerciseQuestionContent(
-        question.value,
-        contentLocale.value,
-        contentFallbackLocales.value,
-      )
+const runtimePages = computed(() =>
+  store.runtime
+    ? normalizeExerciseRuntimePages(store.runtime.settings, store.runtime.questions)
+    : [],
+)
+const usesRuntimePages = computed(() =>
+  store.runtime
+    ? usesExerciseRuntimePages(store.runtime.settings, runtimePages.value)
+    : false,
+)
+const currentRuntimePage = computed(() =>
+  usesRuntimePages.value
+    ? (runtimePages.value[currentRuntimePageIndex.value] ?? null)
     : null,
 )
-const currentAnswer = computed(() =>
-  question.value ? (store.answers[question.value.id] ?? null) : null,
+const answerableQuestionMap = computed(
+  () => new Map(store.answerableQuestions.map((item) => [item.id, item])),
 )
+const isReviewQuestionMode = computed(() => reviewFlowStarted.value && !reviewSummaryVisible.value)
+const visibleQuestions = computed(() => {
+  if (isReviewQuestionMode.value) return store.currentQuestion ? [store.currentQuestion] : []
+
+  if (usesRuntimePages.value && currentRuntimePage.value) {
+    return currentRuntimePage.value.questionIds
+      .map((questionId) => answerableQuestionMap.value.get(questionId))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+  }
+
+  return store.currentQuestion ? [store.currentQuestion] : []
+})
+const displayQuestions = computed(() =>
+  visibleQuestions.value.map((item) =>
+    localizeExerciseQuestionContent(item, contentLocale.value, contentFallbackLocales.value),
+  ),
+)
+const visibleQuestionCards = computed(() =>
+  displayQuestions.value.flatMap((item) => {
+    const answer = store.answers[item.id]
+    return answer ? [{ question: item, answer }] : []
+  }),
+)
+const question = computed(() => visibleQuestions.value[0] ?? null)
 const pendingCurrentFile = computed(() =>
   question.value ? (pendingAnswerFiles.value[question.value.id] ?? null) : null,
 )
+const navigationIndex = computed(() =>
+  usesRuntimePages.value && !isReviewQuestionMode.value
+    ? currentRuntimePageIndex.value
+    : store.currentQuestionIndex,
+)
+const navigationTotal = computed(() =>
+  usesRuntimePages.value && !isReviewQuestionMode.value
+    ? runtimePages.value.length
+    : store.answerableQuestions.length,
+)
 const progress = computed(() =>
-  store.answerableQuestions.length
-    ? Math.round(((store.currentQuestionIndex + 1) / store.answerableQuestions.length) * 100)
+  navigationTotal.value
+    ? Math.round(((navigationIndex.value + 1) / navigationTotal.value) * 100)
     : 0,
 )
 const requiresConfirmation = computed(() => store.runtime?.settings.confirmSavedAnswers === true)
@@ -139,7 +172,13 @@ const reviewEnabled = computed(() => Number(store.runtime?.settings.reviewAnswer
 const hasFinalReview = computed(() => reviewEnabled.value || store.requiresAllAnswers)
 const isTeacherPreview = computed(() => store.runtime?.canManage === true && !store.runtime.attempt)
 const runtimeCompatibilityReason = computed(() =>
-  store.runtime ? exerciseRuntimeCompatibilityReason(store.runtime.settings) : null,
+  store.runtime
+    ? exerciseRuntimeCompatibilityReason(
+        store.runtime.settings,
+        runtimePages.value,
+        campusStore.selectedCampus?.baseUrl ?? null,
+      )
+    : null,
 )
 const canUseNativeRuntime = computed(
   () =>
@@ -202,17 +241,28 @@ function preventRestrictedClipboard(event: ClipboardEvent): void {
   if (preventCopyPaste.value) event.preventDefault()
 }
 
-function updateCurrentAnswer(value: NonNullable<typeof currentAnswer.value>): void {
-  if (question.value) store.answers[question.value.id] = value
+function structuralHtml(value: string): string {
+  return sanitizeExerciseStructuralHtml(
+    value,
+    contentLocale.value,
+    contentFallbackLocales.value,
+  )
 }
 
-function selectCurrentAnswerFile(file: File | null): void {
-  if (!question.value) return
+function updateAnswer(questionId: number, value: ExerciseAnswerState): void {
+  store.answers[questionId] = value
+}
+
+function selectAnswerFile(questionId: number, file: File | null): void {
   pendingAnswerFiles.value = {
     ...pendingAnswerFiles.value,
-    [question.value.id]: file,
+    [questionId]: file,
   }
   store.clearError()
+}
+
+function pendingFileFor(questionId: number): File | null {
+  return pendingAnswerFiles.value[questionId] ?? null
 }
 
 function clearPendingAnswerFile(questionId: number): void {
@@ -221,128 +271,20 @@ function clearPendingAnswerFile(questionId: number): void {
   pendingAnswerFiles.value = next
 }
 
-function releaseAnnotationImage(): void {
-  if (annotationImageObjectUrl) URL.revokeObjectURL(annotationImageObjectUrl)
-  annotationImageObjectUrl = null
-  annotationImageSrc.value = null
-}
-
-async function loadAnnotationImage(): Promise<void> {
-  const sequence = ++annotationImageLoadSequence
-  const imageUrl = question.value?.annotation?.imageUrl?.trim() ?? ""
-
-  releaseAnnotationImage()
-  annotationImageLoading.value = false
-  annotationImageError.value = false
-
-  if (!question.value?.annotation) return
-  if (!imageUrl) {
-    annotationImageError.value = true
+function syncRuntimePageIndex(): void {
+  if (!usesRuntimePages.value || runtimePages.value.length === 0) {
+    currentRuntimePageIndex.value = 0
     return
   }
 
-  annotationImageLoading.value = true
+  const currentQuestionId = store.runtime?.attempt?.currentQuestionId ?? store.currentQuestion?.id ?? 0
+  const pageIndex = runtimePages.value.findIndex((page) =>
+    page.questionIds.includes(Number(currentQuestionId)),
+  )
 
-  try {
-    const blob = await store.loadAnnotationImage(imageUrl)
-    if (sequence !== annotationImageLoadSequence) return
-
-    annotationImageObjectUrl = URL.createObjectURL(blob)
-    annotationImageSrc.value = annotationImageObjectUrl
-  } catch {
-    if (sequence === annotationImageLoadSequence) annotationImageError.value = true
-  } finally {
-    if (sequence === annotationImageLoadSequence) annotationImageLoading.value = false
-  }
-}
-
-function releaseHotspotImage(): void {
-  if (hotspotImageObjectUrl) URL.revokeObjectURL(hotspotImageObjectUrl)
-  hotspotImageObjectUrl = null
-  hotspotImageSrc.value = null
-}
-
-async function loadHotspotImage(): Promise<void> {
-  const sequence = ++hotspotImageLoadSequence
-  const imageUrl = question.value?.hotspot?.imageUrl?.trim() ?? ""
-
-  releaseHotspotImage()
-  hotspotImageLoading.value = false
-  hotspotImageError.value = false
-
-  if (!question.value?.hotspot) return
-  if (!imageUrl) {
-    hotspotImageError.value = true
-    return
-  }
-
-  hotspotImageLoading.value = true
-
-  try {
-    const blob = await store.loadHotspotImage(imageUrl)
-    if (sequence !== hotspotImageLoadSequence) return
-
-    hotspotImageObjectUrl = URL.createObjectURL(blob)
-    hotspotImageSrc.value = hotspotImageObjectUrl
-  } catch {
-    if (sequence === hotspotImageLoadSequence) hotspotImageError.value = true
-  } finally {
-    if (sequence === hotspotImageLoadSequence) hotspotImageLoading.value = false
-  }
-}
-
-function resetOfficeTemplateState(): void {
-  officeTemplateLoading.value = false
-  officeTemplateError.value = false
-}
-
-async function getOfficeTemplateBlob(): Promise<{ blob: Blob; filename: string } | null> {
-  const onlyoffice = question.value?.onlyoffice
-  const templateUrl = onlyoffice?.templateUrl?.trim() ?? ""
-
-  officeTemplateError.value = false
-
-  if (!onlyoffice || !templateUrl) {
-    officeTemplateError.value = true
-    return null
-  }
-
-  officeTemplateLoading.value = true
-
-  try {
-    const blob = await store.loadOfficeDocumentTemplate(templateUrl)
-    return {
-      blob,
-      filename: onlyoffice.templateName.trim() || "office_document.docx",
-    }
-  } catch {
-    officeTemplateError.value = true
-    return null
-  } finally {
-    officeTemplateLoading.value = false
-  }
-}
-
-async function openOfficeTemplate(): Promise<void> {
-  const template = await getOfficeTemplateBlob()
-  if (!template) return
-
-  try {
-    await documentPresenter.open(template.blob, template.filename)
-  } catch {
-    officeTemplateError.value = true
-  }
-}
-
-async function downloadOfficeTemplate(): Promise<void> {
-  const template = await getOfficeTemplateBlob()
-  if (!template) return
-
-  try {
-    await documentPresenter.download(template.blob, template.filename)
-  } catch {
-    officeTemplateError.value = true
-  }
+  currentRuntimePageIndex.value = pageIndex >= 0
+    ? pageIndex
+    : Math.min(currentRuntimePageIndex.value, runtimePages.value.length - 1)
 }
 
 function stopTimer(): void {
@@ -379,6 +321,7 @@ async function load(): Promise<void> {
   confirmedSavedAnswers.value = false
   pendingAnswerFiles.value = {}
   await store.loadRuntime(context.value, numericExerciseId.value, learningPathContext.value)
+  syncRuntimePageIndex()
   startTimer()
 }
 
@@ -386,12 +329,61 @@ async function start(): Promise<void> {
   if (!context.value) return
   if (await store.startAttempt(context.value, numericExerciseId.value, learningPathContext.value)) {
     pendingAnswerFiles.value = {}
+    syncRuntimePageIndex()
     startTimer()
   }
 }
 
+async function saveQuestionIds(questionIds: number[], navigationAction: string): Promise<boolean> {
+  if (!context.value) return false
+  if (isTeacherPreview.value) return true
+
+  for (const [index, questionId] of questionIds.entries()) {
+    const action = index === questionIds.length - 1 ? navigationAction : "none"
+    const saved = await store.saveQuestionAnswer(
+      context.value,
+      numericExerciseId.value,
+      questionId,
+      action,
+      learningPathContext.value,
+      pendingFileFor(questionId),
+    )
+    if (!saved) return false
+    clearPendingAnswerFile(questionId)
+  }
+
+  return true
+}
+
+function syncStoreQuestionIndexForPage(pageIndex: number): void {
+  const page = runtimePages.value[pageIndex]
+  const firstQuestionId = page?.questionIds[0]
+  if (!firstQuestionId) return
+  const questionIndex = store.answerableQuestions.findIndex((item) => item.id === firstQuestionId)
+  if (questionIndex >= 0) store.currentQuestionIndex = questionIndex
+}
+
+async function goRuntimePage(index: number): Promise<void> {
+  if (!usesRuntimePages.value || index < 0 || index >= runtimePages.value.length) return
+
+  if (!isTeacherPreview.value) {
+    const action = index > currentRuntimePageIndex.value ? "next" : "previous"
+    const saved = await saveQuestionIds(currentRuntimePage.value?.questionIds ?? [], action)
+    if (!saved && (currentRuntimePage.value?.questionIds.length ?? 0) > 0) return
+  }
+
+  currentRuntimePageIndex.value = index
+  syncStoreQuestionIndexForPage(index)
+  window.scrollTo({ top: 0, behavior: "smooth" })
+}
+
 async function go(index: number): Promise<void> {
   if (!context.value) return
+  if (usesRuntimePages.value && !isReviewQuestionMode.value) {
+    await goRuntimePage(index)
+    return
+  }
+
   if (isTeacherPreview.value) {
     if (index >= 0 && index < store.answerableQuestions.length) {
       store.currentQuestionIndex = index
@@ -412,6 +404,12 @@ async function go(index: number): Promise<void> {
 
 async function save(): Promise<void> {
   if (!context.value) return
+
+  if (usesRuntimePages.value && !isReviewQuestionMode.value) {
+    await saveQuestionIds(currentRuntimePage.value?.questionIds ?? [], "none")
+    return
+  }
+
   const questionId = question.value?.id ?? 0
   const saved = await store.saveCurrentAnswer(
     context.value,
@@ -425,16 +423,25 @@ async function save(): Promise<void> {
 
 async function finish(): Promise<void> {
   if (!context.value) return
+
+  let skipCurrentSave = reviewSummaryVisible.value
+  if (usesRuntimePages.value && !isReviewQuestionMode.value && !reviewSummaryVisible.value) {
+    const questionIds = currentRuntimePage.value?.questionIds ?? []
+    if (questionIds.length > 0 && !(await saveQuestionIds(questionIds, "finish"))) return
+    skipCurrentSave = true
+  }
+
   const questionId = question.value?.id ?? 0
   const attemptId = await store.finishAttempt(
     context.value,
     numericExerciseId.value,
     confirmedSavedAnswers.value,
     learningPathContext.value,
-    pendingCurrentFile.value,
+    skipCurrentSave ? null : pendingCurrentFile.value,
+    skipCurrentSave,
   )
   if (attemptId) {
-    if (questionId > 0) clearPendingAnswerFile(questionId)
+    if (!skipCurrentSave && questionId > 0) clearPendingAnswerFile(questionId)
     stopTimer()
     await router.push(
       buildExerciseResultRoute(
@@ -454,17 +461,23 @@ async function requestFinish(): Promise<void> {
     return
   }
   if (!context.value) return
+
   if (hasFinalReview.value && !reviewSummaryVisible.value) {
-    const questionId = question.value?.id ?? 0
-    const saved = await store.saveCurrentAnswer(
-      context.value,
-      numericExerciseId.value,
-      "finish",
-      learningPathContext.value,
-      pendingCurrentFile.value,
-    )
-    if (!saved) return
-    if (questionId > 0) clearPendingAnswerFile(questionId)
+    if (usesRuntimePages.value && !isReviewQuestionMode.value) {
+      const questionIds = currentRuntimePage.value?.questionIds ?? []
+      if (questionIds.length > 0 && !(await saveQuestionIds(questionIds, "finish"))) return
+    } else {
+      const questionId = question.value?.id ?? 0
+      const saved = await store.saveCurrentAnswer(
+        context.value,
+        numericExerciseId.value,
+        "finish",
+        learningPathContext.value,
+        pendingCurrentFile.value,
+      )
+      if (!saved) return
+      if (questionId > 0) clearPendingAnswerFile(questionId)
+    }
 
     reviewFlowStarted.value = true
     reviewSummaryVisible.value = true
@@ -477,6 +490,7 @@ async function requestFinish(): Promise<void> {
 
 function restartPreview(): void {
   previewFinished.value = false
+  currentRuntimePageIndex.value = 0
   store.currentQuestionIndex = 0
   store.answers = Object.fromEntries(
     store.answerableQuestions.map((item) => [item.id, createExerciseAnswerState(item)]),
@@ -514,34 +528,12 @@ async function returnToReview(): Promise<void> {
 }
 
 watch(
-  () => [question.value?.id ?? null, question.value?.annotation?.imageUrl ?? null],
-  () => void loadAnnotationImage(),
-  { immediate: true },
-)
-
-watch(
-  () => [question.value?.id ?? null, question.value?.hotspot?.imageUrl ?? null],
-  () => void loadHotspotImage(),
-  { immediate: true },
-)
-
-watch(
-  () => [question.value?.id ?? null, question.value?.onlyoffice?.templateUrl ?? null],
-  () => resetOfficeTemplateState(),
-  { immediate: true },
-)
-
-watch(
   () => store.runtime?.attempt?.remainingSeconds,
   () => startTimer(),
 )
 
 onMounted(load)
 onBeforeUnmount(() => {
-  annotationImageLoadSequence += 1
-  releaseAnnotationImage()
-  hotspotImageLoadSequence += 1
-  releaseHotspotImage()
   stopTimer()
   store.resetRuntime()
 })
@@ -748,16 +740,25 @@ onBeforeUnmount(() => {
       </section>
 
       <template
-        v-else-if="canUseNativeRuntime && question && (store.runtime.attempt || isTeacherPreview)"
+        v-else-if="
+          canUseNativeRuntime &&
+          (visibleQuestionCards.length > 0 || currentRuntimePage) &&
+          (store.runtime.attempt || isTeacherPreview)
+        "
       >
         <section class="rounded-2xl bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between text-xs font-semibold text-slate-600">
             <span>
               {{
-                t("exercises.questionProgress", {
-                  current: store.currentQuestionIndex + 1,
-                  total: store.answerableQuestions.length,
-                })
+                usesRuntimePages && !isReviewQuestionMode
+                  ? t("exercises.pageProgress", {
+                      current: navigationIndex + 1,
+                      total: navigationTotal,
+                    })
+                  : t("exercises.questionProgress", {
+                      current: navigationIndex + 1,
+                      total: navigationTotal,
+                    })
               }}
             </span>
             <span v-if="remainingSeconds !== null">{{ formatDuration(remainingSeconds) }}</span>
@@ -767,61 +768,59 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <section class="rounded-2xl bg-white p-4 shadow-sm">
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {{ question.typeLabel }}
+        <section
+          v-if="usesRuntimePages && !isReviewQuestionMode && currentRuntimePage?.pageBreak"
+          class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        >
+          <p class="text-xs font-semibold uppercase tracking-wide text-chamilo-700">
+            {{ t("exercises.section") }}
           </p>
-          <h2 v-if="showQuestionTitle" class="mt-1 text-lg font-semibold text-slate-900">
-            {{ plainText(question.title) }}
-          </h2>
-          <p
-            v-if="question.description && question.type !== 21"
-            class="mt-2 text-sm text-slate-600"
-          >
-            {{ plainText(question.description) }}
-          </p>
-
-          <ExerciseQuestionField
-            v-if="currentAnswer"
-            class="mt-5"
-            :question="displayQuestion ?? question"
-            :model-value="currentAnswer"
-            :disabled="store.saving || !isSupportedExerciseQuestion(question)"
-            :annotation-image-src="annotationImageSrc"
-            :annotation-image-loading="annotationImageLoading"
-            :annotation-image-error="annotationImageError"
-            :hotspot-image-src="hotspotImageSrc"
-            :hotspot-image-loading="hotspotImageLoading"
-            :hotspot-image-error="hotspotImageError"
-            :office-template-loading="officeTemplateLoading"
-            :office-template-error="officeTemplateError"
-            :pending-file-name="pendingCurrentFile?.name ?? null"
-            @update:model-value="updateCurrentAnswer"
-            @retry-annotation-image="loadAnnotationImage"
-            @retry-hotspot-image="loadHotspotImage"
-            @open-office-template="openOfficeTemplate"
-            @download-office-template="downloadOfficeTemplate"
-            @select-answer-file="selectCurrentAnswerFile"
+          <ExerciseStructuralHtml
+            v-if="currentRuntimePage.pageBreak.title"
+            class="mt-1 text-lg font-semibold text-slate-900 [&_a]:text-chamilo-700 [&_img]:h-auto [&_img]:max-w-full"
+            :html="structuralHtml(currentRuntimePage.pageBreak.title)"
           />
-
-          <label
-            v-if="currentAnswer && reviewEnabled && !isTeacherPreview"
-            class="mt-5 flex min-h-touch items-center gap-3 text-sm text-slate-700"
-          >
-            <input
-              :name="`question-${question.id}-review-later`"
-              type="checkbox"
-              :checked="currentAnswer.reviewLater"
-              @change="
-                updateCurrentAnswer({
-                  ...currentAnswer,
-                  reviewLater: ($event.target as HTMLInputElement).checked,
-                })
-              "
-            />
-            {{ t("exercises.reviewLater") }}
-          </label>
+          <ExerciseStructuralHtml
+            v-if="currentRuntimePage.pageBreak.description"
+            class="mt-2 text-sm text-slate-700 [&_a]:text-chamilo-700 [&_img]:h-auto [&_img]:max-w-full"
+            :html="structuralHtml(currentRuntimePage.pageBreak.description)"
+          />
         </section>
+
+        <section
+          v-if="usesRuntimePages && !isReviewQuestionMode && currentRuntimePage?.media"
+          class="rounded-2xl border border-sky-200 bg-sky-50 p-4 shadow-sm"
+        >
+          <p class="text-xs font-semibold uppercase tracking-wide text-sky-800">
+            {{ t("exercises.mediaContext") }}
+          </p>
+          <ExerciseStructuralHtml
+            v-if="currentRuntimePage.media.title"
+            class="mt-1 text-lg font-semibold text-slate-900 [&_a]:text-chamilo-700 [&_img]:h-auto [&_img]:max-w-full [&_video]:max-w-full [&_audio]:max-w-full"
+            :html="structuralHtml(currentRuntimePage.media.title)"
+          />
+          <ExerciseStructuralHtml
+            v-if="currentRuntimePage.media.description"
+            class="mt-2 text-sm text-slate-700 [&_a]:text-chamilo-700 [&_img]:h-auto [&_img]:max-w-full [&_video]:max-w-full [&_audio]:max-w-full"
+            :html="structuralHtml(currentRuntimePage.media.description)"
+          />
+        </section>
+
+        <div v-if="visibleQuestionCards.length > 0" class="space-y-4">
+          <ExerciseRuntimeQuestionCard
+            v-for="card in visibleQuestionCards"
+            :key="card.question.id"
+            :question="card.question"
+            :answer="card.answer"
+            :disabled="store.saving || !isSupportedExerciseQuestion(card.question)"
+            :show-title="showQuestionTitle"
+            :review-enabled="reviewEnabled"
+            :teacher-preview="isTeacherPreview"
+            :pending-file="pendingFileFor(card.question.id)"
+            @update-answer="updateAnswer(card.question.id, $event)"
+            @select-file="selectAnswerFile(card.question.id, $event)"
+          />
+        </div>
 
         <div
           v-if="store.errorCode"
@@ -839,24 +838,24 @@ onBeforeUnmount(() => {
             v-if="previousNavigationAllowed"
             type="button"
             class="min-h-touch rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-700 disabled:opacity-40"
-            :disabled="store.currentQuestionIndex === 0 || store.saving"
-            @click="go(store.currentQuestionIndex - 1)"
+            :disabled="navigationIndex === 0 || store.saving"
+            @click="go(navigationIndex - 1)"
           >
             <i class="pi pi-arrow-left mr-2" aria-hidden="true" />
             {{ t("actions.previous") }}
           </button>
           <button
-            v-if="store.currentQuestionIndex < store.answerableQuestions.length - 1"
+            v-if="navigationIndex < navigationTotal - 1"
             type="button"
             class="min-h-touch rounded-xl bg-chamilo-700 px-4 font-semibold text-white disabled:opacity-50"
             :disabled="store.saving"
-            @click="go(store.currentQuestionIndex + 1)"
+            @click="go(navigationIndex + 1)"
           >
             {{ t("actions.next") }}
             <i class="pi pi-arrow-right ml-2" aria-hidden="true" />
           </button>
           <button
-            v-else-if="!isTeacherPreview"
+            v-else-if="!isTeacherPreview && visibleQuestionCards.length > 0"
             type="button"
             class="min-h-touch rounded-xl border border-chamilo-700 bg-white px-4 font-semibold text-chamilo-700 disabled:opacity-50"
             :disabled="store.saving"
