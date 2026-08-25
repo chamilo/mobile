@@ -6,12 +6,16 @@ import CourseUnavailableState from "@/components/courseHome/CourseUnavailableSta
 import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
+import { findCourseLanguage } from "@/domain/courses/courseLanguage"
 import {
   buildCourseRoute,
   buildExercisePlayerRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import { useAuthStore } from "@/stores/auth"
+import { useCoursesStore } from "@/stores/courses"
 import { useExercisesStore } from "@/stores/exercises"
 
 const props = defineProps<{
@@ -22,7 +26,9 @@ const props = defineProps<{
   source: string | null
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const authStore = useAuthStore()
+const coursesStore = useCoursesStore()
 const store = useExercisesStore()
 
 const context = computed(() => {
@@ -35,11 +41,14 @@ const context = computed(() => {
 })
 
 const errorDescription = computed(() => t(`exercises.errors.${store.errorCode ?? "server"}`))
+const contentLocale = computed(() => authStore.profile?.locale || locale.value)
+const contentFallbackLocales = computed(() => {
+  const courseLanguage = findCourseLanguage(coursesStore.overview, context.value)
+  return courseLanguage ? [courseLanguage] : []
+})
 
 function plainText(value: string): string {
-  const container = document.createElement("div")
-  container.innerHTML = value
-  return container.textContent ?? ""
+  return translatedPlainText(value, contentLocale.value, contentFallbackLocales.value)
 }
 
 async function load(): Promise<void> {

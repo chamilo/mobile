@@ -9,11 +9,16 @@ import LearningPathToc from "@/components/learningPaths/LearningPathToc.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import {
+  buildExercisePlayerRoute,
   buildLearningPathsRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
-import { isSupportedLearningPathItem } from "@/domain/learningPaths/contracts"
+import { parseLearningPathQuizContentUrl } from "@/domain/exercises/learningPathContext"
+import {
+  isQuizLearningPathItem,
+  isSupportedLearningPathItem,
+} from "@/domain/learningPaths/contracts"
 import type {
   LearningPathRuntimeItem,
   LearningPathScormCommitPayload,
@@ -80,6 +85,19 @@ const previousItem = computed(() =>
 const nextItem = computed(() =>
   store.runtime?.items.find(({ id }) => id === store.runtime?.nextItemId),
 )
+const quizLaunch = computed(() => {
+  const runtime = store.runtime
+  const item = store.currentItem
+
+  if (!runtime || !item || !isQuizLearningPathItem(item)) return null
+
+  return parseLearningPathQuizContentUrl(
+    runtime.contentUrl,
+    runtime.lpId,
+    item.id,
+    runtime.title || props.learningPathTitle || "",
+  )
+})
 
 function itemTypeLabel(itemType: string): string {
   return itemType.replace(/_/g, " ") || t("learningPaths.item")
@@ -356,6 +374,20 @@ onBeforeUnmount(() => {
           @open-external="store.openCurrentContent"
           @download="store.downloadCurrentContent"
         />
+
+        <RouterLink
+          v-else-if="
+            quizLaunch &&
+            context &&
+            isQuizLearningPathItem(store.currentItem) &&
+            store.contentStatus === 'ready'
+          "
+          :to="buildExercisePlayerRoute(context, quizLaunch.exerciseId, quizLaunch.context)"
+          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
+        >
+          <i class="pi pi-play" aria-hidden="true" />
+          {{ t("exercises.open") }}
+        </RouterLink>
 
         <p
           v-else-if="!isSupportedLearningPathItem(store.currentItem)"

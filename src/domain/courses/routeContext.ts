@@ -1,6 +1,8 @@
 import type { RouteLocationRaw } from "vue-router"
 
 import type { CourseNavigationContext, CourseSource } from "@/domain/courses/types"
+import { buildExerciseLearningPathRouteQuery } from "@/domain/exercises/learningPathContext"
+import type { ExerciseLearningPathContext } from "@/domain/exercises/types"
 import type { SurveyOpenMode } from "@/domain/surveys/types"
 
 export class CourseRouteContextError extends Error {
@@ -222,6 +224,7 @@ export const buildExercisesRoute = (context: CourseNavigationContext) =>
 export function buildExercisePlayerRoute(
   context: CourseNavigationContext,
   exerciseId: number,
+  learningPathContext?: ExerciseLearningPathContext | null,
 ): RouteLocationRaw {
   return {
     name: "exercise-player",
@@ -229,7 +232,10 @@ export function buildExercisePlayerRoute(
       courseId: String(context.courseId),
       exerciseId: String(exerciseId),
     },
-    query: buildContextQuery(context),
+    query: {
+      ...buildContextQuery(context),
+      ...buildExerciseLearningPathRouteQuery(learningPathContext),
+    },
   }
 }
 
@@ -237,6 +243,7 @@ export function buildExerciseResultRoute(
   context: CourseNavigationContext,
   exerciseId: number,
   attemptId: number,
+  learningPathContext?: ExerciseLearningPathContext | null,
 ): RouteLocationRaw {
   return {
     name: "exercise-result",
@@ -245,7 +252,10 @@ export function buildExerciseResultRoute(
       exerciseId: String(exerciseId),
       attemptId: String(attemptId),
     },
-    query: buildContextQuery(context),
+    query: {
+      ...buildContextQuery(context),
+      ...buildExerciseLearningPathRouteQuery(learningPathContext),
+    },
   }
 }
 

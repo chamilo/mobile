@@ -1,4 +1,5 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import { buildExerciseLearningPathApiQuery } from "@/domain/exercises/learningPathContext"
 import {
   normalizeExerciseAnswerResponse,
   normalizeExerciseAttempt,
@@ -12,6 +13,7 @@ import type {
   ExerciseAnswerResponse,
   ExerciseAttempt,
   ExerciseFinishResponse,
+  ExerciseLearningPathContext,
   ExerciseList,
   ExerciseResult,
   ExerciseRuntime,
@@ -42,11 +44,13 @@ export class ExerciseServiceError extends Error {
 
 function contextQuery(
   context: CourseNavigationContext,
+  learningPathContext?: ExerciseLearningPathContext | null,
 ): Record<string, string | number | boolean | null | undefined> {
   return {
     cid: context.courseId,
     sid: context.sessionId ?? 0,
     gid: 0,
+    ...buildExerciseLearningPathApiQuery(learningPathContext),
   }
 }
 
@@ -96,12 +100,16 @@ export class ExerciseApiService {
     }
   }
 
-  async getRuntime(context: CourseNavigationContext, exerciseId: number): Promise<ExerciseRuntime> {
+  async getRuntime(
+    context: CourseNavigationContext,
+    exerciseId: number,
+    learningPathContext?: ExerciseLearningPathContext | null,
+  ): Promise<ExerciseRuntime> {
     try {
       const response = await this.httpClient.request<unknown>({
         method: "GET",
         path: `/api/exercise/runtime/${exerciseId}`,
-        query: contextQuery(context),
+        query: contextQuery(context, learningPathContext),
         headers: { Accept: "application/ld+json" },
       })
       return normalizeExerciseRuntime(response.data)
@@ -113,12 +121,13 @@ export class ExerciseApiService {
   async startAttempt(
     context: CourseNavigationContext,
     exerciseId: number,
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<ExerciseAttempt> {
     try {
       const response = await this.httpClient.request<unknown, { exerciseId: number }>({
         method: "POST",
         path: `/api/exercise/runtime/${exerciseId}/attempt`,
-        query: contextQuery(context),
+        query: contextQuery(context, learningPathContext),
         headers: {
           Accept: "application/ld+json",
           "Content-Type": "application/ld+json",
@@ -142,12 +151,13 @@ export class ExerciseApiService {
       secondsSpent: number
       navigationAction: string
     },
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<ExerciseAnswerResponse> {
     try {
       const response = await this.httpClient.request<unknown>({
         method: "POST",
         path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/answer`,
-        query: contextQuery(context),
+        query: contextQuery(context, learningPathContext),
         headers: {
           Accept: "application/ld+json",
           "Content-Type": "application/ld+json",
@@ -165,12 +175,13 @@ export class ExerciseApiService {
     exerciseId: number,
     attemptId: number,
     confirmedSavedAnswers: boolean,
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<ExerciseFinishResponse> {
     try {
       const response = await this.httpClient.request<unknown>({
         method: "POST",
         path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/finish`,
-        query: contextQuery(context),
+        query: contextQuery(context, learningPathContext),
         headers: {
           Accept: "application/ld+json",
           "Content-Type": "application/ld+json",
@@ -187,12 +198,13 @@ export class ExerciseApiService {
     context: CourseNavigationContext,
     exerciseId: number,
     attemptId: number,
+    learningPathContext?: ExerciseLearningPathContext | null,
   ): Promise<ExerciseResult> {
     try {
       const response = await this.httpClient.request<unknown>({
         method: "GET",
         path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/result`,
-        query: contextQuery(context),
+        query: contextQuery(context, learningPathContext),
         headers: { Accept: "application/ld+json" },
       })
       return normalizeExerciseResult(response.data)

@@ -5,6 +5,7 @@ import type { CourseNavigationContext } from "@/domain/courses/types"
 import type { OfflineHttpWritePayload } from "@/domain/offline/types"
 import {
   buildLearningPathScormCommitRequest,
+  isQuizLearningPathItem,
   isScormLearningPathItem,
   isSupportedLearningPathItem,
 } from "@/domain/learningPaths/contracts"
@@ -220,6 +221,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
       !previewItem ||
       !isSupportedLearningPathItem(previewItem) ||
       isScormLearningPathItem(previewItem) ||
+      isQuizLearningPathItem(previewItem) ||
       !previewRuntime.contentUrl
     ) {
       return null
@@ -432,6 +434,33 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         } else {
           await queueRegularSync(context, learningPathId, currentRuntime)
         }
+      }
+
+      if (isQuizLearningPathItem(previewItem)) {
+        if (!useConnectivityStore().campusAvailable) {
+          contentErrorCode.value = "network"
+          contentStatus.value = "error"
+          return false
+        }
+
+        await api.openItem(context, learningPathId, itemId, previewRuntime.actionToken)
+        const activeRuntime = await api.getRuntime(context, learningPathId, itemId)
+        const activeItem =
+          activeRuntime.items.find(({ id }) => id === activeRuntime.currentItemId) ?? null
+
+        if (!isQuizLearningPathItem(activeItem) || !activeRuntime.contentUrl) {
+          contentErrorCode.value = "unsupported"
+          contentStatus.value = "error"
+          return false
+        }
+
+        runtime.value = activeRuntime
+        contentBlob.value = null
+        scormEntryUrl.value = ""
+        contentErrorCode.value = null
+        contentStatus.value = "ready"
+        await savePreparedItem(context, learningPathId, itemId, activeRuntime)
+        return true
       }
 
       if (isScormLearningPathItem(previewItem)) {
