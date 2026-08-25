@@ -9,6 +9,7 @@ import {
   isOpenableLearningPathItem,
   isQuizLearningPathItem,
   isScormLearningPathItem,
+  isSurveyLearningPathItem,
   isSupportedLearningPathItem,
   normalizeLearningPathRuntime,
 } from "@/domain/learningPaths/contracts"
@@ -144,6 +145,21 @@ describe("learning path runtime contract", () => {
     })
 
     expect(isQuizLearningPathItem(runtime.items[0])).toBe(true)
+    expect(isSupportedLearningPathItem(runtime.items[0])).toBe(true)
+    expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(true)
+  })
+
+  it("treats an available survey as a native mobile learning path item", () => {
+    const runtime = normalizeLearningPathRuntime({
+      lpId: 7,
+      runtimeSupported: true,
+      currentItemId: 13,
+      contentUrl:
+        "/resources/survey/40/18/answer?lp_id=7&item_id=13&lpItemId=13&invitationCode=auto",
+      items: [{ id: 13, title: "Survey", itemType: "survey", available: true, isSection: false }],
+    })
+
+    expect(isSurveyLearningPathItem(runtime.items[0])).toBe(true)
     expect(isSupportedLearningPathItem(runtime.items[0])).toBe(true)
     expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(true)
   })

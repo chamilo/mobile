@@ -146,12 +146,14 @@ export function buildSurveyDetailRequest(
   mode: SurveyOpenMode,
   invitationLpItemId = 0,
   invitationCode = "",
+  learningPathId = 0,
 ): SurveyRequestDefinition {
   return {
     path: `/api/survey/answer/${positiveInteger(surveyId, "survey id")}`,
     query: {
       ...contextQuery(context),
       ...(invitationLpItemId > 0 ? { lpItemId: invitationLpItemId } : {}),
+      ...(learningPathId > 0 ? { lp_id: learningPathId } : {}),
       ...(invitationCode.trim() ? { invitationCode: invitationCode.trim() } : {}),
       ...(mode === "preview" ? { preview: true } : {}),
     },
@@ -164,12 +166,14 @@ export function buildSurveySubmitRequest(
   invitationLpItemId: number,
   invitationCode: string,
   body: SurveySubmissionPayload,
+  learningPathId = 0,
 ): SurveySubmitRequestDefinition {
   return {
     path: `/api/survey/answer/${positiveInteger(surveyId, "survey id")}`,
     query: {
       ...contextQuery(context),
       ...(invitationLpItemId > 0 ? { lpItemId: invitationLpItemId } : {}),
+      ...(learningPathId > 0 ? { lp_id: learningPathId } : {}),
       ...(invitationCode.trim() ? { invitationCode: invitationCode.trim() } : {}),
     },
     body: structuredClone(body),

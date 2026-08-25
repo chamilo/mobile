@@ -34,12 +34,14 @@ describe("survey contracts", () => {
       },
     })
 
-    expect(buildSurveyDetailRequest(sessionContext, 8, "answer", 27)).toEqual({
+    expect(buildSurveyDetailRequest(sessionContext, 8, "answer", 27, "auto", 7)).toEqual({
       path: "/api/survey/answer/8",
       query: {
         cid: 16,
         sid: 4,
         lpItemId: 27,
+        lp_id: 7,
+        invitationCode: "auto",
       },
     })
 
@@ -53,18 +55,26 @@ describe("survey contracts", () => {
     })
 
     expect(
-      buildSurveySubmitRequest(sessionContext, 8, 27, "invite-8", {
-        csrfToken: "csrf-8",
-        answers: { "20": 30 },
-        otherAnswers: {},
-        profileValues: {},
-      }),
+      buildSurveySubmitRequest(
+        sessionContext,
+        8,
+        27,
+        "invite-8",
+        {
+          csrfToken: "csrf-8",
+          answers: { "20": 30 },
+          otherAnswers: {},
+          profileValues: {},
+        },
+        7,
+      ),
     ).toEqual({
       path: "/api/survey/answer/8",
       query: {
         cid: 16,
         sid: 4,
         lpItemId: 27,
+        lp_id: 7,
         invitationCode: "invite-8",
       },
       body: {

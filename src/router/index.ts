@@ -528,6 +528,10 @@ export const routes: RouteRecordRaw[] = [
       invitationLpItemId: typeof route.query.lpItemId === "string" ? route.query.lpItemId : null,
       invitationCode:
         typeof route.query.invitationCode === "string" ? route.query.invitationCode : null,
+      learningPathId:
+        typeof route.query.learningPathId === "string" ? route.query.learningPathId : null,
+      learningPathTitle:
+        typeof route.query.learningPathTitle === "string" ? route.query.learningPathTitle : null,
       sessionId: typeof route.query.sid === "string" ? route.query.sid : null,
       membershipId: typeof route.query.membership === "string" ? route.query.membership : null,
       sessionCourseId:

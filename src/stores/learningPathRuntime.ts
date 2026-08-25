@@ -7,6 +7,7 @@ import {
   buildLearningPathScormCommitRequest,
   isQuizLearningPathItem,
   isScormLearningPathItem,
+  isSurveyLearningPathItem,
   isSupportedLearningPathItem,
 } from "@/domain/learningPaths/contracts"
 import type {
@@ -222,6 +223,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
       !isSupportedLearningPathItem(previewItem) ||
       isScormLearningPathItem(previewItem) ||
       isQuizLearningPathItem(previewItem) ||
+      isSurveyLearningPathItem(previewItem) ||
       !previewRuntime.contentUrl
     ) {
       return null
@@ -436,7 +438,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         }
       }
 
-      if (isQuizLearningPathItem(previewItem)) {
+      if (isQuizLearningPathItem(previewItem) || isSurveyLearningPathItem(previewItem)) {
         if (!useConnectivityStore().campusAvailable) {
           contentErrorCode.value = "network"
           contentStatus.value = "error"
@@ -447,8 +449,11 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         const activeRuntime = await api.getRuntime(context, learningPathId, itemId)
         const activeItem =
           activeRuntime.items.find(({ id }) => id === activeRuntime.currentItemId) ?? null
+        const sameInteractiveType =
+          (isQuizLearningPathItem(previewItem) && isQuizLearningPathItem(activeItem)) ||
+          (isSurveyLearningPathItem(previewItem) && isSurveyLearningPathItem(activeItem))
 
-        if (!isQuizLearningPathItem(activeItem) || !activeRuntime.contentUrl) {
+        if (!sameInteractiveType || !activeRuntime.contentUrl) {
           contentErrorCode.value = "unsupported"
           contentStatus.value = "error"
           return false

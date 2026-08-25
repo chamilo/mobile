@@ -333,6 +333,8 @@ export function buildSurveyDetailRoute(
   surveyTitle?: string,
   invitationLpItemId = 0,
   invitationCode = "",
+  learningPathId = 0,
+  learningPathTitle = "",
 ): RouteLocationRaw {
   return {
     name: "survey-detail",
@@ -346,6 +348,8 @@ export function buildSurveyDetailRoute(
       ...(surveyTitle ? { surveyTitle } : {}),
       ...(invitationLpItemId > 0 ? { lpItemId: String(invitationLpItemId) } : {}),
       ...(invitationCode.trim() ? { invitationCode: invitationCode.trim() } : {}),
+      ...(learningPathId > 0 ? { learningPathId: String(learningPathId) } : {}),
+      ...(learningPathTitle.trim() ? { learningPathTitle: learningPathTitle.trim() } : {}),
     },
   }
 }

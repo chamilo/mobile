@@ -989,6 +989,8 @@ export default {
   surveys: {
     backToCourse: "Back to course",
     backToSurveys: "Back to surveys",
+    backToLearningPath: "Back to learning path",
+    open: "Open survey",
     eyebrow: "Feedback",
     title: "Surveys",
     description: "Review surveys available for the current course context.",

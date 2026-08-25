@@ -11,13 +11,16 @@ import LoadingState from "@/components/states/LoadingState.vue"
 import {
   buildExercisePlayerRoute,
   buildLearningPathsRoute,
+  buildSurveyDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
 import { parseLearningPathQuizContentUrl } from "@/domain/exercises/learningPathContext"
+import { parseLearningPathSurveyContentUrl } from "@/domain/surveys/learningPathContext"
 import {
   isQuizLearningPathItem,
   isSupportedLearningPathItem,
+  isSurveyLearningPathItem,
 } from "@/domain/learningPaths/contracts"
 import type {
   LearningPathRuntimeItem,
@@ -92,6 +95,20 @@ const quizLaunch = computed(() => {
   if (!runtime || !item || !isQuizLearningPathItem(item)) return null
 
   return parseLearningPathQuizContentUrl(
+    runtime.contentUrl,
+    runtime.lpId,
+    item.id,
+    runtime.title || props.learningPathTitle || "",
+  )
+})
+
+const surveyLaunch = computed(() => {
+  const runtime = store.runtime
+  const item = store.currentItem
+
+  if (!runtime || !item || !isSurveyLearningPathItem(item)) return null
+
+  return parseLearningPathSurveyContentUrl(
     runtime.contentUrl,
     runtime.lpId,
     item.id,
@@ -387,6 +404,31 @@ onBeforeUnmount(() => {
         >
           <i class="pi pi-play" aria-hidden="true" />
           {{ t("exercises.open") }}
+        </RouterLink>
+
+        <RouterLink
+          v-else-if="
+            surveyLaunch &&
+            context &&
+            isSurveyLearningPathItem(store.currentItem) &&
+            store.contentStatus === 'ready'
+          "
+          :to="
+            buildSurveyDetailRoute(
+              context,
+              surveyLaunch.surveyId,
+              'answer',
+              store.currentItem.title,
+              surveyLaunch.learningPathItemId,
+              surveyLaunch.invitationCode,
+              surveyLaunch.learningPathId,
+              surveyLaunch.learningPathTitle,
+            )
+          "
+          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
+        >
+          <i class="pi pi-arrow-right" aria-hidden="true" />
+          {{ t("surveys.open") }}
         </RouterLink>
 
         <p
