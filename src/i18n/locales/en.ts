@@ -749,6 +749,8 @@ export default {
     previewFinished: "Preview finished",
     restartPreview: "Restart preview",
     legacyRuntimeRequired: "This exercise requires the full campus player.",
+    runtimeConfigurationRequired:
+      "This exercise uses a runtime configuration that is not supported safely in the native mobile player yet. Continue on the campus to preserve the expected exercise behavior.",
     campusRuntimeRequired:
       "Some questions in this exercise are not available in the native mobile player yet. Continue on the campus to complete the exercise without losing functionality.",
     openOnCampus: "Open on campus",

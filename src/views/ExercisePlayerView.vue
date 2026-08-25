@@ -25,6 +25,11 @@ import {
   isExerciseAnswerProvided,
   isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
+import {
+  exerciseRuntimeCompatibilityReason,
+  isExercisePreviousNavigationAllowed,
+  isExerciseQuestionTitleVisible,
+} from "@/domain/exercises/runtimeCompatibility"
 import { localizeExerciseQuestionContent } from "@/domain/exercises/presentation"
 import { createDocumentBlobPresenter } from "@/services/documents/DocumentBlobPresenter"
 import { useAuthStore } from "@/stores/auth"
@@ -133,8 +138,24 @@ const requiresConfirmation = computed(() => store.runtime?.settings.confirmSaved
 const reviewEnabled = computed(() => Number(store.runtime?.settings.reviewAnswers ?? 0) > 0)
 const hasFinalReview = computed(() => reviewEnabled.value || store.requiresAllAnswers)
 const isTeacherPreview = computed(() => store.runtime?.canManage === true && !store.runtime.attempt)
-const canUseMobileAttempt = computed(
-  () => store.runtime?.settings.requiresLegacyRuntime !== true && !store.hasUnsupportedQuestions,
+const runtimeCompatibilityReason = computed(() =>
+  store.runtime ? exerciseRuntimeCompatibilityReason(store.runtime.settings) : null,
+)
+const canUseNativeRuntime = computed(
+  () =>
+    store.runtime?.settings.requiresLegacyRuntime !== true &&
+    !store.hasUnsupportedQuestions &&
+    runtimeCompatibilityReason.value === null,
+)
+const canUseMobileAttempt = computed(() => canUseNativeRuntime.value)
+const previousNavigationAllowed = computed(() =>
+  store.runtime ? isExercisePreviousNavigationAllowed(store.runtime.settings) : true,
+)
+const showQuestionTitle = computed(() =>
+  store.runtime ? isExerciseQuestionTitleVisible(store.runtime.settings) : true,
+)
+const preventCopyPaste = computed(
+  () => store.runtime?.settings.preventCopyPaste === true && !isTeacherPreview.value,
 )
 const reviewItems = computed(() =>
   store.answerableQuestions.map((item, index) => {
@@ -175,6 +196,10 @@ const startBlockMessage = computed(() => {
 
 function plainText(value: string): string {
   return translatedPlainText(value, contentLocale.value, contentFallbackLocales.value)
+}
+
+function preventRestrictedClipboard(event: ClipboardEvent): void {
+  if (preventCopyPaste.value) event.preventDefault()
 }
 
 function updateCurrentAnswer(value: NonNullable<typeof currentAnswer.value>): void {
@@ -528,7 +553,13 @@ onBeforeUnmount(() => {
     kind="missing"
   />
 
-  <div v-else class="space-y-5">
+  <div
+    v-else
+    class="space-y-5"
+    @copy="preventRestrictedClipboard"
+    @cut="preventRestrictedClipboard"
+    @paste="preventRestrictedClipboard"
+  >
     <RouterLink
       :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
@@ -573,9 +604,7 @@ onBeforeUnmount(() => {
       </section>
 
       <section
-        v-if="
-          store.hasUnsupportedQuestions || store.runtime.settings.requiresLegacyRuntime === true
-        "
+        v-if="!canUseNativeRuntime"
         class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
         role="alert"
       >
@@ -583,7 +612,9 @@ onBeforeUnmount(() => {
           {{
             store.hasUnsupportedQuestions
               ? t("exercises.campusRuntimeRequired")
-              : t("exercises.legacyRuntimeRequired")
+              : store.runtime.settings.requiresLegacyRuntime === true
+                ? t("exercises.legacyRuntimeRequired")
+                : t("exercises.runtimeConfigurationRequired")
           }}
         </p>
         <a
@@ -716,7 +747,9 @@ onBeforeUnmount(() => {
         </button>
       </section>
 
-      <template v-else-if="question && (store.runtime.attempt || isTeacherPreview)">
+      <template
+        v-else-if="canUseNativeRuntime && question && (store.runtime.attempt || isTeacherPreview)"
+      >
         <section class="rounded-2xl bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between text-xs font-semibold text-slate-600">
             <span>
@@ -738,7 +771,7 @@ onBeforeUnmount(() => {
           <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
             {{ question.typeLabel }}
           </p>
-          <h2 class="mt-1 text-lg font-semibold text-slate-900">
+          <h2 v-if="showQuestionTitle" class="mt-1 text-lg font-semibold text-slate-900">
             {{ plainText(question.title) }}
           </h2>
           <p
@@ -798,8 +831,12 @@ onBeforeUnmount(() => {
           {{ errorDescription }}
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div
+          class="grid gap-3"
+          :class="previousNavigationAllowed ? 'grid-cols-2' : 'grid-cols-1'"
+        >
           <button
+            v-if="previousNavigationAllowed"
             type="button"
             class="min-h-touch rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-700 disabled:opacity-40"
             :disabled="store.currentQuestionIndex === 0 || store.saving"
