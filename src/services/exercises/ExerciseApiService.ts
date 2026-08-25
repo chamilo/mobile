@@ -171,6 +171,26 @@ export class ExerciseApiService {
     }
   }
 
+  async getAnnotationImage(imageUrl: string): Promise<Blob> {
+    try {
+      const response = await this.httpClient.request<Blob>({
+        method: "GET",
+        path: exerciseAssetPath(imageUrl),
+        headers: { Accept: "image/*" },
+        responseType: "blob",
+        timeoutMs: 60_000,
+      })
+
+      if (!(response.data instanceof Blob)) {
+        throw new ExerciseContractError("The exercise annotation image response is invalid.")
+      }
+
+      return response.data
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
   async startAttempt(
     context: CourseNavigationContext,
     exerciseId: number,

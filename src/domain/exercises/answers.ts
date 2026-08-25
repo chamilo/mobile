@@ -1,4 +1,9 @@
 import {
+  normalizeExerciseAnnotationPaths,
+  normalizeExerciseAnnotationTexts,
+  parseSavedExerciseAnnotation,
+} from "@/domain/exercises/annotation"
+import {
   isExerciseFileAnswerType,
   ORAL_EXPRESSION_TYPE,
   UPLOAD_ANSWER_TYPE,
@@ -17,7 +22,8 @@ const FILL_BLANK_TYPES = [3, 27]
 const MATCHING_TYPES = [4, 19, 24, 25]
 const DROPDOWN_TYPES = [28, 29]
 const HOTSPOT_TYPES = [6, 8, 26]
-const UNSUPPORTED_TYPES = [20, 30]
+const ANNOTATION_TYPE = 20
+const UNSUPPORTED_TYPES = [30]
 const STRUCTURAL_TYPES = [15, 31]
 
 export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolean {
@@ -33,6 +39,7 @@ export function isSupportedExerciseQuestion(question: ExerciseQuestion): boolean
     MATCHING_TYPES.includes(question.type) ||
     question.type === 18 ||
     (HOTSPOT_TYPES.includes(question.type) && Boolean(question.hotspot?.imageUrl)) ||
+    (question.type === ANNOTATION_TYPE && Boolean(question.annotation?.imageUrl)) ||
     isExerciseFileAnswerType(question.type) ||
     DROPDOWN_TYPES.includes(question.type) ||
     question.type === 16 ||
@@ -82,6 +89,12 @@ export function isExerciseAnswerProvided(
   if (question.type === 18) {
     return state.order.length > 0 && state.order.length === (question.draggable?.items.length ?? 0)
   }
+  if (question.type === ANNOTATION_TYPE) {
+    return (
+      normalizeExerciseAnnotationPaths(state.annotationPaths ?? []).length > 0 ||
+      normalizeExerciseAnnotationTexts(state.annotationTexts ?? []).length > 0
+    )
+  }
   if (HOTSPOT_TYPES.includes(question.type)) {
     const points = state.hotspotPoints ?? []
     if (question.hotspot?.delineation) return points.length >= 3
@@ -110,6 +123,8 @@ export function createExerciseAnswerState(question: ExerciseQuestion): ExerciseA
     calculatedAnswerId:
       question.calculated?.answerId ?? question.calculated?.variations[0]?.id ?? null,
     text: "",
+    annotationPaths: [],
+    annotationTexts: [],
     hotspotPoints: [],
     uploadedFiles: [],
     reviewLater: false,
@@ -131,6 +146,12 @@ export function buildExerciseAnswerPayload(
   if (FILL_BLANK_TYPES.includes(question.type)) return { blanks: state.blanks }
   if (MATCHING_TYPES.includes(question.type)) return { matching: state.matching }
   if (question.type === 18) return { order: state.order }
+  if (question.type === ANNOTATION_TYPE) {
+    return {
+      paths: normalizeExerciseAnnotationPaths(state.annotationPaths ?? []),
+      texts: normalizeExerciseAnnotationTexts(state.annotationTexts ?? []),
+    }
+  }
   if (HOTSPOT_TYPES.includes(question.type)) {
     return {
       points: (state.hotspotPoints ?? []).map((point) => ({
@@ -210,6 +231,12 @@ export function applySavedExerciseAnswer(
       .filter((id) => id > 0)
     return
   }
+  if (question.type === ANNOTATION_TYPE) {
+    const annotation = parseSavedExerciseAnnotation(rows)
+    state.annotationPaths = annotation.paths
+    state.annotationTexts = annotation.texts
+    return
+  }
   if (HOTSPOT_TYPES.includes(question.type)) {
     state.hotspotPoints = parseSavedExerciseHotspotPoints(rows)
     return
@@ -243,6 +270,7 @@ export function answerKind(
   | "fill-blanks"
   | "matching"
   | "ordering"
+  | "annotation"
   | "hotspot"
   | "file"
   | "oral"
@@ -257,6 +285,7 @@ export function answerKind(
   if (FILL_BLANK_TYPES.includes(question.type)) return "fill-blanks"
   if (MATCHING_TYPES.includes(question.type)) return "matching"
   if (question.type === 18) return "ordering"
+  if (question.type === ANNOTATION_TYPE) return "annotation"
   if (HOTSPOT_TYPES.includes(question.type)) return "hotspot"
   if (question.type === ORAL_EXPRESSION_TYPE) return "oral"
   if (question.type === UPLOAD_ANSWER_TYPE) return "file"

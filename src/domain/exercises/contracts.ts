@@ -1,4 +1,5 @@
 import type {
+  ExerciseAnnotationRuntime,
   ExerciseAnswerResponse,
   ExerciseAttempt,
   ExerciseAttemptFile,
@@ -183,6 +184,7 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
   const dropdown = optionalRecord(item.dropdown)
   const calculated = optionalRecord(item.calculated)
   const reading = optionalRecord(item.reading)
+  const annotation = optionalRecord(item.annotation)
   const hotspot = optionalRecord(item.hotspot)
 
   return {
@@ -249,6 +251,12 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
           speed: Math.max(0, numberValue(reading.speed)),
           text: stringValue(reading.text),
         }
+      : null,
+    annotation: annotation
+      ? ({
+          imageName: stringValue(annotation.imageName),
+          imageUrl: stringValue(annotation.imageUrl),
+        } satisfies ExerciseAnnotationRuntime)
       : null,
     hotspot: hotspot
       ? {

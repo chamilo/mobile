@@ -89,6 +89,25 @@ export interface ExerciseReadingRuntime {
   text: string
 }
 
+
+export interface ExerciseAnnotationPoint {
+  x: number
+  y: number
+}
+
+export interface ExerciseAnnotationPath {
+  points: ExerciseAnnotationPoint[]
+}
+
+export interface ExerciseAnnotationText extends ExerciseAnnotationPoint {
+  text: string
+}
+
+export interface ExerciseAnnotationRuntime {
+  imageName: string
+  imageUrl: string
+}
+
 export interface ExerciseHotspotPoint {
   x: number
   y: number
@@ -135,6 +154,7 @@ export interface ExerciseQuestion {
   dropdown: ExerciseDropdownRuntime | null
   calculated: ExerciseCalculatedRuntime | null
   reading: ExerciseReadingRuntime | null
+  annotation: ExerciseAnnotationRuntime | null
   hotspot: ExerciseHotspotRuntime | null
   isContent: boolean
 }
@@ -204,6 +224,8 @@ export interface ExerciseAnswerState {
   calculated: string
   calculatedAnswerId: number | null
   text: string
+  annotationPaths: ExerciseAnnotationPath[]
+  annotationTexts: ExerciseAnnotationText[]
   hotspotPoints: ExerciseHotspotPoint[]
   uploadedFiles: ExerciseAttemptFile[]
   reviewLater: boolean

@@ -28,6 +28,7 @@ function question(type: number): ExerciseQuestion {
     dropdown: null,
     calculated: null,
     reading: null,
+    annotation: null,
     hotspot: null,
     isContent: false,
   }
@@ -97,6 +98,51 @@ describe("exercise answers", () => {
     expect(state.uploadedFiles).toHaveLength(1)
     expect(state.uploadedFiles[0]?.name).toBe("report.pdf")
     expect(buildExerciseAnswerPayload(item, state)).toEqual({})
+  })
+
+  it("supports saved and local annotation answers when an image runtime is available", () => {
+    const item = question(20)
+    item.annotation = {
+      imageName: "diagram.png",
+      imageUrl: "/r/resource/20/view?cid=14&sid=0&gid=0",
+    }
+    const state = createExerciseAnswerState(item)
+
+    expect(hasUnsupportedExerciseQuestions([item])).toBe(false)
+    expect(isExerciseAnswerProvided(item, state)).toBe(false)
+
+    applySavedExerciseAnswer(
+      item,
+      [
+        {
+          answer: "P)(10;20)(30;40|T)(Label)(50;60",
+          position: 0,
+        },
+      ],
+      state,
+    )
+
+    expect(state.annotationPaths).toEqual([
+      {
+        points: [
+          { x: 10, y: 20 },
+          { x: 30, y: 40 },
+        ],
+      },
+    ])
+    expect(state.annotationTexts).toEqual([{ text: "Label", x: 50, y: 60 }])
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({
+      paths: [
+        {
+          points: [
+            { x: 10, y: 20 },
+            { x: 30, y: 40 },
+          ],
+        },
+      ],
+      texts: [{ text: "Label", x: 50, y: 60 }],
+    })
   })
 
   it("treats reading comprehension as a native single-choice question", () => {

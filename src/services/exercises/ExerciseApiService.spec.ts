@@ -106,6 +106,33 @@ describe("ExerciseApiService", () => {
     expect(client.requests).toHaveLength(0)
   })
 
+  it("loads an annotation image through the authenticated relative campus path", async () => {
+    const blob = new Blob(["image"], { type: "image/png" })
+    const client = new RecordingHttpClient(blob)
+    const service = new ExerciseApiService(client)
+
+    await expect(service.getAnnotationImage("/r/resource/20/view?cid=14&sid=0&gid=0")).resolves.toBe(
+      blob,
+    )
+
+    expect(client.requests[0]).toMatchObject({
+      method: "GET",
+      path: "/r/resource/20/view?cid=14&sid=0&gid=0",
+      responseType: "blob",
+      headers: { Accept: "image/*" },
+    })
+  })
+
+  it("rejects an absolute annotation image URL before issuing a request", async () => {
+    const client = new RecordingHttpClient(new Blob())
+    const service = new ExerciseApiService(client)
+
+    await expect(service.getAnnotationImage("https://other.example/diagram.png")).rejects.toMatchObject({
+      code: "invalid_response",
+    } satisfies Partial<ExerciseServiceError>)
+    expect(client.requests).toHaveLength(0)
+  })
+
   it("uploads file answers through the native-safe JSON contract", async () => {
     const client = new RecordingHttpClient({
       success: true,

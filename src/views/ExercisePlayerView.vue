@@ -58,10 +58,15 @@ const remainingSeconds = ref<number | null>(null)
 const previewFinished = ref(false)
 const reviewFlowStarted = ref(false)
 const reviewSummaryVisible = ref(false)
+const annotationImageSrc = ref<string | null>(null)
+const annotationImageLoading = ref(false)
+const annotationImageError = ref(false)
 const hotspotImageSrc = ref<string | null>(null)
 const hotspotImageLoading = ref(false)
 const hotspotImageError = ref(false)
 const pendingAnswerFiles = ref<Record<number, File | null>>({})
+let annotationImageObjectUrl: string | null = null
+let annotationImageLoadSequence = 0
 let hotspotImageObjectUrl: string | null = null
 let hotspotImageLoadSequence = 0
 let timer: ReturnType<typeof setInterval> | null = null
@@ -185,6 +190,41 @@ function clearPendingAnswerFile(questionId: number): void {
   const next = { ...pendingAnswerFiles.value }
   delete next[questionId]
   pendingAnswerFiles.value = next
+}
+
+function releaseAnnotationImage(): void {
+  if (annotationImageObjectUrl) URL.revokeObjectURL(annotationImageObjectUrl)
+  annotationImageObjectUrl = null
+  annotationImageSrc.value = null
+}
+
+async function loadAnnotationImage(): Promise<void> {
+  const sequence = ++annotationImageLoadSequence
+  const imageUrl = question.value?.annotation?.imageUrl?.trim() ?? ""
+
+  releaseAnnotationImage()
+  annotationImageLoading.value = false
+  annotationImageError.value = false
+
+  if (!question.value?.annotation) return
+  if (!imageUrl) {
+    annotationImageError.value = true
+    return
+  }
+
+  annotationImageLoading.value = true
+
+  try {
+    const blob = await store.loadAnnotationImage(imageUrl)
+    if (sequence !== annotationImageLoadSequence) return
+
+    annotationImageObjectUrl = URL.createObjectURL(blob)
+    annotationImageSrc.value = annotationImageObjectUrl
+  } catch {
+    if (sequence === annotationImageLoadSequence) annotationImageError.value = true
+  } finally {
+    if (sequence === annotationImageLoadSequence) annotationImageLoading.value = false
+  }
 }
 
 function releaseHotspotImage(): void {
@@ -391,6 +431,12 @@ async function returnToReview(): Promise<void> {
 }
 
 watch(
+  () => [question.value?.id ?? null, question.value?.annotation?.imageUrl ?? null],
+  () => void loadAnnotationImage(),
+  { immediate: true },
+)
+
+watch(
   () => [question.value?.id ?? null, question.value?.hotspot?.imageUrl ?? null],
   () => void loadHotspotImage(),
   { immediate: true },
@@ -403,6 +449,8 @@ watch(
 
 onMounted(load)
 onBeforeUnmount(() => {
+  annotationImageLoadSequence += 1
+  releaseAnnotationImage()
   hotspotImageLoadSequence += 1
   releaseHotspotImage()
   stopTimer()
@@ -642,11 +690,15 @@ onBeforeUnmount(() => {
             :question="displayQuestion ?? question"
             :model-value="currentAnswer"
             :disabled="store.saving || !isSupportedExerciseQuestion(question)"
+            :annotation-image-src="annotationImageSrc"
+            :annotation-image-loading="annotationImageLoading"
+            :annotation-image-error="annotationImageError"
             :hotspot-image-src="hotspotImageSrc"
             :hotspot-image-loading="hotspotImageLoading"
             :hotspot-image-error="hotspotImageError"
             :pending-file-name="pendingCurrentFile?.name ?? null"
             @update:model-value="updateCurrentAnswer"
+            @retry-annotation-image="loadAnnotationImage"
             @retry-hotspot-image="loadHotspotImage"
             @select-answer-file="selectCurrentAnswerFile"
           />
