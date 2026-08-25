@@ -768,6 +768,8 @@ export default {
     moveUp: "Move up",
     moveDown: "Move down",
     openAnswer: "Open answer",
+    readingPassage: "Reading passage",
+    readingSpeed: "{speed} words per minute",
     reviewLater: "Review this question later",
     reviewAnswers: "Review answers",
     reviewAnswersDescription:

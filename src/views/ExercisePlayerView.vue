@@ -546,7 +546,10 @@ onBeforeUnmount(() => {
           <h2 class="mt-1 text-lg font-semibold text-slate-900">
             {{ plainText(question.title) }}
           </h2>
-          <p v-if="question.description" class="mt-2 text-sm text-slate-600">
+          <p
+            v-if="question.description && question.type !== 21"
+            class="mt-2 text-sm text-slate-600"
+          >
             {{ plainText(question.description) }}
           </p>
 

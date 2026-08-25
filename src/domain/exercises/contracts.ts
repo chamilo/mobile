@@ -136,6 +136,7 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
   const draggable = optionalRecord(item.draggable)
   const dropdown = optionalRecord(item.dropdown)
   const calculated = optionalRecord(item.calculated)
+  const reading = optionalRecord(item.reading)
 
   return {
     id: numberValue(item.id),
@@ -194,6 +195,12 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
                   text: stringValue(variation.text),
                 }))
             : [],
+        }
+      : null,
+    reading: reading
+      ? {
+          speed: Math.max(0, numberValue(reading.speed)),
+          text: stringValue(reading.text),
         }
       : null,
     isContent: booleanValue(item.isContent),

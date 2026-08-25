@@ -74,5 +74,11 @@ export function localizeExerciseQuestionContent(
           })),
         }
       : null,
+    reading: question.reading
+      ? {
+          ...question.reading,
+          text: translatedPlainText(question.reading.text, locale, fallbackLocales),
+        }
+      : null,
   }
 }

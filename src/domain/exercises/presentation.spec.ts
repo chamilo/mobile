@@ -11,8 +11,8 @@ function questionFixture(): ExerciseQuestion {
     title:
       '<span class="mce-translatehtml" lang="en">Question</span><span class="mce-translatehtml" lang="es">Pregunta</span>',
     description: "",
-    type: 1,
-    typeLabel: "Unique answer",
+    type: 21,
+    typeLabel: "Reading comprehension",
     position: 1,
     mandatory: true,
     duration: null,
@@ -30,6 +30,11 @@ function questionFixture(): ExerciseQuestion {
     draggable: null,
     dropdown: null,
     calculated: null,
+    reading: {
+      speed: 175,
+      text:
+        '<span class="mce-translatehtml" lang="en">Reading text</span><span class="mce-translatehtml" lang="es">Texto de lectura</span>',
+    },
     isContent: false,
   }
 }
@@ -40,5 +45,6 @@ describe("exercise presentation", () => {
 
     expect(localized.title).toBe("Pregunta")
     expect(localized.choices).toEqual([{ id: 10, answer: "Sí", position: 1 }])
+    expect(localized.reading?.text).toBe("Texto de lectura")
   })
 })
