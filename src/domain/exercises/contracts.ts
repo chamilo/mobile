@@ -1,5 +1,6 @@
 import type {
   ExerciseAnnotationRuntime,
+  ExerciseAnswerFeedback,
   ExerciseAnswerResponse,
   ExerciseAttempt,
   ExerciseAttemptFile,
@@ -124,6 +125,49 @@ function normalizeAttemptFiles(value: unknown): ExerciseAttemptFile[] {
   return Array.isArray(value)
     ? value.map(normalizeAttemptFile).filter((file): file is ExerciseAttemptFile => file !== null)
     : []
+}
+
+function normalizeAnswerFeedback(value: unknown): ExerciseAnswerFeedback | null {
+  const item = optionalRecord(value)
+  if (!item || item.enabled !== true) return null
+
+  const rawMode = stringValue(item.mode)
+  const mode = rawMode === "popup" ? "popup" : "direct"
+  const rawStatus = stringValue(item.status)
+  const status = ["correct", "partial", "pending", "empty", "incorrect"].includes(rawStatus)
+    ? (rawStatus as ExerciseAnswerFeedback["status"])
+    : "incorrect"
+  const rawAction = stringValue(item.afterAction)
+  const afterAction = ["next", "previous", "finish", "repeat", "question", "url"].includes(
+    rawAction,
+  )
+    ? (rawAction as ExerciseAnswerFeedback["afterAction"])
+    : "none"
+
+  return {
+    enabled: true,
+    mode,
+    questionId: Math.max(0, numberValue(item.questionId)),
+    status,
+    title: stringValue(item.title),
+    score: numberValue(item.score),
+    maxScore: numberValue(item.maxScore),
+    entries: Array.isArray(item.entries)
+      ? item.entries
+          .map((entry) => optionalRecord(entry))
+          .filter((entry): entry is Record<string, unknown> => entry !== null)
+          .map((entry) => ({
+            answer: stringValue(entry.answer),
+            comment: stringValue(entry.comment),
+            correct: booleanValue(entry.correct),
+          }))
+      : [],
+    afterAction,
+    targetQuestionId: Math.max(0, numberValue(item.targetQuestionId)),
+    targetUrl: stringValue(item.targetUrl),
+    achievedLevel: stringValue(item.achievedLevel),
+    categoryScore: nullableNumber(item.categoryScore),
+  }
 }
 
 function normalizeSavedAnswers(value: unknown): Record<string, SavedAnswerRow[]> {
@@ -379,6 +423,7 @@ export function normalizeExerciseAnswerResponse(value: unknown): ExerciseAnswerR
     answeredCount: numberValue(source.answeredCount),
     canFinish: booleanValue(source.canFinish),
     files: normalizeAttemptFiles(source.files),
+    feedback: normalizeAnswerFeedback(source.feedback),
   }
 }
 

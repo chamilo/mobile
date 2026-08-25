@@ -5,6 +5,7 @@ import { useRouter } from "vue-router"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
 import { translatedPlainText } from "@/domain/content/translatedHtml"
+import ExerciseAnswerFeedback from "@/components/exercises/ExerciseAnswerFeedback.vue"
 import ExerciseRuntimeQuestionCard from "@/components/exercises/ExerciseRuntimeQuestionCard.vue"
 import ExerciseStructuralHtml from "@/components/exercises/ExerciseStructuralHtml.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
@@ -27,17 +28,25 @@ import {
   isSupportedExerciseQuestion,
 } from "@/domain/exercises/answers"
 import {
+  isImmediateExerciseFeedbackType,
+  withExerciseFeedbackFallbackAction,
+} from "@/domain/exercises/feedback"
+import {
   exerciseRuntimeCompatibilityReason,
   isExercisePreviousNavigationAllowed,
   isExerciseQuestionTitleVisible,
 } from "@/domain/exercises/runtimeCompatibility"
 import { localizeExerciseQuestionContent } from "@/domain/exercises/presentation"
-import type { ExerciseAnswerState } from "@/domain/exercises/types"
+import type {
+  ExerciseAnswerFeedback as ExerciseAnswerFeedbackState,
+  ExerciseAnswerState,
+} from "@/domain/exercises/types"
 import {
   normalizeExerciseRuntimePages,
   sanitizeExerciseStructuralHtml,
   usesExerciseRuntimePages,
 } from "@/domain/exercises/runtimePages"
+import { BrowserExternalLinkPresenter } from "@/services/links/ExternalLinkPresenter"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
@@ -65,6 +74,7 @@ const campusStore = useCampusStore()
 const connectivityStore = useConnectivityStore()
 const coursesStore = useCoursesStore()
 const store = useExercisesStore()
+const externalLinkPresenter = new BrowserExternalLinkPresenter()
 const confirmedSavedAnswers = ref(false)
 const remainingSeconds = ref<number | null>(null)
 const previewFinished = ref(false)
@@ -72,6 +82,8 @@ const reviewFlowStarted = ref(false)
 const reviewSummaryVisible = ref(false)
 const pendingAnswerFiles = ref<Record<number, File | null>>({})
 const currentRuntimePageIndex = ref(0)
+const activeFeedback = ref<ExerciseAnswerFeedbackState | null>(null)
+const feedbackActionError = ref("")
 let timer: ReturnType<typeof setInterval> | null = null
 
 const context = computed(() => {
@@ -167,9 +179,20 @@ const progress = computed(() =>
     ? Math.round(((navigationIndex.value + 1) / navigationTotal.value) * 100)
     : 0,
 )
-const requiresConfirmation = computed(() => store.runtime?.settings.confirmSavedAnswers === true)
-const reviewEnabled = computed(() => Number(store.runtime?.settings.reviewAnswers ?? 0) > 0)
-const hasFinalReview = computed(() => reviewEnabled.value || store.requiresAllAnswers)
+const isImmediateFeedbackRuntime = computed(() =>
+  isImmediateExerciseFeedbackType(store.runtime?.settings.feedbackType),
+)
+const requiresConfirmation = computed(
+  () => !isImmediateFeedbackRuntime.value && store.runtime?.settings.confirmSavedAnswers === true,
+)
+const reviewEnabled = computed(
+  () =>
+    !isImmediateFeedbackRuntime.value && Number(store.runtime?.settings.reviewAnswers ?? 0) > 0,
+)
+const hasFinalReview = computed(
+  () => !isImmediateFeedbackRuntime.value && (reviewEnabled.value || store.requiresAllAnswers),
+)
+const hasActiveFeedback = computed(() => activeFeedback.value !== null)
 const isTeacherPreview = computed(() => store.runtime?.canManage === true && !store.runtime.attempt)
 const runtimeCompatibilityReason = computed(() =>
   store.runtime
@@ -249,6 +272,163 @@ function structuralHtml(value: string): string {
   )
 }
 
+function clearActiveFeedback(): void {
+  activeFeedback.value = null
+  feedbackActionError.value = ""
+}
+
+function captureAnswerFeedback(questionId: number, navigationAction: string): boolean {
+  const feedback = store.lastAnswerFeedback
+  if (!feedback?.enabled) return false
+
+  activeFeedback.value = withExerciseFeedbackFallbackAction(
+    {
+      ...feedback,
+      questionId: feedback.questionId || questionId,
+    },
+    navigationAction,
+  )
+  feedbackActionError.value = ""
+  return true
+}
+
+function navigateToFeedbackQuestion(questionId: number): boolean {
+  const questionIndex = store.answerableQuestions.findIndex((item) => item.id === questionId)
+  if (questionIndex < 0) return false
+
+  if (usesRuntimePages.value && !isReviewQuestionMode.value) {
+    const pageIndex = runtimePages.value.findIndex((page) => page.questionIds.includes(questionId))
+    if (pageIndex < 0) return false
+    currentRuntimePageIndex.value = pageIndex
+    syncStoreQuestionIndexForPage(pageIndex)
+  } else {
+    store.currentQuestionIndex = questionIndex
+  }
+
+  return true
+}
+
+function openFeedbackOnCampus(): void {
+  if (!campusExerciseUrl.value) return
+
+  try {
+    externalLinkPresenter.open(campusExerciseUrl.value)
+  } catch {
+    feedbackActionError.value = t("exercises.feedback.destinationInvalid")
+  }
+}
+
+function feedbackDestinationUrl(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+
+  try {
+    return new URL(trimmed).toString()
+  } catch {
+    const baseUrl = campusStore.selectedCampus?.baseUrl
+    if (!baseUrl) return ""
+
+    try {
+      return new URL(trimmed, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`).toString()
+    } catch {
+      return ""
+    }
+  }
+}
+
+async function finishAfterFeedback(): Promise<void> {
+  if (!context.value) return
+
+  const attemptId = await store.finishAttempt(
+    context.value,
+    numericExerciseId.value,
+    confirmedSavedAnswers.value,
+    learningPathContext.value,
+    null,
+    true,
+  )
+  if (!attemptId) return
+
+  clearActiveFeedback()
+  stopTimer()
+  await router.push(
+    buildExerciseResultRoute(
+      context.value,
+      numericExerciseId.value,
+      attemptId,
+      learningPathContext.value,
+    ),
+  )
+}
+
+async function proceedAfterFeedback(): Promise<void> {
+  const feedback = activeFeedback.value
+  if (!feedback) return
+
+  feedbackActionError.value = ""
+
+  if (feedback.afterAction === "finish") {
+    await finishAfterFeedback()
+    return
+  }
+
+  if (feedback.afterAction === "url") {
+    const destinationUrl = feedbackDestinationUrl(feedback.targetUrl)
+    if (!destinationUrl) {
+      feedbackActionError.value = t("exercises.feedback.destinationInvalid")
+      return
+    }
+
+    try {
+      externalLinkPresenter.open(destinationUrl)
+      clearActiveFeedback()
+    } catch {
+      feedbackActionError.value = t("exercises.feedback.destinationInvalid")
+    }
+    return
+  }
+
+  if (feedback.afterAction === "question") {
+    if (!feedback.targetQuestionId || !navigateToFeedbackQuestion(feedback.targetQuestionId)) {
+      feedbackActionError.value = t("exercises.feedback.destinationUnavailable")
+      return
+    }
+    clearActiveFeedback()
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    return
+  }
+
+  if (feedback.afterAction === "next") {
+    if (usesRuntimePages.value && !isReviewQuestionMode.value) {
+      if (currentRuntimePageIndex.value < runtimePages.value.length - 1) {
+        currentRuntimePageIndex.value += 1
+        syncStoreQuestionIndexForPage(currentRuntimePageIndex.value)
+      }
+    } else if (store.currentQuestionIndex < store.answerableQuestions.length - 1) {
+      store.currentQuestionIndex += 1
+    }
+    clearActiveFeedback()
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    return
+  }
+
+  if (feedback.afterAction === "previous") {
+    if (usesRuntimePages.value && !isReviewQuestionMode.value) {
+      if (currentRuntimePageIndex.value > 0) {
+        currentRuntimePageIndex.value -= 1
+        syncStoreQuestionIndexForPage(currentRuntimePageIndex.value)
+      }
+    } else if (store.currentQuestionIndex > 0) {
+      store.currentQuestionIndex -= 1
+    }
+    clearActiveFeedback()
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    return
+  }
+
+  clearActiveFeedback()
+}
+
 function updateAnswer(questionId: number, value: ExerciseAnswerState): void {
   store.answers[questionId] = value
 }
@@ -320,6 +500,7 @@ async function load(): Promise<void> {
   reviewSummaryVisible.value = false
   confirmedSavedAnswers.value = false
   pendingAnswerFiles.value = {}
+  clearActiveFeedback()
   await store.loadRuntime(context.value, numericExerciseId.value, learningPathContext.value)
   syncRuntimePageIndex()
   startTimer()
@@ -327,6 +508,7 @@ async function load(): Promise<void> {
 
 async function start(): Promise<void> {
   if (!context.value) return
+  clearActiveFeedback()
   if (await store.startAttempt(context.value, numericExerciseId.value, learningPathContext.value)) {
     pendingAnswerFiles.value = {}
     syncRuntimePageIndex()
@@ -350,6 +532,7 @@ async function saveQuestionIds(questionIds: number[], navigationAction: string):
     )
     if (!saved) return false
     clearPendingAnswerFile(questionId)
+    if (captureAnswerFeedback(questionId, action)) return true
   }
 
   return true
@@ -370,6 +553,7 @@ async function goRuntimePage(index: number): Promise<void> {
     const action = index > currentRuntimePageIndex.value ? "next" : "previous"
     const saved = await saveQuestionIds(currentRuntimePage.value?.questionIds ?? [], action)
     if (!saved && (currentRuntimePage.value?.questionIds.length ?? 0) > 0) return
+    if (hasActiveFeedback.value) return
   }
 
   currentRuntimePageIndex.value = index
@@ -390,6 +574,7 @@ async function go(index: number): Promise<void> {
     }
   } else {
     const questionId = question.value?.id ?? 0
+    const action = index > store.currentQuestionIndex ? "next" : "previous"
     const saved = await store.goToQuestion(
       context.value,
       numericExerciseId.value,
@@ -397,7 +582,10 @@ async function go(index: number): Promise<void> {
       learningPathContext.value,
       pendingCurrentFile.value,
     )
-    if (saved && questionId > 0) clearPendingAnswerFile(questionId)
+    if (saved && questionId > 0) {
+      clearPendingAnswerFile(questionId)
+      if (captureAnswerFeedback(questionId, action)) return
+    }
   }
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
@@ -418,7 +606,10 @@ async function save(): Promise<void> {
     learningPathContext.value,
     pendingCurrentFile.value,
   )
-  if (saved && questionId > 0) clearPendingAnswerFile(questionId)
+  if (saved && questionId > 0) {
+    clearPendingAnswerFile(questionId)
+    captureAnswerFeedback(questionId, "none")
+  }
 }
 
 async function finish(): Promise<void> {
@@ -428,6 +619,7 @@ async function finish(): Promise<void> {
   if (usesRuntimePages.value && !isReviewQuestionMode.value && !reviewSummaryVisible.value) {
     const questionIds = currentRuntimePage.value?.questionIds ?? []
     if (questionIds.length > 0 && !(await saveQuestionIds(questionIds, "finish"))) return
+    if (hasActiveFeedback.value) return
     skipCurrentSave = true
   }
 
@@ -440,6 +632,12 @@ async function finish(): Promise<void> {
     skipCurrentSave ? null : pendingCurrentFile.value,
     skipCurrentSave,
   )
+  if (!attemptId && !skipCurrentSave && questionId > 0 && store.lastAnswerFeedback) {
+    clearPendingAnswerFile(questionId)
+    captureAnswerFeedback(questionId, "finish")
+    return
+  }
+
   if (attemptId) {
     if (!skipCurrentSave && questionId > 0) clearPendingAnswerFile(questionId)
     stopTimer()
@@ -466,6 +664,7 @@ async function requestFinish(): Promise<void> {
     if (usesRuntimePages.value && !isReviewQuestionMode.value) {
       const questionIds = currentRuntimePage.value?.questionIds ?? []
       if (questionIds.length > 0 && !(await saveQuestionIds(questionIds, "finish"))) return
+      if (hasActiveFeedback.value) return
     } else {
       const questionId = question.value?.id ?? 0
       const saved = await store.saveCurrentAnswer(
@@ -476,7 +675,10 @@ async function requestFinish(): Promise<void> {
         pendingCurrentFile.value,
       )
       if (!saved) return
-      if (questionId > 0) clearPendingAnswerFile(questionId)
+      if (questionId > 0) {
+        clearPendingAnswerFile(questionId)
+        if (captureAnswerFeedback(questionId, "finish")) return
+      }
     }
 
     reviewFlowStarted.value = true
@@ -496,6 +698,7 @@ function restartPreview(): void {
     store.answerableQuestions.map((item) => [item.id, createExerciseAnswerState(item)]),
   )
   pendingAnswerFiles.value = {}
+  clearActiveFeedback()
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
@@ -812,7 +1015,7 @@ onBeforeUnmount(() => {
             :key="card.question.id"
             :question="card.question"
             :answer="card.answer"
-            :disabled="store.saving || !isSupportedExerciseQuestion(card.question)"
+            :disabled="store.saving || hasActiveFeedback || !isSupportedExerciseQuestion(card.question)"
             :show-title="showQuestionTitle"
             :review-enabled="reviewEnabled"
             :teacher-preview="isTeacherPreview"
@@ -821,6 +1024,18 @@ onBeforeUnmount(() => {
             @select-file="selectAnswerFile(card.question.id, $event)"
           />
         </div>
+
+        <ExerciseAnswerFeedback
+          v-if="activeFeedback && activeFeedback.mode === 'direct'"
+          :feedback="activeFeedback"
+          :locale="contentLocale"
+          :fallback-locales="contentFallbackLocales"
+          :action-error="feedbackActionError"
+          :campus-base-url="campusStore.selectedCampus?.baseUrl ?? null"
+          :campus-url-available="Boolean(campusExerciseUrl)"
+          @open-campus="openFeedbackOnCampus"
+          @proceed="proceedAfterFeedback"
+        />
 
         <div
           v-if="store.errorCode"
@@ -831,6 +1046,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div
+          v-if="!hasActiveFeedback"
           class="grid gap-3"
           :class="previousNavigationAllowed ? 'grid-cols-2' : 'grid-cols-1'"
         >
@@ -865,7 +1081,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <section class="rounded-2xl bg-white p-4 shadow-sm">
+        <section v-if="!hasActiveFeedback" class="rounded-2xl bg-white p-4 shadow-sm">
           <button
             v-if="reviewFlowStarted && !isTeacherPreview"
             type="button"
@@ -913,5 +1129,18 @@ onBeforeUnmount(() => {
         </section>
       </template>
     </template>
+
+    <ExerciseAnswerFeedback
+      v-if="activeFeedback && activeFeedback.mode === 'popup'"
+      :feedback="activeFeedback"
+      :locale="contentLocale"
+      :fallback-locales="contentFallbackLocales"
+      :action-error="feedbackActionError"
+      :campus-base-url="campusStore.selectedCampus?.baseUrl ?? null"
+      :campus-url-available="Boolean(campusExerciseUrl)"
+      popup
+      @open-campus="openFeedbackOnCampus"
+      @proceed="proceedAfterFeedback"
+    />
   </div>
 </template>

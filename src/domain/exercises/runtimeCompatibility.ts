@@ -4,7 +4,6 @@ import {
 } from "@/domain/exercises/runtimePages"
 
 export type ExerciseRuntimeCompatibilityReason =
-  | "immediate_feedback"
   | "timed_questions"
   | "blocked_categories"
   | "structural_pages"
@@ -20,9 +19,6 @@ export function exerciseRuntimeCompatibilityReason(
   runtimePages: ExerciseRuntimePage[] = [],
   campusBaseUrl: string | null = null,
 ): ExerciseRuntimeCompatibilityReason | null {
-  const feedbackType = numberSetting(settings, "feedbackType")
-  if ([1, 3, 4].includes(feedbackType)) return "immediate_feedback"
-
   if (settings.allowTimePerQuestion === true && settings.hasTimedQuestions === true) {
     return "timed_questions"
   }

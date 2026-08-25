@@ -12,8 +12,8 @@ describe("exercise runtime compatibility", () => {
     expect(exerciseRuntimeCompatibilityReason({ feedbackType: 2 })).toBeNull()
   })
 
-  it.each([1, 3, 4])("falls back for immediate feedback type %s", (feedbackType: number) => {
-    expect(exerciseRuntimeCompatibilityReason({ feedbackType })).toBe("immediate_feedback")
+  it.each([1, 3, 4])("keeps verified immediate feedback type %s native", (feedbackType: number) => {
+    expect(exerciseRuntimeCompatibilityReason({ feedbackType })).toBeNull()
   })
 
   it("falls back when per-question timing is active", () => {

@@ -238,6 +238,41 @@ export interface ExerciseAnswerState {
   reviewLater: boolean
 }
 
+export type ExerciseFeedbackMode = "direct" | "popup"
+
+export type ExerciseFeedbackStatus = "correct" | "partial" | "pending" | "empty" | "incorrect"
+
+export type ExerciseFeedbackAfterAction =
+  | "none"
+  | "next"
+  | "previous"
+  | "finish"
+  | "repeat"
+  | "question"
+  | "url"
+
+export interface ExerciseAnswerFeedbackEntry {
+  answer: string
+  comment: string
+  correct: boolean
+}
+
+export interface ExerciseAnswerFeedback {
+  enabled: boolean
+  mode: ExerciseFeedbackMode
+  questionId: number
+  status: ExerciseFeedbackStatus
+  title: string
+  score: number
+  maxScore: number
+  entries: ExerciseAnswerFeedbackEntry[]
+  afterAction: ExerciseFeedbackAfterAction
+  targetQuestionId: number
+  targetUrl: string
+  achievedLevel: string
+  categoryScore: number | null
+}
+
 export interface ExerciseAnswerResponse {
   success: boolean
   message: string
@@ -247,6 +282,7 @@ export interface ExerciseAnswerResponse {
   answeredCount: number
   canFinish: boolean
   files: ExerciseAttemptFile[]
+  feedback: ExerciseAnswerFeedback | null
 }
 
 export interface ExerciseFinishResponse {
