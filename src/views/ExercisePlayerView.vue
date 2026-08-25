@@ -58,6 +58,11 @@ const remainingSeconds = ref<number | null>(null)
 const previewFinished = ref(false)
 const reviewFlowStarted = ref(false)
 const reviewSummaryVisible = ref(false)
+const hotspotImageSrc = ref<string | null>(null)
+const hotspotImageLoading = ref(false)
+const hotspotImageError = ref(false)
+let hotspotImageObjectUrl: string | null = null
+let hotspotImageLoadSequence = 0
 let timer: ReturnType<typeof setInterval> | null = null
 
 const context = computed(() => {
@@ -161,6 +166,41 @@ function plainText(value: string): string {
 
 function updateCurrentAnswer(value: NonNullable<typeof currentAnswer.value>): void {
   if (question.value) store.answers[question.value.id] = value
+}
+
+function releaseHotspotImage(): void {
+  if (hotspotImageObjectUrl) URL.revokeObjectURL(hotspotImageObjectUrl)
+  hotspotImageObjectUrl = null
+  hotspotImageSrc.value = null
+}
+
+async function loadHotspotImage(): Promise<void> {
+  const sequence = ++hotspotImageLoadSequence
+  const imageUrl = question.value?.hotspot?.imageUrl?.trim() ?? ""
+
+  releaseHotspotImage()
+  hotspotImageLoading.value = false
+  hotspotImageError.value = false
+
+  if (!question.value?.hotspot) return
+  if (!imageUrl) {
+    hotspotImageError.value = true
+    return
+  }
+
+  hotspotImageLoading.value = true
+
+  try {
+    const blob = await store.loadHotspotImage(imageUrl)
+    if (sequence !== hotspotImageLoadSequence) return
+
+    hotspotImageObjectUrl = URL.createObjectURL(blob)
+    hotspotImageSrc.value = hotspotImageObjectUrl
+  } catch {
+    if (sequence === hotspotImageLoadSequence) hotspotImageError.value = true
+  } finally {
+    if (sequence === hotspotImageLoadSequence) hotspotImageLoading.value = false
+  }
 }
 
 function stopTimer(): void {
@@ -316,12 +356,20 @@ async function returnToReview(): Promise<void> {
 }
 
 watch(
+  () => [question.value?.id ?? null, question.value?.hotspot?.imageUrl ?? null],
+  () => void loadHotspotImage(),
+  { immediate: true },
+)
+
+watch(
   () => store.runtime?.attempt?.remainingSeconds,
   () => startTimer(),
 )
 
 onMounted(load)
 onBeforeUnmount(() => {
+  hotspotImageLoadSequence += 1
+  releaseHotspotImage()
   stopTimer()
   store.resetRuntime()
 })
@@ -559,7 +607,11 @@ onBeforeUnmount(() => {
             :question="displayQuestion ?? question"
             :model-value="currentAnswer"
             :disabled="store.saving || !isSupportedExerciseQuestion(question)"
+            :hotspot-image-src="hotspotImageSrc"
+            :hotspot-image-loading="hotspotImageLoading"
+            :hotspot-image-error="hotspotImageError"
             @update:model-value="updateCurrentAnswer"
+            @retry-hotspot-image="loadHotspotImage"
           />
 
           <label

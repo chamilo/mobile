@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import type { CourseNavigationContext } from "@/domain/courses/types"
-import { ExerciseApiService } from "@/services/exercises/ExerciseApiService"
+import {
+  ExerciseApiService,
+  ExerciseServiceError,
+} from "@/services/exercises/ExerciseApiService"
 import type { HttpClient, HttpRequest, HttpResponse } from "@/services/http/HttpClient"
 
 class RecordingHttpClient implements HttpClient {
@@ -77,6 +80,33 @@ describe("ExerciseApiService", () => {
         learnpath_item_view_id: 33,
       },
     })
+  })
+
+  it("loads a hotspot image through the authenticated relative campus path", async () => {
+    const blob = new Blob(["image"], { type: "image/png" })
+    const client = new RecordingHttpClient(blob)
+    const service = new ExerciseApiService(client)
+
+    await expect(
+      service.getHotspotImage("/r/resource/31/view?cid=14&sid=0&gid=0"),
+    ).resolves.toBe(blob)
+
+    expect(client.requests[0]).toMatchObject({
+      method: "GET",
+      path: "/r/resource/31/view?cid=14&sid=0&gid=0",
+      responseType: "blob",
+      headers: { Accept: "image/*" },
+    })
+  })
+
+  it("rejects an absolute hotspot image URL before issuing a request", async () => {
+    const client = new RecordingHttpClient(new Blob())
+    const service = new ExerciseApiService(client)
+
+    await expect(service.getHotspotImage("https://other.example/image.png")).rejects.toMatchObject({
+      code: "invalid_response",
+    } satisfies Partial<ExerciseServiceError>)
+    expect(client.requests).toHaveLength(0)
   })
 
   it("saves an answer without sending a user id", async () => {

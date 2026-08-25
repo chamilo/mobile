@@ -770,6 +770,19 @@ export default {
     openAnswer: "Open answer",
     readingPassage: "Reading passage",
     readingSpeed: "{speed} words per minute",
+    hotspot: {
+      loadingImage: "Loading hotspot image...",
+      imageError: "The hotspot image could not be loaded from this campus.",
+      pointInstructions: "Tap the image to select {count} point. | Tap the image to select {count} points.",
+      delineationInstructions:
+        "Tap around the target area to draw its outline. Add at least three vertices.",
+      pointsSelected: "{selected} of {total} points selected",
+      verticesSelected: "{count} vertex selected | {count} vertices selected",
+      pointsRemaining: "{count} point remaining | {count} points remaining",
+      minimumVertices: "Add at least three vertices before saving this answer.",
+      undoPoint: "Undo point",
+      reset: "Reset selection",
+    },
     reviewLater: "Review this question later",
     reviewAnswers: "Review answers",
     reviewAnswersDescription:
