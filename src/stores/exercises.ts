@@ -3,6 +3,7 @@ import { defineStore } from "pinia"
 
 import type { CampusProfile } from "@/domain/campus/types"
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import { isImmediateExerciseFeedbackType } from "@/domain/exercises/feedback"
 import { isExerciseFileAnswerType } from "@/domain/exercises/fileAnswers"
 import { buildExerciseLearningPathApiQuery } from "@/domain/exercises/learningPathContext"
 import type { OfflineHttpWritePayload } from "@/domain/offline/types"
@@ -15,6 +16,7 @@ import {
   isStructuralExerciseQuestion,
 } from "@/domain/exercises/answers"
 import type {
+  ExerciseAnswerFeedback,
   ExerciseAnswerState,
   ExerciseLearningPathContext,
   ExerciseList,
@@ -86,6 +88,7 @@ export const useExercisesStore = defineStore("exercises", () => {
   const errorMessage = ref("")
   const savedQuestionIds = ref<number[]>([])
   const reviewQuestionIds = ref<number[]>([])
+  const lastAnswerFeedback = ref<ExerciseAnswerFeedback | null>(null)
 
   const answerableQuestions = computed(
     () =>
@@ -609,6 +612,10 @@ export const useExercisesStore = defineStore("exercises", () => {
     }
   }
 
+  function requiresOnlineAnswerFeedback(): boolean {
+    return isImmediateExerciseFeedbackType(runtime.value?.settings.feedbackType)
+  }
+
   async function saveQuestionAnswer(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -625,6 +632,14 @@ export const useExercisesStore = defineStore("exercises", () => {
 
     saving.value = true
     clearError()
+    lastAnswerFeedback.value = null
+
+    if (requiresOnlineAnswerFeedback() && shouldUsePreparedData()) {
+      errorCode.value = "network"
+      errorMessage.value = "Reconnect before submitting an answer that requires immediate feedback."
+      saving.value = false
+      return false
+    }
     const answerPayload = {
       questionId: question.id,
       answer: buildExerciseAnswerPayload(question, answerState),
@@ -677,6 +692,7 @@ export const useExercisesStore = defineStore("exercises", () => {
         if (!runtime.value?.attempt) return false
 
         answerState.uploadedFiles = [...response.files]
+        lastAnswerFeedback.value = response.feedback
         const progress = mergeExerciseAnswerProgress(runtime.value.attempt, response)
         savedQuestionIds.value = progress.savedQuestionIds
         reviewQuestionIds.value = progress.reviewQuestionIds
@@ -742,6 +758,7 @@ export const useExercisesStore = defineStore("exercises", () => {
         )
       }
       if (!runtime.value?.attempt) return false
+      lastAnswerFeedback.value = response.feedback
       const progress = mergeExerciseAnswerProgress(runtime.value.attempt, response)
       savedQuestionIds.value = progress.savedQuestionIds
       reviewQuestionIds.value = progress.reviewQuestionIds
@@ -788,6 +805,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     if (index < 0 || index >= answerableQuestions.value.length) return false
     const action = index > currentQuestionIndex.value ? "next" : "previous"
     if (await saveCurrentAnswer(context, exerciseId, action, learningPathContext, file)) {
+      if (lastAnswerFeedback.value) return true
       currentQuestionIndex.value = index
       if (!learningPathContext) await saveOfflineState(context, exerciseId)
       return true
@@ -813,6 +831,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     ) {
       return null
     }
+    if (!skipCurrentSave && lastAnswerFeedback.value) return null
 
     finishing.value = true
     clearError()
@@ -913,6 +932,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     currentQuestionIndex.value = 0
     savedQuestionIds.value = []
     reviewQuestionIds.value = []
+    lastAnswerFeedback.value = null
     clearError()
   }
 
@@ -936,6 +956,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     errorMessage,
     savedQuestionIds,
     reviewQuestionIds,
+    lastAnswerFeedback,
     loadList,
     loadRuntime,
     loadHotspotImage,

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   ExerciseContractError,
+  normalizeExerciseAnswerResponse,
   normalizeExerciseList,
   normalizeExerciseRuntime,
 } from "@/domain/exercises/contracts"
@@ -207,6 +208,49 @@ describe("exercise contracts", () => {
           coordinates: null,
         },
       ],
+    })
+  })
+
+  it("normalizes verified immediate feedback without exposing unsupported fields", () => {
+    const result = normalizeExerciseAnswerResponse({
+      success: true,
+      message: "Draft answer saved",
+      savedAnswer: [{ answer: "21", position: null }],
+      answeredQuestionIds: [11],
+      reviewQuestionIds: [],
+      answeredCount: 1,
+      canFinish: false,
+      files: [],
+      feedback: {
+        enabled: true,
+        mode: "popup",
+        questionId: 11,
+        status: "correct",
+        title: "Correct",
+        score: 1,
+        maxScore: 1,
+        entries: [{ answer: "A", comment: "Good choice", correct: true }],
+        afterAction: "question",
+        targetQuestionId: 12,
+        targetUrl: "",
+        categoryScore: 100,
+      },
+    })
+
+    expect(result.feedback).toEqual({
+      enabled: true,
+      mode: "popup",
+      questionId: 11,
+      status: "correct",
+      title: "Correct",
+      score: 1,
+      maxScore: 1,
+      entries: [{ answer: "A", comment: "Good choice", correct: true }],
+      afterAction: "question",
+      targetQuestionId: 12,
+      targetUrl: "",
+      achievedLevel: "",
+      categoryScore: 100,
     })
   })
 
