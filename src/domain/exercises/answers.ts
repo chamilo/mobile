@@ -63,9 +63,15 @@ export function isExerciseAnswerProvided(
   if (RADIO_TYPES.includes(question.type)) return state.choice !== null
   if (CHECKBOX_TYPES.includes(question.type)) return state.choices.length > 0
   if (TRUE_FALSE_TYPES.includes(question.type)) {
-    return (
+    const hasEveryAnswer =
       question.choices.length > 0 &&
       question.choices.every((choice) => Number(state.trueFalse[choice.id] ?? 0) > 0)
+
+    if (!hasEveryAnswer) return false
+    if (question.type !== 22) return true
+
+    return question.choices.every(
+      (choice) => Number(state.degreeCertainty[choice.id] ?? 0) > 0,
     )
   }
   if (FILL_BLANK_TYPES.includes(question.type)) {

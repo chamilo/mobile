@@ -267,6 +267,35 @@ describe("exercise answers", () => {
     expect(isExerciseAnswerProvided(delineation, delineationState)).toBe(true)
   })
 
+
+  it("requires a degree of certainty for every type 22 answer", () => {
+    const item = question(22)
+    item.choices = [
+      { id: 101, answer: "Statement A", position: 1 },
+      { id: 102, answer: "Statement B", position: 2 },
+    ]
+    item.trueFalseOptions = [
+      { id: 1, title: "True", position: 1 },
+      { id: 2, title: "False", position: 2 },
+      { id: 3, title: "50%", position: 3 },
+      { id: 4, title: "75%", position: 4 },
+    ]
+    const state = createExerciseAnswerState(item)
+
+    state.trueFalse = { 101: 1, 102: 2 }
+    expect(isExerciseAnswerProvided(item, state)).toBe(false)
+
+    state.degreeCertainty = { 101: 3 }
+    expect(isExerciseAnswerProvided(item, state)).toBe(false)
+
+    state.degreeCertainty = { 101: 3, 102: 4 }
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({
+      trueFalse: { 101: 1, 102: 2 },
+      degreeCertainty: { 101: 3, 102: 4 },
+    })
+  })
+
   it("recognizes a locally selected final answer before it is saved", () => {
     const item = question(1)
     item.choices = [{ id: 4, answer: "Option", position: 1 }]
