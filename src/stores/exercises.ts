@@ -3,6 +3,7 @@ import { defineStore } from "pinia"
 
 import type { CampusProfile } from "@/domain/campus/types"
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import { isExerciseFileAnswerType } from "@/domain/exercises/fileAnswers"
 import { buildExerciseLearningPathApiQuery } from "@/domain/exercises/learningPathContext"
 import type { OfflineHttpWritePayload } from "@/domain/offline/types"
 import {
@@ -504,10 +505,7 @@ export const useExercisesStore = defineStore("exercises", () => {
         const existingPrepared = await exerciseCoreFlowRepository
           .loadExerciseRuntime(identity.campusId, identity.userId, context, exerciseId)
           .catch(() => null)
-        const preparedForStorage = selectExerciseRuntimeForPreparedStorage(
-          loaded,
-          existingPrepared,
-        )
+        const preparedForStorage = selectExerciseRuntimeForPreparedStorage(loaded, existingPrepared)
 
         await exerciseCoreFlowRepository
           .saveExerciseRuntime(
@@ -608,6 +606,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     exerciseId: number,
     navigationAction = "none",
     learningPathContext?: ExerciseLearningPathContext | null,
+    file?: File | null,
   ): Promise<boolean> {
     const question = currentQuestion.value
     const attemptId = runtime.value?.attempt?.attemptId
@@ -624,6 +623,66 @@ export const useExercisesStore = defineStore("exercises", () => {
       secondsSpent: 0,
       navigationAction,
     }
+    const fileAnswer = isExerciseFileAnswerType(question.type)
+
+    if (fileAnswer && !file && (answerState.uploadedFiles?.length ?? 0) === 0) {
+      errorCode.value = "validation"
+      errorMessage.value = "Select or record a file before saving this answer."
+      saving.value = false
+      return false
+    }
+
+    if (fileAnswer) {
+      if (shouldUsePreparedData()) {
+        if (!file && (answerState.uploadedFiles?.length ?? 0) > 0) {
+          saving.value = false
+          return true
+        }
+
+        errorCode.value = "network"
+        errorMessage.value = "Reconnect before uploading an exercise answer file."
+        saving.value = false
+        return false
+      }
+
+      try {
+        const response = await service().uploadAnswer(
+          context,
+          exerciseId,
+          attemptId,
+          {
+            questionId: question.id,
+            file,
+            reviewLater: answerState.reviewLater,
+            secondsSpent: 0,
+            navigationAction,
+          },
+          learningPathContext,
+        )
+        if (!response.success) {
+          throw new ExerciseServiceError(
+            "invalid_response",
+            response.message || "The file answer could not be saved.",
+          )
+        }
+        if (!runtime.value?.attempt) return false
+
+        answerState.uploadedFiles = [...response.files]
+        const progress = mergeExerciseAnswerProgress(runtime.value.attempt, response)
+        savedQuestionIds.value = progress.savedQuestionIds
+        reviewQuestionIds.value = progress.reviewQuestionIds
+        runtime.value.attempt.canFinish = progress.canFinish
+        syncReviewAnswerState()
+        if (!learningPathContext) await saveOfflineState(context, exerciseId)
+        return true
+      } catch (error) {
+        setError(error)
+        return false
+      } finally {
+        saving.value = false
+      }
+    }
+
     const queueAnswer = async (uncertainDelivery = false): Promise<boolean> => {
       const queued = await useOfflineSyncStore().enqueueHttpWrite({
         category: "exercise_answer",
@@ -695,13 +754,17 @@ export const useExercisesStore = defineStore("exercises", () => {
     exerciseId: number,
     index: number,
     learningPathContext?: ExerciseLearningPathContext | null,
-  ): Promise<void> {
-    if (index < 0 || index >= answerableQuestions.value.length) return
+    file?: File | null,
+  ): Promise<boolean> {
+    if (index < 0 || index >= answerableQuestions.value.length) return false
     const action = index > currentQuestionIndex.value ? "next" : "previous"
-    if (await saveCurrentAnswer(context, exerciseId, action, learningPathContext)) {
+    if (await saveCurrentAnswer(context, exerciseId, action, learningPathContext, file)) {
       currentQuestionIndex.value = index
       if (!learningPathContext) await saveOfflineState(context, exerciseId)
+      return true
     }
+
+    return false
   }
 
   async function finishAttempt(
@@ -709,11 +772,13 @@ export const useExercisesStore = defineStore("exercises", () => {
     exerciseId: number,
     confirmedSavedAnswers: boolean,
     learningPathContext?: ExerciseLearningPathContext | null,
+    file?: File | null,
   ): Promise<number | null> {
     const attemptId = runtime.value?.attempt?.attemptId
     if (!attemptId || hasUnsupportedQuestions.value) return null
     if (rejectOfflineLearningPathRuntime(learningPathContext)) return null
-    if (!(await saveCurrentAnswer(context, exerciseId, "finish", learningPathContext))) return null
+    if (!(await saveCurrentAnswer(context, exerciseId, "finish", learningPathContext, file)))
+      return null
 
     finishing.value = true
     clearError()
@@ -780,11 +845,13 @@ export const useExercisesStore = defineStore("exercises", () => {
     try {
       result.value = await service().getResult(context, exerciseId, attemptId, learningPathContext)
     } catch (error) {
-      const pendingFinish = !learningPathContext && queuedExerciseWrites(exerciseId, attemptId).some(
-        (operation) =>
-          operation.type === "http_write" &&
-          (operation.payload as OfflineHttpWritePayload).category === "exercise_finish",
-      )
+      const pendingFinish =
+        !learningPathContext &&
+        queuedExerciseWrites(exerciseId, attemptId).some(
+          (operation) =>
+            operation.type === "http_write" &&
+            (operation.payload as OfflineHttpWritePayload).category === "exercise_finish",
+        )
 
       if (pendingFinish) {
         result.value = {

@@ -60,9 +60,43 @@ describe("exercise answers", () => {
     expect(state.matching).toEqual({ 10: 30, 20: 40 })
   })
 
-  it("detects question types that need the campus runtime fallback", () => {
-    expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(true)
+  it("keeps only unfinished question families on the campus runtime fallback", () => {
+    expect(hasUnsupportedExerciseQuestions([question(13)])).toBe(false)
+    expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(false)
+    expect(hasUnsupportedExerciseQuestions([question(20)])).toBe(true)
+    expect(hasUnsupportedExerciseQuestions([question(30)])).toBe(true)
     expect(hasUnsupportedExerciseQuestions([question(1)])).toBe(false)
+  })
+
+  it("restores uploaded answer files as a provided answer", () => {
+    const item = question(23)
+    const state = createExerciseAnswerState(item)
+
+    applySavedExerciseAnswer(
+      item,
+      [
+        {
+          answer: "",
+          position: 0,
+          files: [
+            {
+              id: 55,
+              name: "report.pdf",
+              size: 1024,
+              mimeType: "application/pdf",
+              url: "/api/exercise/runtime/1/attempt/2/file/55/download?cid=14",
+              inlineUrl: null,
+            },
+          ],
+        },
+      ],
+      state,
+    )
+
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(state.uploadedFiles).toHaveLength(1)
+    expect(state.uploadedFiles[0]?.name).toBe("report.pdf")
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({})
   })
 
   it("treats reading comprehension as a native single-choice question", () => {
@@ -99,11 +133,7 @@ describe("exercise answers", () => {
     }
     const state = createExerciseAnswerState(hotspot)
 
-    applySavedExerciseAnswer(
-      hotspot,
-      [{ answer: "120;75|260;190", position: 0 }],
-      state,
-    )
+    applySavedExerciseAnswer(hotspot, [{ answer: "120;75|260;190", position: 0 }], state)
 
     expect(hasUnsupportedExerciseQuestions([hotspot])).toBe(false)
     expect(

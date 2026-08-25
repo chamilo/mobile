@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import type { CourseNavigationContext } from "@/domain/courses/types"
-import {
-  ExerciseApiService,
-  ExerciseServiceError,
-} from "@/services/exercises/ExerciseApiService"
+import { ExerciseApiService, ExerciseServiceError } from "@/services/exercises/ExerciseApiService"
 import type { HttpClient, HttpRequest, HttpResponse } from "@/services/http/HttpClient"
 
 class RecordingHttpClient implements HttpClient {
@@ -87,9 +84,9 @@ describe("ExerciseApiService", () => {
     const client = new RecordingHttpClient(blob)
     const service = new ExerciseApiService(client)
 
-    await expect(
-      service.getHotspotImage("/r/resource/31/view?cid=14&sid=0&gid=0"),
-    ).resolves.toBe(blob)
+    await expect(service.getHotspotImage("/r/resource/31/view?cid=14&sid=0&gid=0")).resolves.toBe(
+      blob,
+    )
 
     expect(client.requests[0]).toMatchObject({
       method: "GET",
@@ -107,6 +104,52 @@ describe("ExerciseApiService", () => {
       code: "invalid_response",
     } satisfies Partial<ExerciseServiceError>)
     expect(client.requests).toHaveLength(0)
+  })
+
+  it("uploads file answers through the native-safe JSON contract", async () => {
+    const client = new RecordingHttpClient({
+      success: true,
+      answeredQuestionIds: [23],
+      canFinish: true,
+      files: [
+        {
+          id: 91,
+          name: "answer.txt",
+          size: 5,
+          mimeType: "text/plain",
+          url: "/api/exercise/runtime/3/attempt/9/file/91/download?cid=14",
+        },
+      ],
+    })
+    const service = new ExerciseApiService(client)
+
+    const response = await service.uploadAnswer(context, 3, 9, {
+      questionId: 23,
+      file: new File(["hello"], "answer.txt", { type: "text/plain" }),
+      reviewLater: true,
+      secondsSpent: 7,
+      navigationAction: "next",
+    })
+
+    expect(client.requests[0]).toMatchObject({
+      method: "POST",
+      path: "/api/exercise/runtime/3/attempt/9/upload-answer",
+      query: { cid: 14, sid: 0, gid: 0 },
+      headers: {
+        Accept: "application/ld+json",
+        "Content-Type": "application/json",
+      },
+    })
+    expect(client.requests[0].body).toEqual({
+      questionId: 23,
+      secondsSpent: 7,
+      reviewLater: true,
+      navigationAction: "next",
+      fileName: "answer.txt",
+      mimeType: "text/plain",
+      base64Content: "aGVsbG8=",
+    })
+    expect(response.files[0]?.name).toBe("answer.txt")
   })
 
   it("saves an answer without sending a user id", async () => {

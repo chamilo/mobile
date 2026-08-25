@@ -1,4 +1,5 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import { encodeExerciseAnswerFile } from "@/domain/exercises/fileAnswers"
 import { buildExerciseLearningPathApiQuery } from "@/domain/exercises/learningPathContext"
 import {
   normalizeExerciseAnswerResponse,
@@ -28,6 +29,7 @@ export type ExerciseServiceErrorCode =
   | "not_found"
   | "network"
   | "timeout"
+  | "validation"
   | "invalid_response"
   | "server"
 
@@ -79,6 +81,9 @@ function mapError(error: unknown): ExerciseServiceError {
   if (error.kind === "http" && error.status === 404) {
     return new ExerciseServiceError("not_found", error.message, error)
   }
+  if (error.kind === "http" && (error.status === 400 || error.status === 422)) {
+    return new ExerciseServiceError("validation", error.message, error)
+  }
 
   return new ExerciseServiceError("server", error.message, error)
 }
@@ -88,7 +93,9 @@ const SELECTED_CAMPUS_PLACEHOLDER = "https://selected-campus.invalid/"
 function exerciseAssetPath(value: string): string {
   const raw = value.trim()
   if (!raw || /^https?:\/\//i.test(raw) || raw.startsWith("//")) {
-    throw new ExerciseContractError("The exercise asset URL is not relative to the selected campus.")
+    throw new ExerciseContractError(
+      "The exercise asset URL is not relative to the selected campus.",
+    )
   }
 
   try {
@@ -96,7 +103,9 @@ function exerciseAssetPath(value: string): string {
     const resolved = new URL(raw, base)
 
     if (resolved.origin !== base.origin) {
-      throw new ExerciseContractError("The exercise asset URL is not relative to the selected campus.")
+      throw new ExerciseContractError(
+        "The exercise asset URL is not relative to the selected campus.",
+      )
     }
 
     return `${resolved.pathname}${resolved.search}`
@@ -208,6 +217,45 @@ export class ExerciseApiService {
         },
         body: { exerciseId, attemptId, ...payload },
       })
+      return normalizeExerciseAnswerResponse(response.data)
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+  async uploadAnswer(
+    context: CourseNavigationContext,
+    exerciseId: number,
+    attemptId: number,
+    input: {
+      questionId: number
+      file?: File | null
+      reviewLater: boolean
+      secondsSpent: number
+      navigationAction: string
+    },
+    learningPathContext?: ExerciseLearningPathContext | null,
+  ): Promise<ExerciseAnswerResponse> {
+    try {
+      const encoded = input.file ? await encodeExerciseAnswerFile(input.file) : null
+      const response = await this.httpClient.request<unknown>({
+        method: "POST",
+        path: `/api/exercise/runtime/${exerciseId}/attempt/${attemptId}/upload-answer`,
+        query: contextQuery(context, learningPathContext),
+        headers: {
+          Accept: "application/ld+json",
+          "Content-Type": "application/json",
+        },
+        body: {
+          questionId: input.questionId,
+          secondsSpent: input.secondsSpent,
+          reviewLater: input.reviewLater,
+          navigationAction: input.navigationAction,
+          ...(encoded ?? {}),
+        },
+        timeoutMs: 60_000,
+      })
+
       return normalizeExerciseAnswerResponse(response.data)
     } catch (error) {
       throw mapError(error)

@@ -57,6 +57,23 @@ describe("exercise contracts", () => {
         canFinish: true,
         savedAnswers: {
           11: [{ answer: "21", position: null }],
+          12: [
+            {
+              answer: "",
+              position: 0,
+              secondsSpent: 4,
+              files: [
+                {
+                  id: 55,
+                  name: "answer.ogg",
+                  size: 512,
+                  mimeType: "audio/ogg",
+                  url: "/api/exercise/runtime/7/attempt/99/file/55/download?cid=3",
+                  inlineUrl: "/api/exercise/runtime/7/attempt/99/file/55/download?cid=3&inline=1",
+                },
+              ],
+            },
+          ],
         },
         reviewQuestionIds: [11],
       },
@@ -65,6 +82,7 @@ describe("exercise contracts", () => {
     expect(result.questions[0].choices[0].id).toBe(21)
     expect(result.questions[0].reading).toEqual({ speed: 175, text: "Read this passage." })
     expect(result.attempt?.savedAnswers["11"][0].answer).toBe("21")
+    expect(result.attempt?.savedAnswers["12"][0].files?.[0]?.name).toBe("answer.ogg")
     expect(result.canManage).toBe(true)
     expect(result.canStartAttempt).toBe(false)
     expect(result.legacyUrls.overview).toContain("/main/exercise/overview.php")

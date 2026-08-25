@@ -1,3 +1,8 @@
+import {
+  isExerciseFileAnswerType,
+  ORAL_EXPRESSION_TYPE,
+  UPLOAD_ANSWER_TYPE,
+} from "@/domain/exercises/fileAnswers"
 import { parseSavedExerciseHotspotPoints } from "@/domain/exercises/hotspot"
 import type {
   ExerciseAnswerState,
@@ -12,7 +17,7 @@ const FILL_BLANK_TYPES = [3, 27]
 const MATCHING_TYPES = [4, 19, 24, 25]
 const DROPDOWN_TYPES = [28, 29]
 const HOTSPOT_TYPES = [6, 8, 26]
-const UNSUPPORTED_TYPES = [13, 20, 23, 30]
+const UNSUPPORTED_TYPES = [20, 30]
 const STRUCTURAL_TYPES = [15, 31]
 
 export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolean {
@@ -28,6 +33,7 @@ export function isSupportedExerciseQuestion(question: ExerciseQuestion): boolean
     MATCHING_TYPES.includes(question.type) ||
     question.type === 18 ||
     (HOTSPOT_TYPES.includes(question.type) && Boolean(question.hotspot?.imageUrl)) ||
+    isExerciseFileAnswerType(question.type) ||
     DROPDOWN_TYPES.includes(question.type) ||
     question.type === 16 ||
     question.type === 5
@@ -82,6 +88,7 @@ export function isExerciseAnswerProvided(
 
     return points.length >= Math.max(1, question.hotspot?.maxClicks ?? 1)
   }
+  if (isExerciseFileAnswerType(question.type)) return (state.uploadedFiles?.length ?? 0) > 0
   if (DROPDOWN_TYPES.includes(question.type)) return state.dropdown !== null
   if (question.type === 16) return state.calculated.trim().length > 0
   if (question.type === 5) return state.text.trim().length > 0
@@ -104,6 +111,7 @@ export function createExerciseAnswerState(question: ExerciseQuestion): ExerciseA
       question.calculated?.answerId ?? question.calculated?.variations[0]?.id ?? null,
     text: "",
     hotspotPoints: [],
+    uploadedFiles: [],
     reviewLater: false,
   }
 }
@@ -132,6 +140,7 @@ export function buildExerciseAnswerPayload(
       })),
     }
   }
+  if (isExerciseFileAnswerType(question.type)) return {}
   if (DROPDOWN_TYPES.includes(question.type)) return { dropdown: state.dropdown }
   if (question.type === 16) {
     return { calculated: state.calculated, answerId: state.calculatedAnswerId }
@@ -205,6 +214,12 @@ export function applySavedExerciseAnswer(
     state.hotspotPoints = parseSavedExerciseHotspotPoints(rows)
     return
   }
+  if (isExerciseFileAnswerType(question.type)) {
+    const files = rows.flatMap((row) => row.files ?? [])
+    const unique = new Map(files.map((file) => [file.id, file]))
+    state.uploadedFiles = [...unique.values()]
+    return
+  }
   if (DROPDOWN_TYPES.includes(question.type)) {
     state.dropdown = Number(rows[0]?.answer || 0) || null
     return
@@ -229,6 +244,8 @@ export function answerKind(
   | "matching"
   | "ordering"
   | "hotspot"
+  | "file"
+  | "oral"
   | "dropdown"
   | "calculated"
   | "text"
@@ -241,6 +258,8 @@ export function answerKind(
   if (MATCHING_TYPES.includes(question.type)) return "matching"
   if (question.type === 18) return "ordering"
   if (HOTSPOT_TYPES.includes(question.type)) return "hotspot"
+  if (question.type === ORAL_EXPRESSION_TYPE) return "oral"
+  if (question.type === UPLOAD_ANSWER_TYPE) return "file"
   if (DROPDOWN_TYPES.includes(question.type)) return "dropdown"
   if (question.type === 16) return "calculated"
   if (question.type === 5) return "text"

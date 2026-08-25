@@ -1,6 +1,7 @@
 import type {
   ExerciseAnswerResponse,
   ExerciseAttempt,
+  ExerciseAttemptFile,
   ExerciseChoice,
   ExerciseFinishResponse,
   ExerciseHotspotZone,
@@ -101,6 +102,29 @@ function normalizeHotspotZone(value: unknown): ExerciseHotspotZone | null {
   }
 }
 
+function normalizeAttemptFile(value: unknown): ExerciseAttemptFile | null {
+  const item = optionalRecord(value)
+  if (!item || !Number.isInteger(item.id) || numberValue(item.id) <= 0) return null
+
+  const name = stringValue(item.name).trim()
+  if (!name) return null
+
+  return {
+    id: numberValue(item.id),
+    name,
+    size: Math.max(0, numberValue(item.size)),
+    mimeType: stringValue(item.mimeType),
+    url: stringValue(item.url),
+    inlineUrl: nullableString(item.inlineUrl),
+  }
+}
+
+function normalizeAttemptFiles(value: unknown): ExerciseAttemptFile[] {
+  return Array.isArray(value)
+    ? value.map(normalizeAttemptFile).filter((file): file is ExerciseAttemptFile => file !== null)
+    : []
+}
+
 function normalizeSavedAnswers(value: unknown): Record<string, SavedAnswerRow[]> {
   const source = optionalRecord(value)
   if (!source) return {}
@@ -115,6 +139,8 @@ function normalizeSavedAnswers(value: unknown): Record<string, SavedAnswerRow[]>
             .map((row) => ({
               answer: stringValue(row.answer),
               position: nullableNumber(row.position),
+              secondsSpent: Math.max(0, numberValue(row.secondsSpent)),
+              files: normalizeAttemptFiles(row.files),
             }))
         : [],
     ]),
@@ -335,6 +361,7 @@ export function normalizeExerciseAnswerResponse(value: unknown): ExerciseAnswerR
     reviewQuestionIds: numberArray(source.reviewQuestionIds),
     answeredCount: numberValue(source.answeredCount),
     canFinish: booleanValue(source.canFinish),
+    files: normalizeAttemptFiles(source.files),
   }
 }
 
