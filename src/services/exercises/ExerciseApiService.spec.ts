@@ -133,6 +133,37 @@ describe("ExerciseApiService", () => {
     expect(client.requests).toHaveLength(0)
   })
 
+  it("loads an Office document template through the authenticated relative campus path", async () => {
+    const blob = new Blob(["document"], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    })
+    const client = new RecordingHttpClient(blob)
+    const service = new ExerciseApiService(client)
+
+    await expect(
+      service.getOfficeDocumentTemplate("/r/resource/30/view?cid=14&sid=0&gid=0"),
+    ).resolves.toBe(blob)
+
+    expect(client.requests[0]).toMatchObject({
+      method: "GET",
+      path: "/r/resource/30/view?cid=14&sid=0&gid=0",
+      responseType: "blob",
+    })
+    expect(client.requests[0]?.headers?.Accept).toContain("application/vnd.openxmlformats")
+  })
+
+  it("rejects an absolute Office document template URL before issuing a request", async () => {
+    const client = new RecordingHttpClient(new Blob())
+    const service = new ExerciseApiService(client)
+
+    await expect(
+      service.getOfficeDocumentTemplate("https://other.example/template.docx"),
+    ).rejects.toMatchObject({
+      code: "invalid_response",
+    } satisfies Partial<ExerciseServiceError>)
+    expect(client.requests).toHaveLength(0)
+  })
+
   it("uploads file answers through the native-safe JSON contract", async () => {
     const client = new RecordingHttpClient({
       success: true,

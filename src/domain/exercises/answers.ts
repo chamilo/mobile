@@ -5,6 +5,7 @@ import {
 } from "@/domain/exercises/annotation"
 import {
   isExerciseFileAnswerType,
+  OFFICE_DOCUMENT_TYPE,
   ORAL_EXPRESSION_TYPE,
   UPLOAD_ANSWER_TYPE,
 } from "@/domain/exercises/fileAnswers"
@@ -23,7 +24,6 @@ const MATCHING_TYPES = [4, 19, 24, 25]
 const DROPDOWN_TYPES = [28, 29]
 const HOTSPOT_TYPES = [6, 8, 26]
 const ANNOTATION_TYPE = 20
-const UNSUPPORTED_TYPES = [30]
 const STRUCTURAL_TYPES = [15, 31]
 
 export function isStructuralExerciseQuestion(question: ExerciseQuestion): boolean {
@@ -40,7 +40,8 @@ export function isSupportedExerciseQuestion(question: ExerciseQuestion): boolean
     question.type === 18 ||
     (HOTSPOT_TYPES.includes(question.type) && Boolean(question.hotspot?.imageUrl)) ||
     (question.type === ANNOTATION_TYPE && Boolean(question.annotation?.imageUrl)) ||
-    isExerciseFileAnswerType(question.type) ||
+    (isExerciseFileAnswerType(question.type) &&
+      (question.type !== OFFICE_DOCUMENT_TYPE || Boolean(question.onlyoffice?.templateUrl))) ||
     DROPDOWN_TYPES.includes(question.type) ||
     question.type === 16 ||
     question.type === 5
@@ -51,7 +52,7 @@ export function hasUnsupportedExerciseQuestions(questions: ExerciseQuestion[]): 
   return questions.some(
     (question) =>
       !isStructuralExerciseQuestion(question) &&
-      (!isSupportedExerciseQuestion(question) || UNSUPPORTED_TYPES.includes(question.type)),
+      !isSupportedExerciseQuestion(question),
   )
 }
 
@@ -274,6 +275,7 @@ export function answerKind(
   | "hotspot"
   | "file"
   | "oral"
+  | "office"
   | "dropdown"
   | "calculated"
   | "text"
@@ -289,6 +291,7 @@ export function answerKind(
   if (HOTSPOT_TYPES.includes(question.type)) return "hotspot"
   if (question.type === ORAL_EXPRESSION_TYPE) return "oral"
   if (question.type === UPLOAD_ANSWER_TYPE) return "file"
+  if (question.type === OFFICE_DOCUMENT_TYPE) return "office"
   if (DROPDOWN_TYPES.includes(question.type)) return "dropdown"
   if (question.type === 16) return "calculated"
   if (question.type === 5) return "text"

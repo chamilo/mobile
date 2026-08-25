@@ -8,7 +8,10 @@ import {
   exerciseAnnotationPointPercent,
 } from "@/domain/exercises/annotation"
 import { answerKind } from "@/domain/exercises/answers"
-import { exerciseFileAccept } from "@/domain/exercises/fileAnswers"
+import {
+  exerciseFileAccept,
+  exerciseOfficeDocumentFileMatchesTemplate,
+} from "@/domain/exercises/fileAnswers"
 import {
   exerciseHotspotPointFromClientCoordinates,
   exerciseHotspotPointPercent,
@@ -30,6 +33,8 @@ const props = defineProps<{
   hotspotImageSrc?: string | null
   hotspotImageLoading?: boolean
   hotspotImageError?: boolean
+  officeTemplateLoading?: boolean
+  officeTemplateError?: boolean
   pendingFileName?: string | null
 }>()
 
@@ -37,12 +42,15 @@ const emit = defineEmits<{
   "update:modelValue": [value: ExerciseAnswerState]
   retryAnnotationImage: []
   retryHotspotImage: []
+  openOfficeTemplate: []
+  downloadOfficeTemplate: []
   selectAnswerFile: [file: File | null]
 }>()
 
 const { t } = useI18n()
 const kind = computed(() => answerKind(props.question))
 const answerFileInput = ref<HTMLInputElement | null>(null)
+const answerFileSelectionError = ref("")
 
 function update(patch: Partial<ExerciseAnswerState>): void {
   emit("update:modelValue", { ...props.modelValue, ...patch })
@@ -50,7 +58,24 @@ function update(patch: Partial<ExerciseAnswerState>): void {
 
 function selectAnswerFile(event: Event): void {
   const input = event.target as HTMLInputElement
-  emit("selectAnswerFile", input.files?.[0] ?? null)
+  const file = input.files?.[0] ?? null
+
+  if (
+    kind.value === "office" &&
+    file &&
+    !exerciseOfficeDocumentFileMatchesTemplate(
+      file.name,
+      props.question.onlyoffice?.templateName ?? "",
+    )
+  ) {
+    answerFileSelectionError.value = t("exercises.officeDocument.formatMismatch")
+    input.value = ""
+    emit("selectAnswerFile", null)
+    return
+  }
+
+  answerFileSelectionError.value = ""
+  emit("selectAnswerFile", file)
 }
 
 function selectRecordedAudio(file: File): void {
@@ -94,6 +119,13 @@ function trueFalseAnswerOptions() {
       )
     : props.question.trueFalseOptions
 }
+
+watch(
+  () => props.question.id,
+  () => {
+    answerFileSelectionError.value = ""
+  },
+)
 
 function certaintyOptions() {
   return props.question.trueFalseOptions.filter(
@@ -859,7 +891,55 @@ watch(
       </div>
     </div>
 
-    <div v-else-if="kind === 'file' || kind === 'oral'" class="space-y-4">
+    <div v-else-if="kind === 'file' || kind === 'oral' || kind === 'office'" class="space-y-4">
+      <div
+        v-if="kind === 'office'"
+        class="space-y-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950"
+      >
+        <div>
+          <p class="font-semibold">{{ t("exercises.officeDocument.title") }}</p>
+          <p v-if="question.onlyoffice?.templateName" class="mt-1">
+            {{
+              t("exercises.officeDocument.template", {
+                name: question.onlyoffice.templateName,
+              })
+            }}
+          </p>
+          <p class="mt-2 text-xs text-sky-800">
+            {{ t("exercises.officeDocument.instructions") }}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="min-h-touch rounded-xl bg-chamilo-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            :disabled="disabled || officeTemplateLoading || !question.onlyoffice?.templateUrl"
+            @click="emit('openOfficeTemplate')"
+          >
+            <i class="pi pi-external-link mr-2" aria-hidden="true" />
+            {{
+              officeTemplateLoading
+                ? t("exercises.officeDocument.loadingTemplate")
+                : t("exercises.officeDocument.openTemplate")
+            }}
+          </button>
+          <button
+            type="button"
+            class="min-h-touch rounded-xl border border-chamilo-700 px-4 py-2 text-sm font-semibold text-chamilo-700 disabled:opacity-60"
+            :disabled="disabled || officeTemplateLoading || !question.onlyoffice?.templateUrl"
+            @click="emit('downloadOfficeTemplate')"
+          >
+            <i class="pi pi-download mr-2" aria-hidden="true" />
+            {{ t("exercises.officeDocument.saveTemplate") }}
+          </button>
+        </div>
+
+        <p v-if="officeTemplateError" class="text-xs font-medium text-red-700" role="alert">
+          {{ t("exercises.officeDocument.templateError") }}
+        </p>
+      </div>
+
       <ExerciseAudioRecorder
         v-if="kind === 'oral'"
         :question-id="question.id"
@@ -872,7 +952,9 @@ watch(
           {{
             kind === "oral"
               ? t("exercises.fileAnswer.chooseAudio")
-              : t("exercises.fileAnswer.chooseFile")
+              : kind === "office"
+                ? t("exercises.officeDocument.chooseCompleted")
+                : t("exercises.fileAnswer.chooseFile")
           }}
         </span>
         <input
@@ -880,12 +962,16 @@ watch(
           ref="answerFileInput"
           :name="`question-${question.id}-file`"
           type="file"
-          :accept="exerciseFileAccept(question.type)"
+          :accept="exerciseFileAccept(question.type, question.onlyoffice?.templateName)"
           class="mt-2 block w-full text-sm text-slate-700"
           :disabled="disabled"
           @change="selectAnswerFile"
         />
       </label>
+
+      <p v-if="answerFileSelectionError" class="text-sm font-medium text-red-700" role="alert">
+        {{ answerFileSelectionError }}
+      </p>
 
       <div
         v-if="pendingFileName"
@@ -898,7 +984,13 @@ watch(
         v-if="(modelValue.uploadedFiles?.length ?? 0) > 0"
         class="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
       >
-        <p class="font-semibold">{{ t("exercises.fileAnswer.savedFiles") }}</p>
+        <p class="font-semibold">
+          {{
+            kind === "office"
+              ? t("exercises.officeDocument.savedDocument")
+              : t("exercises.fileAnswer.savedFiles")
+          }}
+        </p>
         <p v-for="file in modelValue.uploadedFiles ?? []" :key="file.id">
           {{ file.name }}
         </p>
@@ -906,6 +998,9 @@ watch(
 
       <p v-if="kind === 'oral'" class="text-xs text-slate-500">
         {{ t("exercises.fileAnswer.oralFormats") }}
+      </p>
+      <p v-else-if="kind === 'office'" class="text-xs text-slate-500">
+        {{ t("exercises.officeDocument.sameFormat") }}
       </p>
     </div>
 

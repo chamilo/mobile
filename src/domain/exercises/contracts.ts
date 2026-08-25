@@ -184,6 +184,7 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
   const dropdown = optionalRecord(item.dropdown)
   const calculated = optionalRecord(item.calculated)
   const reading = optionalRecord(item.reading)
+  const onlyoffice = optionalRecord(item.onlyoffice)
   const annotation = optionalRecord(item.annotation)
   const hotspot = optionalRecord(item.hotspot)
 
@@ -250,6 +251,14 @@ function normalizeQuestion(value: unknown): ExerciseQuestion | null {
       ? {
           speed: Math.max(0, numberValue(reading.speed)),
           text: stringValue(reading.text),
+        }
+      : null,
+    onlyoffice: onlyoffice
+      ? {
+          templateName: stringValue(onlyoffice.templateName),
+          templateUrl: stringValue(onlyoffice.templateUrl),
+          editorUrl: stringValue(onlyoffice.editorUrl),
+          manualCorrection: booleanValue(onlyoffice.manualCorrection),
         }
       : null,
     annotation: annotation

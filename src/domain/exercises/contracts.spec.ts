@@ -89,6 +89,41 @@ describe("exercise contracts", () => {
     expect(result.attempt?.reviewQuestionIds).toEqual([11])
   })
 
+  it("normalizes the verified Office document runtime", () => {
+    const result = normalizeExerciseRuntime({
+      exerciseId: 10,
+      title: "Office document quiz",
+      settings: {},
+      questions: [
+        {
+          id: 30,
+          title: "Complete the document",
+          type: 30,
+          typeLabel: "Office document",
+          onlyoffice: {
+            templateName: "worksheet.xlsx",
+            templateUrl: "/r/resource/30/view?cid=14&sid=0&gid=0",
+            editorUrl:
+              "/plugin/Onlyoffice/editor.php?resourceNodeId=90&exerciseId=10&exeId=11&questionId=30",
+            manualCorrection: true,
+          },
+        },
+      ],
+      canManage: false,
+      canStartAttempt: true,
+      legacyUrls: {},
+      attempt: null,
+    })
+
+    expect(result.questions[0].onlyoffice).toEqual({
+      templateName: "worksheet.xlsx",
+      templateUrl: "/r/resource/30/view?cid=14&sid=0&gid=0",
+      editorUrl:
+        "/plugin/Onlyoffice/editor.php?resourceNodeId=90&exerciseId=10&exeId=11&questionId=30",
+      manualCorrection: true,
+    })
+  })
+
   it("normalizes the verified annotation image runtime", () => {
     const result = normalizeExerciseRuntime({
       exerciseId: 8,

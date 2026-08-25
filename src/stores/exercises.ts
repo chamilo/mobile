@@ -553,6 +553,10 @@ export const useExercisesStore = defineStore("exercises", () => {
     return service().getAnnotationImage(imageUrl)
   }
 
+  async function loadOfficeDocumentTemplate(templateUrl: string): Promise<Blob> {
+    return service().getOfficeDocumentTemplate(templateUrl)
+  }
+
   async function startAttempt(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -910,6 +914,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     loadRuntime,
     loadHotspotImage,
     loadAnnotationImage,
+    loadOfficeDocumentTemplate,
     startAttempt,
     saveCurrentAnswer,
     goToQuestion,

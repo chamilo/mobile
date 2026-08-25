@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import { encodeMonoPcm16Wav } from "@/domain/exercises/audioRecording"
-import { encodeExerciseAnswerFile, exerciseFileAccept } from "@/domain/exercises/fileAnswers"
+import {
+  encodeExerciseAnswerFile,
+  exerciseFileAccept,
+  exerciseOfficeDocumentFileMatchesTemplate,
+} from "@/domain/exercises/fileAnswers"
 
 describe("exercise file answers", () => {
   it("encodes a selected answer file for the verified JSON upload contract", async () => {
@@ -14,9 +18,18 @@ describe("exercise file answers", () => {
     })
   })
 
-  it("limits oral-expression selection to the server-supported formats", () => {
+  it("limits file selection to the server-supported question formats", () => {
     expect(exerciseFileAccept(13)).toBe(".wav,.ogg,audio/wav,audio/ogg")
     expect(exerciseFileAccept(23)).toBeUndefined()
+    expect(exerciseFileAccept(30, "template.docx")).toBe(".docx")
+    expect(exerciseFileAccept(30)).toBe(".doc,.docx,.xls,.xlsx")
+  })
+
+  it("requires a completed Office document to keep the template format", () => {
+    expect(exerciseOfficeDocumentFileMatchesTemplate("completed.docx", "template.docx")).toBe(true)
+    expect(exerciseOfficeDocumentFileMatchesTemplate("completed.xlsx", "template.docx")).toBe(false)
+    expect(exerciseOfficeDocumentFileMatchesTemplate("completed.xls", "")).toBe(true)
+    expect(exerciseOfficeDocumentFileMatchesTemplate("completed.pdf", "template.docx")).toBe(false)
   })
 
   it("encodes microphone samples as a mono PCM WAV file", async () => {

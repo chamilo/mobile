@@ -28,6 +28,7 @@ function question(type: number): ExerciseQuestion {
     dropdown: null,
     calculated: null,
     reading: null,
+    onlyoffice: null,
     annotation: null,
     hotspot: null,
     isContent: false,
@@ -97,6 +98,47 @@ describe("exercise answers", () => {
     expect(isExerciseAnswerProvided(item, state)).toBe(true)
     expect(state.uploadedFiles).toHaveLength(1)
     expect(state.uploadedFiles[0]?.name).toBe("report.pdf")
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({})
+  })
+
+  it("supports Office document answers when the verified template runtime is available", () => {
+    const item = question(30)
+    item.onlyoffice = {
+      templateName: "template.docx",
+      templateUrl: "/r/resource/77/view?cid=14&sid=0&gid=0",
+      editorUrl:
+        "/plugin/Onlyoffice/editor.php?resourceNodeId=88&exerciseId=7&exeId=9&questionId=30",
+      manualCorrection: true,
+    }
+    const state = createExerciseAnswerState(item)
+
+    expect(hasUnsupportedExerciseQuestions([item])).toBe(false)
+    expect(isExerciseAnswerProvided(item, state)).toBe(false)
+
+    applySavedExerciseAnswer(
+      item,
+      [
+        {
+          answer: "onlyoffice:88",
+          position: 0,
+          files: [
+            {
+              id: 88,
+              name: "template.docx",
+              size: 4096,
+              mimeType:
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              url: "/api/exercise/runtime/7/attempt/9/file/88/download?cid=14",
+              inlineUrl: null,
+            },
+          ],
+        },
+      ],
+      state,
+    )
+
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(state.uploadedFiles[0]?.name).toBe("template.docx")
     expect(buildExerciseAnswerPayload(item, state)).toEqual({})
   })
 

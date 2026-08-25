@@ -191,6 +191,29 @@ export class ExerciseApiService {
     }
   }
 
+  async getOfficeDocumentTemplate(templateUrl: string): Promise<Blob> {
+    try {
+      const response = await this.httpClient.request<Blob>({
+        method: "GET",
+        path: exerciseAssetPath(templateUrl),
+        headers: {
+          Accept:
+            "application/octet-stream,application/msword,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+        responseType: "blob",
+        timeoutMs: 60_000,
+      })
+
+      if (!(response.data instanceof Blob)) {
+        throw new ExerciseContractError("The exercise Office document template response is invalid.")
+      }
+
+      return response.data
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
   async startAttempt(
     context: CourseNavigationContext,
     exerciseId: number,
