@@ -35,6 +35,7 @@ function questionFixture(): ExerciseQuestion {
       text:
         '<span class="mce-translatehtml" lang="en">Reading text</span><span class="mce-translatehtml" lang="es">Texto de lectura</span>',
     },
+    annotation: null,
     hotspot: null,
     isContent: false,
   }

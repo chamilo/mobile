@@ -3,18 +3,30 @@ import { computed, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
 import ExerciseAudioRecorder from "@/components/exercises/ExerciseAudioRecorder.vue"
+import {
+  exerciseAnnotationPointFromClientCoordinates,
+  exerciseAnnotationPointPercent,
+} from "@/domain/exercises/annotation"
 import { answerKind } from "@/domain/exercises/answers"
 import { exerciseFileAccept } from "@/domain/exercises/fileAnswers"
 import {
   exerciseHotspotPointFromClientCoordinates,
   exerciseHotspotPointPercent,
 } from "@/domain/exercises/hotspot"
-import type { ExerciseAnswerState, ExerciseQuestion } from "@/domain/exercises/types"
+import type {
+  ExerciseAnnotationPoint,
+  ExerciseAnnotationText,
+  ExerciseAnswerState,
+  ExerciseQuestion,
+} from "@/domain/exercises/types"
 
 const props = defineProps<{
   question: ExerciseQuestion
   modelValue: ExerciseAnswerState
   disabled?: boolean
+  annotationImageSrc?: string | null
+  annotationImageLoading?: boolean
+  annotationImageError?: boolean
   hotspotImageSrc?: string | null
   hotspotImageLoading?: boolean
   hotspotImageError?: boolean
@@ -23,6 +35,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:modelValue": [value: ExerciseAnswerState]
+  retryAnnotationImage: []
   retryHotspotImage: []
   selectAnswerFile: [file: File | null]
 }>()
@@ -105,6 +118,161 @@ const orderedItems = computed(() => {
   return props.modelValue.order.map((id) => items.get(id)).filter(Boolean)
 })
 
+const annotationImage = ref<HTMLImageElement | null>(null)
+const annotationNaturalWidth = ref(0)
+const annotationNaturalHeight = ref(0)
+const annotationMode = ref<"path" | "text">("path")
+const annotationTextDraft = ref("")
+const annotationDrawing = ref(false)
+const annotationPointerId = ref<number | null>(null)
+
+const annotationPaths = computed(() => props.modelValue.annotationPaths ?? [])
+const annotationTexts = computed(() => props.modelValue.annotationTexts ?? [])
+const annotationPolylinePoints = (points: ExerciseAnnotationPoint[]) =>
+  points.map((point) => `${point.x},${point.y}`).join(" ")
+
+function resetAnnotationImageGeometry(): void {
+  annotationImage.value = null
+  annotationNaturalWidth.value = 0
+  annotationNaturalHeight.value = 0
+  annotationDrawing.value = false
+  annotationPointerId.value = null
+}
+
+function handleAnnotationImageLoad(event: Event): void {
+  const image = event.currentTarget as HTMLImageElement
+  annotationImage.value = image
+  annotationNaturalWidth.value = image.naturalWidth
+  annotationNaturalHeight.value = image.naturalHeight
+}
+
+function annotationPoint(event: PointerEvent): ExerciseAnnotationPoint | null {
+  const image = annotationImage.value
+  if (!image) return null
+
+  const rect = image.getBoundingClientRect()
+
+  return exerciseAnnotationPointFromClientCoordinates(event.clientX, event.clientY, {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    naturalWidth: image.naturalWidth,
+    naturalHeight: image.naturalHeight,
+  })
+}
+
+function handleAnnotationPointerDown(event: PointerEvent): void {
+  if (props.disabled || !props.question.annotation || !annotationImage.value) return
+  if (event.pointerType === "mouse" && event.button !== 0) return
+
+  const point = annotationPoint(event)
+  if (!point) return
+
+  event.preventDefault()
+
+  if (annotationMode.value === "text") {
+    const text = annotationTextDraft.value.trim()
+    if (!text) return
+
+    update({
+      annotationTexts: [...annotationTexts.value, { text, ...point }],
+    })
+    annotationTextDraft.value = ""
+    return
+  }
+
+  const target = event.currentTarget as HTMLElement
+  target.setPointerCapture?.(event.pointerId)
+  annotationDrawing.value = true
+  annotationPointerId.value = event.pointerId
+  update({
+    annotationPaths: [...annotationPaths.value, { points: [point] }],
+  })
+}
+
+function handleAnnotationPointerMove(event: PointerEvent): void {
+  if (
+    props.disabled ||
+    !annotationDrawing.value ||
+    annotationPointerId.value !== event.pointerId ||
+    annotationMode.value !== "path"
+  ) {
+    return
+  }
+
+  const point = annotationPoint(event)
+  if (!point) return
+
+  event.preventDefault()
+
+  const paths = annotationPaths.value
+  const current = paths[paths.length - 1]
+  const previous = current?.points[current.points.length - 1]
+  if (!current || !previous) return
+
+  if (Math.abs(previous.x - point.x) + Math.abs(previous.y - point.y) < 2) return
+
+  update({
+    annotationPaths: [
+      ...paths.slice(0, -1),
+      {
+        points: [...current.points, point],
+      },
+    ],
+  })
+}
+
+function finishAnnotationPath(event: PointerEvent): void {
+  if (!annotationDrawing.value || annotationPointerId.value !== event.pointerId) return
+
+  const target = event.currentTarget as HTMLElement
+  if (target.hasPointerCapture?.(event.pointerId)) {
+    target.releasePointerCapture?.(event.pointerId)
+  }
+
+  annotationDrawing.value = false
+  annotationPointerId.value = null
+
+  const paths = annotationPaths.value
+  const current = paths[paths.length - 1]
+  if (current && current.points.length < 2) {
+    update({ annotationPaths: paths.slice(0, -1) })
+  }
+}
+
+function setAnnotationMode(mode: "path" | "text"): void {
+  annotationMode.value = mode
+  annotationDrawing.value = false
+  annotationPointerId.value = null
+}
+
+function undoAnnotation(): void {
+  if (annotationMode.value === "text" && annotationTexts.value.length > 0) {
+    update({ annotationTexts: annotationTexts.value.slice(0, -1) })
+    return
+  }
+
+  if (annotationPaths.value.length > 0) {
+    update({ annotationPaths: annotationPaths.value.slice(0, -1) })
+  }
+}
+
+function resetAnnotation(): void {
+  annotationDrawing.value = false
+  annotationPointerId.value = null
+  annotationTextDraft.value = ""
+  update({ annotationPaths: [], annotationTexts: [] })
+}
+
+function annotationTextStyle(point: ExerciseAnnotationText) {
+  return exerciseAnnotationPointPercent(
+    point,
+    annotationNaturalWidth.value,
+    annotationNaturalHeight.value,
+  )
+}
+
 const hotspotImage = ref<HTMLImageElement | null>(null)
 const hotspotNaturalWidth = ref(0)
 const hotspotNaturalHeight = ref(0)
@@ -167,6 +335,15 @@ function resetHotspotPoints(): void {
 function hotspotMarkerStyle(point: ExerciseAnswerState["hotspotPoints"][number]) {
   return exerciseHotspotPointPercent(point, hotspotNaturalWidth.value, hotspotNaturalHeight.value)
 }
+
+watch(
+  () => [props.question.id, props.annotationImageSrc],
+  () => {
+    resetAnnotationImageGeometry()
+    annotationMode.value = "path"
+    annotationTextDraft.value = ""
+  },
+)
 
 watch(
   () => [props.question.id, props.hotspotImageSrc],
@@ -382,6 +559,177 @@ watch(
         </button>
       </li>
     </ol>
+
+    <div v-else-if="kind === 'annotation'" class="space-y-4">
+      <p class="text-sm text-slate-700">
+        {{ t("exercises.annotation.instructions") }}
+      </p>
+
+      <div
+        v-if="annotationImageLoading"
+        class="flex min-h-48 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600"
+        role="status"
+      >
+        {{ t("exercises.annotation.loadingImage") }}
+      </div>
+
+      <div
+        v-else-if="annotationImageError || !annotationImageSrc"
+        class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+        role="alert"
+      >
+        <p>{{ t("exercises.annotation.imageError") }}</p>
+        <button
+          type="button"
+          class="mt-3 min-h-touch rounded-xl border border-amber-700 bg-white px-4 font-semibold text-amber-900"
+          :disabled="disabled"
+          @click="emit('retryAnnotationImage')"
+        >
+          {{ t("actions.retry") }}
+        </button>
+      </div>
+
+      <template v-else>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            class="min-h-touch rounded-xl border px-3 font-semibold"
+            :class="
+              annotationMode === 'path'
+                ? 'border-chamilo-700 bg-white text-chamilo-700'
+                : 'border-slate-300 bg-white text-slate-700'
+            "
+            :aria-pressed="annotationMode === 'path'"
+            :disabled="disabled"
+            @click="setAnnotationMode('path')"
+          >
+            <i class="pi pi-pencil mr-2" aria-hidden="true" />
+            {{ t("exercises.annotation.draw") }}
+          </button>
+          <button
+            type="button"
+            class="min-h-touch rounded-xl border px-3 font-semibold"
+            :class="
+              annotationMode === 'text'
+                ? 'border-chamilo-700 bg-white text-chamilo-700'
+                : 'border-slate-300 bg-white text-slate-700'
+            "
+            :aria-pressed="annotationMode === 'text'"
+            :disabled="disabled"
+            @click="setAnnotationMode('text')"
+          >
+            <i class="pi pi-comment mr-2" aria-hidden="true" />
+            {{ t("exercises.annotation.text") }}
+          </button>
+        </div>
+
+        <label v-if="annotationMode === 'text'" class="block">
+          <span class="text-sm font-medium text-slate-700">
+            {{ t("exercises.annotation.textLabel") }}
+          </span>
+          <input
+            v-model="annotationTextDraft"
+            :name="`question-${question.id}-annotation-text`"
+            type="text"
+            class="mt-2 min-h-touch w-full rounded-xl border border-slate-300 px-3"
+            :placeholder="t('exercises.annotation.textPlaceholder')"
+            :disabled="disabled"
+          />
+          <span class="mt-1 block text-xs text-slate-500">
+            {{ t("exercises.annotation.textInstructions") }}
+          </span>
+        </label>
+
+        <p v-else class="text-xs text-slate-500">
+          {{ t("exercises.annotation.drawInstructions") }}
+        </p>
+
+        <div class="overflow-x-auto">
+          <div
+            class="relative inline-block max-w-full touch-none overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+            :class="disabled ? 'cursor-default opacity-75' : 'cursor-crosshair'"
+            @pointerdown="handleAnnotationPointerDown"
+            @pointermove="handleAnnotationPointerMove"
+            @pointerup="finishAnnotationPath"
+            @pointercancel="finishAnnotationPath"
+          >
+            <img
+              ref="annotationImage"
+              :src="annotationImageSrc"
+              :alt="question.annotation?.imageName || plainText(question.title)"
+              class="pointer-events-none block max-h-[70vh] max-w-full select-none"
+              draggable="false"
+              @load="handleAnnotationImageLoad"
+            />
+
+            <svg
+              v-if="annotationNaturalWidth > 0 && annotationNaturalHeight > 0"
+              class="pointer-events-none absolute inset-0 h-full w-full"
+              :viewBox="`0 0 ${annotationNaturalWidth} ${annotationNaturalHeight}`"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <polyline
+                v-for="(path, pathIndex) in annotationPaths"
+                :key="`${question.id}-annotation-path-${pathIndex}`"
+                :points="annotationPolylinePoints(path.points)"
+                class="fill-none stroke-chamilo-700"
+                vector-effect="non-scaling-stroke"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="3"
+              />
+            </svg>
+
+            <span
+              v-for="(textAnnotation, textIndex) in annotationTexts"
+              :key="`${question.id}-annotation-text-${textIndex}`"
+              class="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded bg-white/90 px-2 py-1 text-xs font-semibold text-chamilo-700 shadow"
+              :style="annotationTextStyle(textAnnotation)"
+            >
+              {{ textAnnotation.text }}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+          <span aria-live="polite">
+            {{
+              t("exercises.annotation.summary", {
+                paths: annotationPaths.length,
+                texts: annotationTexts.length,
+              })
+            }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            class="min-h-touch rounded-xl border border-slate-300 bg-white px-3 font-semibold text-slate-700 disabled:opacity-40"
+            :disabled="
+              disabled ||
+              (annotationMode === 'text'
+                ? annotationTexts.length === 0
+                : annotationPaths.length === 0)
+            "
+            @click="undoAnnotation"
+          >
+            <i class="pi pi-undo mr-2" aria-hidden="true" />
+            {{ t("exercises.annotation.undo") }}
+          </button>
+          <button
+            type="button"
+            class="min-h-touch rounded-xl border border-slate-300 bg-white px-3 font-semibold text-slate-700 disabled:opacity-40"
+            :disabled="disabled || (annotationPaths.length === 0 && annotationTexts.length === 0)"
+            @click="resetAnnotation"
+          >
+            <i class="pi pi-refresh mr-2" aria-hidden="true" />
+            {{ t("exercises.annotation.clear") }}
+          </button>
+        </div>
+      </template>
+    </div>
 
     <div v-else-if="kind === 'hotspot'" class="space-y-4">
       <p class="text-sm text-slate-700">

@@ -549,6 +549,10 @@ export const useExercisesStore = defineStore("exercises", () => {
     return service().getHotspotImage(imageUrl)
   }
 
+  async function loadAnnotationImage(imageUrl: string): Promise<Blob> {
+    return service().getAnnotationImage(imageUrl)
+  }
+
   async function startAttempt(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -905,6 +909,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     loadList,
     loadRuntime,
     loadHotspotImage,
+    loadAnnotationImage,
     startAttempt,
     saveCurrentAnswer,
     goToQuestion,

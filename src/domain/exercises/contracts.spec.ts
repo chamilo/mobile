@@ -89,6 +89,35 @@ describe("exercise contracts", () => {
     expect(result.attempt?.reviewQuestionIds).toEqual([11])
   })
 
+  it("normalizes the verified annotation image runtime", () => {
+    const result = normalizeExerciseRuntime({
+      exerciseId: 8,
+      title: "Annotation quiz",
+      settings: {},
+      questions: [
+        {
+          id: 20,
+          title: "Annotate the diagram",
+          type: 20,
+          typeLabel: "Annotation",
+          annotation: {
+            imageName: "diagram.png",
+            imageUrl: "/r/resource/20/view?cid=14&sid=0&gid=0",
+          },
+        },
+      ],
+      canManage: false,
+      canStartAttempt: true,
+      legacyUrls: {},
+      attempt: null,
+    })
+
+    expect(result.questions[0].annotation).toEqual({
+      imageName: "diagram.png",
+      imageUrl: "/r/resource/20/view?cid=14&sid=0&gid=0",
+    })
+  })
+
   it("normalizes the verified hotspot runtime without requiring teacher coordinates", () => {
     const result = normalizeExerciseRuntime({
       exerciseId: 9,
