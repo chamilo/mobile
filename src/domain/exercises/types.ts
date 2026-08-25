@@ -84,6 +84,11 @@ export interface ExerciseCalculatedRuntime {
   variations: ExerciseCalculatedVariation[]
 }
 
+export interface ExerciseReadingRuntime {
+  speed: number
+  text: string
+}
+
 export interface ExerciseQuestion {
   id: number
   title: string
@@ -103,6 +108,7 @@ export interface ExerciseQuestion {
   draggable: ExerciseDraggableRuntime | null
   dropdown: ExerciseDropdownRuntime | null
   calculated: ExerciseCalculatedRuntime | null
+  reading: ExerciseReadingRuntime | null
   isContent: boolean
 }
 

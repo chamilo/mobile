@@ -40,9 +40,10 @@ describe("exercise contracts", () => {
         {
           id: 11,
           title: "Choose one",
-          type: 1,
-          typeLabel: "Unique answer",
+          type: 21,
+          typeLabel: "Reading comprehension",
           choices: [{ id: 21, answer: "A", position: 1 }],
+          reading: { speed: 175, text: "Read this passage." },
         },
       ],
       canManage: true,
@@ -62,6 +63,7 @@ describe("exercise contracts", () => {
     })
 
     expect(result.questions[0].choices[0].id).toBe(21)
+    expect(result.questions[0].reading).toEqual({ speed: 175, text: "Read this passage." })
     expect(result.attempt?.savedAnswers["11"][0].answer).toBe("21")
     expect(result.canManage).toBe(true)
     expect(result.canStartAttempt).toBe(false)

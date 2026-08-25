@@ -88,7 +88,51 @@ const orderedItems = computed(() => {
   <fieldset :disabled="disabled" class="space-y-4">
     <legend class="sr-only">{{ plainText(question.title) }}</legend>
 
-    <div v-if="kind === 'radio'" class="space-y-3">
+    <div v-if="kind === 'reading'" class="space-y-5">
+      <section
+        class="rounded-xl border border-slate-200 bg-slate-50 p-4"
+        :aria-labelledby="`question-${question.id}-reading-title`"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p
+            :id="`question-${question.id}-reading-title`"
+            class="font-medium text-slate-900"
+          >
+            {{ t("exercises.readingPassage") }}
+          </p>
+          <span
+            v-if="(question.reading?.speed ?? 0) > 0"
+            class="text-xs font-medium text-slate-500"
+          >
+            {{ t("exercises.readingSpeed", { speed: question.reading?.speed ?? 0 }) }}
+          </span>
+        </div>
+
+        <p class="mt-3 whitespace-pre-line text-base leading-7 text-slate-800">
+          {{ question.reading?.text || question.description }}
+        </p>
+      </section>
+
+      <div class="space-y-3">
+        <label
+          v-for="choice in question.choices"
+          :key="choice.id"
+          class="flex min-h-touch items-start gap-3 rounded-xl border border-slate-200 p-3"
+        >
+          <input
+            :name="`question-${question.id}`"
+            type="radio"
+            :value="choice.id"
+            :checked="modelValue.choice === choice.id"
+            class="mt-1"
+            @change="update({ choice: choice.id })"
+          />
+          <span>{{ plainText(choice.answer) }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div v-else-if="kind === 'radio'" class="space-y-3">
       <label
         v-for="choice in question.choices"
         :key="choice.id"

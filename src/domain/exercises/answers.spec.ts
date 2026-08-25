@@ -6,6 +6,7 @@ import {
   createExerciseAnswerState,
   hasUnsupportedExerciseQuestions,
   isExerciseAnswerProvided,
+  isStructuralExerciseQuestion,
 } from "@/domain/exercises/answers"
 import type { ExerciseQuestion } from "@/domain/exercises/types"
 
@@ -26,6 +27,7 @@ function question(type: number): ExerciseQuestion {
     draggable: null,
     dropdown: null,
     calculated: null,
+    reading: null,
     isContent: false,
   }
 }
@@ -60,6 +62,28 @@ describe("exercise answers", () => {
   it("detects question types that need the campus runtime fallback", () => {
     expect(hasUnsupportedExerciseQuestions([question(23)])).toBe(true)
     expect(hasUnsupportedExerciseQuestions([question(1)])).toBe(false)
+  })
+
+  it("treats reading comprehension as a native single-choice question", () => {
+    const item = question(21)
+    item.choices = [
+      { id: 101, answer: "First option", position: 1 },
+      { id: 102, answer: "Second option", position: 2 },
+    ]
+    item.reading = { speed: 175, text: "A short reading passage." }
+    const state = createExerciseAnswerState(item)
+
+    expect(isStructuralExerciseQuestion(item)).toBe(false)
+    expect(hasUnsupportedExerciseQuestions([item])).toBe(false)
+    expect(isExerciseAnswerProvided(item, state)).toBe(false)
+
+    applySavedExerciseAnswer(item, [{ answer: "101", position: null }], state)
+    expect(state.choice).toBe(101)
+
+    state.choice = 102
+
+    expect(isExerciseAnswerProvided(item, state)).toBe(true)
+    expect(buildExerciseAnswerPayload(item, state)).toEqual({ choice: 102 })
   })
 
   it("recognizes a locally selected final answer before it is saved", () => {
