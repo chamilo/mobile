@@ -9,15 +9,18 @@ import LearningPathToc from "@/components/learningPaths/LearningPathToc.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import {
+  buildAssignmentDetailRoute,
   buildExercisePlayerRoute,
   buildLearningPathsRoute,
   buildSurveyDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import { parseLearningPathAssignmentContentUrl } from "@/domain/assignments/learningPathContext"
 import { parseLearningPathQuizContentUrl } from "@/domain/exercises/learningPathContext"
 import { parseLearningPathSurveyContentUrl } from "@/domain/surveys/learningPathContext"
 import {
+  isAssignmentLearningPathItem,
   isQuizLearningPathItem,
   isSupportedLearningPathItem,
   isSurveyLearningPathItem,
@@ -112,6 +115,23 @@ const surveyLaunch = computed(() => {
     runtime.contentUrl,
     runtime.lpId,
     item.id,
+    runtime.title || props.learningPathTitle || "",
+  )
+})
+
+const assignmentLaunch = computed(() => {
+  const runtime = store.runtime
+  const item = store.currentItem
+  const activeContext = context.value
+
+  if (!runtime || !item || !activeContext || !isAssignmentLearningPathItem(item)) return null
+
+  return parseLearningPathAssignmentContentUrl(
+    runtime.contentUrl,
+    runtime.lpId,
+    item.id,
+    activeContext.courseId,
+    activeContext.sessionId,
     runtime.title || props.learningPathTitle || "",
   )
 })
@@ -429,6 +449,28 @@ onBeforeUnmount(() => {
         >
           <i class="pi pi-arrow-right" aria-hidden="true" />
           {{ t("surveys.open") }}
+        </RouterLink>
+
+        <RouterLink
+          v-else-if="
+            assignmentLaunch &&
+            context &&
+            isAssignmentLearningPathItem(store.currentItem) &&
+            store.contentStatus === 'ready'
+          "
+          :to="
+            buildAssignmentDetailRoute(
+              context,
+              assignmentLaunch.assignmentId,
+              store.currentItem.title,
+              assignmentLaunch.learningPathId,
+              assignmentLaunch.learningPathTitle,
+            )
+          "
+          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
+        >
+          <i class="pi pi-arrow-right" aria-hidden="true" />
+          {{ t("assignments.open") }}
         </RouterLink>
 
         <p

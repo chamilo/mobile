@@ -27,6 +27,8 @@ const SUPPORTED_ITEM_TYPES = new Set([
   "asset",
   "quiz",
   "survey",
+  "student_publication",
+  "assignments",
 ])
 const SCORM_ITEM_TYPES = new Set(["sco", "asset"])
 const COMPLETED_STATUSES = new Set(["completed", "passed", "succeeded", "browsed", "failed"])
@@ -303,6 +305,14 @@ export function isQuizLearningPathItem(item: LearningPathRuntimeItem | null | un
 
 export function isSurveyLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
   return Boolean(item && item.itemType.toLowerCase() === "survey")
+}
+
+export function isAssignmentLearningPathItem(
+  item: LearningPathRuntimeItem | null | undefined,
+): boolean {
+  if (!item) return false
+
+  return ["student_publication", "assignments"].includes(item.itemType.toLowerCase())
 }
 
 export function isSupportedLearningPathItem(

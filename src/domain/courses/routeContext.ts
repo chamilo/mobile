@@ -309,6 +309,8 @@ export function buildAssignmentDetailRoute(
   context: CourseNavigationContext,
   assignmentId: number,
   assignmentTitle?: string,
+  learningPathId = 0,
+  learningPathTitle = "",
 ): RouteLocationRaw {
   return {
     name: "assignment-detail",
@@ -319,6 +321,8 @@ export function buildAssignmentDetailRoute(
     query: {
       ...buildContextQuery(context),
       ...(assignmentTitle ? { assignmentTitle } : {}),
+      ...(learningPathId > 0 ? { learningPathId: String(learningPathId) } : {}),
+      ...(learningPathTitle.trim() ? { learningPathTitle: learningPathTitle.trim() } : {}),
     },
   }
 }

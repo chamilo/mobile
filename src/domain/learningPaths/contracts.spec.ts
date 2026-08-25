@@ -5,6 +5,7 @@ import {
   buildLearningPathRuntimeRequest,
   buildLearningPathScormCommitRequest,
   buildLearningPathScormPackageRequest,
+  isAssignmentLearningPathItem,
   isCompletedLearningPathStatus,
   isOpenableLearningPathItem,
   isQuizLearningPathItem,
@@ -160,6 +161,29 @@ describe("learning path runtime contract", () => {
     })
 
     expect(isSurveyLearningPathItem(runtime.items[0])).toBe(true)
+    expect(isSupportedLearningPathItem(runtime.items[0])).toBe(true)
+    expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(true)
+  })
+
+  it("treats an available assignment as a native mobile learning path item", () => {
+    const runtime = normalizeLearningPathRuntime({
+      lpId: 7,
+      runtimeSupported: true,
+      currentItemId: 14,
+      contentUrl:
+        "/resources/assignment/88/submission/23?cid=10&sid=4&origin=learnpath&lp_id=7&item_id=14&returnToLp=1&embedded=1&type=step",
+      items: [
+        {
+          id: 14,
+          title: "Assignment",
+          itemType: "student_publication",
+          available: true,
+          isSection: false,
+        },
+      ],
+    })
+
+    expect(isAssignmentLearningPathItem(runtime.items[0])).toBe(true)
     expect(isSupportedLearningPathItem(runtime.items[0])).toBe(true)
     expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(true)
   })

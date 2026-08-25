@@ -1,3 +1,7 @@
+import {
+  assignmentDownloadFilename,
+  assignmentDownloadPath,
+} from "@/domain/assignments/downloads"
 import type { CourseNavigationContext } from "@/domain/courses/types"
 import {
   AssignmentContractError,
@@ -31,6 +35,12 @@ export type AssignmentErrorCode =
   | "server"
   | "validation"
   | "invalid_response"
+
+
+export interface AssignmentFileDelivery {
+  blob: Blob
+  filename: string
+}
 
 export class AssignmentServiceError extends Error {
   constructor(
@@ -207,6 +217,43 @@ export class AssignmentApiService {
         submissionsResponse.data,
         commentsBySubmissionId,
       )
+    } catch (error) {
+      throw mapError(error)
+    }
+  }
+
+
+  async getFile(downloadUrl: string, fallbackFilename: string): Promise<AssignmentFileDelivery> {
+    try {
+      const path = assignmentDownloadPath(downloadUrl)
+
+      if (!path) {
+        throw new AssignmentContractError(
+          "The assignment file URL is not relative to the selected campus.",
+        )
+      }
+
+      const response = await this.httpClient.request<Blob>({
+        method: "GET",
+        path,
+        headers: {
+          Accept: "*/*",
+        },
+        responseType: "blob",
+        timeoutMs: 60_000,
+      })
+
+      if (!(response.data instanceof Blob)) {
+        throw new AssignmentContractError("The assignment file response is invalid.")
+      }
+
+      return {
+        blob: response.data,
+        filename: assignmentDownloadFilename(
+          response.headers["content-disposition"],
+          fallbackFilename,
+        ),
+      }
     } catch (error) {
       throw mapError(error)
     }
