@@ -11,6 +11,8 @@ import LoadingState from "@/components/states/LoadingState.vue"
 import {
   buildAssignmentDetailRoute,
   buildExercisePlayerRoute,
+  buildForumThreadRoute,
+  buildForumThreadsRoute,
   buildLearningPathsRoute,
   buildSurveyDetailRoute,
   CourseRouteContextError,
@@ -18,12 +20,18 @@ import {
 } from "@/domain/courses/routeContext"
 import { parseLearningPathAssignmentContentUrl } from "@/domain/assignments/learningPathContext"
 import { parseLearningPathQuizContentUrl } from "@/domain/exercises/learningPathContext"
+import {
+  parseLearningPathForumContentUrl,
+  parseLearningPathThreadContentUrl,
+} from "@/domain/forums/learningPathContext"
 import { parseLearningPathSurveyContentUrl } from "@/domain/surveys/learningPathContext"
 import {
   isAssignmentLearningPathItem,
+  isForumLearningPathItem,
   isQuizLearningPathItem,
   isSupportedLearningPathItem,
   isSurveyLearningPathItem,
+  isThreadLearningPathItem,
 } from "@/domain/learningPaths/contracts"
 import type {
   LearningPathRuntimeItem,
@@ -127,6 +135,40 @@ const assignmentLaunch = computed(() => {
   if (!runtime || !item || !activeContext || !isAssignmentLearningPathItem(item)) return null
 
   return parseLearningPathAssignmentContentUrl(
+    runtime.contentUrl,
+    runtime.lpId,
+    item.id,
+    activeContext.courseId,
+    activeContext.sessionId,
+    runtime.title || props.learningPathTitle || "",
+  )
+})
+
+const forumLaunch = computed(() => {
+  const runtime = store.runtime
+  const item = store.currentItem
+  const activeContext = context.value
+
+  if (!runtime || !item || !activeContext || !isForumLearningPathItem(item)) return null
+
+  return parseLearningPathForumContentUrl(
+    runtime.contentUrl,
+    runtime.lpId,
+    item.id,
+    activeContext.courseId,
+    activeContext.sessionId,
+    runtime.title || props.learningPathTitle || "",
+  )
+})
+
+const threadLaunch = computed(() => {
+  const runtime = store.runtime
+  const item = store.currentItem
+  const activeContext = context.value
+
+  if (!runtime || !item || !activeContext || !isThreadLearningPathItem(item)) return null
+
+  return parseLearningPathThreadContentUrl(
     runtime.contentUrl,
     runtime.lpId,
     item.id,
@@ -472,6 +514,60 @@ onBeforeUnmount(() => {
           <i class="pi pi-arrow-right" aria-hidden="true" />
           {{ t("assignments.open") }}
         </RouterLink>
+
+        <RouterLink
+          v-else-if="
+            forumLaunch &&
+            context &&
+            isForumLearningPathItem(store.currentItem) &&
+            store.contentStatus === 'ready'
+          "
+          :to="
+            buildForumThreadsRoute(
+              context,
+              forumLaunch.forumId,
+              store.currentItem.title,
+              forumLaunch.context,
+            )
+          "
+          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
+        >
+          <i class="pi pi-comments" aria-hidden="true" />
+          {{ t("forums.threads.title") }}
+        </RouterLink>
+
+        <RouterLink
+          v-else-if="
+            threadLaunch &&
+            context &&
+            isThreadLearningPathItem(store.currentItem) &&
+            store.contentStatus === 'ready'
+          "
+          :to="
+            buildForumThreadRoute(
+              context,
+              threadLaunch.forumId,
+              threadLaunch.threadId,
+              undefined,
+              store.currentItem.title,
+              threadLaunch.context,
+            )
+          "
+          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
+        >
+          <i class="pi pi-comment" aria-hidden="true" />
+          {{ t("forums.thread.title") }}
+        </RouterLink>
+
+        <p
+          v-else-if="
+            store.contentStatus === 'ready' &&
+            (isForumLearningPathItem(store.currentItem) || isThreadLearningPathItem(store.currentItem))
+          "
+          class="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"
+        >
+          {{ t("learningPaths.unsupportedItem") }}
+        </p>
 
         <p
           v-else-if="!isSupportedLearningPathItem(store.currentItem)"

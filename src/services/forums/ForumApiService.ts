@@ -1,4 +1,6 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import { buildForumLearningPathApiQuery } from "@/domain/forums/learningPathContext"
+import type { ForumLearningPathContext } from "@/domain/forums/learningPathContext"
 import {
   buildForumCategoriesRequest,
   buildForumsRequest,
@@ -124,10 +126,14 @@ function actionToken(value: unknown): ForumActionToken {
   return { token }
 }
 
-function contextQuery(context: CourseNavigationContext): Record<string, number> {
+function contextQuery(
+  context: CourseNavigationContext,
+  learningPathContext?: ForumLearningPathContext | null,
+): Record<string, number> {
   return {
     cid: context.courseId,
     ...(context.sessionId ? { sid: context.sessionId } : {}),
+    ...buildForumLearningPathApiQuery(learningPathContext),
   }
 }
 
@@ -199,9 +205,10 @@ export class ForumApiService {
   async getThreads(
     context: CourseNavigationContext,
     forumId: number,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<ForumThreadsCollection> {
     try {
-      const request = buildForumThreadsRequest(context, forumId)
+      const request = buildForumThreadsRequest(context, forumId, learningPathContext)
       const response = await this.httpClient.request<unknown>({
         method: "GET",
         path: request.path,
@@ -221,9 +228,10 @@ export class ForumApiService {
     context: CourseNavigationContext,
     forumId: number,
     threadId: number,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<ForumThreadDetail> {
     try {
-      const request = buildForumThreadRequest(context, forumId, threadId)
+      const request = buildForumThreadRequest(context, forumId, threadId, learningPathContext)
       const response = await this.httpClient.request<unknown>({
         method: "GET",
         path: request.path,
@@ -254,13 +262,14 @@ export class ForumApiService {
     context: CourseNavigationContext,
     forumId: number,
     input: CreateForumThreadInput,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<HttpRequest<Record<string, unknown>>> {
     const token = await this.getActionToken()
 
     return {
       method: "POST",
       path: "/api/forum_threads/create",
-      query: contextQuery(context),
+      query: contextQuery(context, learningPathContext),
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -281,13 +290,14 @@ export class ForumApiService {
     forumId: number,
     threadId: number,
     input: CreateForumReplyInput,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<HttpRequest<Record<string, unknown>>> {
     const token = await this.getActionToken()
 
     return {
       method: "POST",
       path: "/api/forum_posts/reply",
-      query: contextQuery(context),
+      query: contextQuery(context, learningPathContext),
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -310,10 +320,11 @@ export class ForumApiService {
     context: CourseNavigationContext,
     forumId: number,
     input: CreateForumThreadInput,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<ForumWriteResult> {
     try {
       const response = await this.httpClient.request<unknown>(
-        await this.prepareCreateThreadRequest(context, forumId, input),
+        await this.prepareCreateThreadRequest(context, forumId, input, learningPathContext),
       )
       return writeResult(response.data)
     } catch (error) {
@@ -326,10 +337,11 @@ export class ForumApiService {
     forumId: number,
     threadId: number,
     input: CreateForumReplyInput,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<ForumWriteResult> {
     try {
       const response = await this.httpClient.request<unknown>(
-        await this.prepareCreateReplyRequest(context, forumId, threadId, input),
+        await this.prepareCreateReplyRequest(context, forumId, threadId, input, learningPathContext),
       )
       return writeResult(response.data)
     } catch (error) {

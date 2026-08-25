@@ -6,11 +6,13 @@ import {
   buildLearningPathScormCommitRequest,
   buildLearningPathScormPackageRequest,
   isAssignmentLearningPathItem,
+  isForumLearningPathItem,
   isCompletedLearningPathStatus,
   isOpenableLearningPathItem,
   isQuizLearningPathItem,
   isScormLearningPathItem,
   isSurveyLearningPathItem,
+  isThreadLearningPathItem,
   isSupportedLearningPathItem,
   normalizeLearningPathRuntime,
 } from "@/domain/learningPaths/contracts"
@@ -126,7 +128,7 @@ describe("learning path runtime contract", () => {
         packageEntryPath: "../index.html",
         packageFingerprint: "not-a-fingerprint",
       },
-      items: [{ id: 12, title: "Forum", itemType: "forum", available: true, isSection: false }],
+      items: [{ id: 12, title: "Unsupported", itemType: "external_tool", available: true, isSection: false }],
     })
 
     expect(runtime.contentUrl).toBeNull()
@@ -187,4 +189,32 @@ describe("learning path runtime contract", () => {
     expect(isSupportedLearningPathItem(runtime.items[0])).toBe(true)
     expect(isOpenableLearningPathItem(runtime.items[0] ?? null, runtime)).toBe(true)
   })
+
+  it("treats available forum and thread items as native mobile learning path items", () => {
+    const forumRuntime = normalizeLearningPathRuntime({
+      lpId: 7,
+      runtimeSupported: true,
+      currentItemId: 15,
+      contentUrl:
+        "/resources/forum/40/forum/8?cid=10&sid=4&gid=0&origin=learnpath&lp_id=7&item_id=15&returnToLp=1&embedded=1&type=step&lp_item_id=15",
+      items: [{ id: 15, title: "Forum", itemType: "forum", available: true, isSection: false }],
+    })
+    const threadRuntime = normalizeLearningPathRuntime({
+      lpId: 7,
+      runtimeSupported: true,
+      currentItemId: 16,
+      contentUrl:
+        "/resources/forum/40/forum/8/thread/21?cid=10&sid=4&gid=0&origin=learnpath&lp_id=7&item_id=16&returnToLp=1&embedded=1&type=step&lp_item_id=16",
+      items: [{ id: 16, title: "Thread", itemType: "thread", available: true, isSection: false }],
+    })
+
+    expect(isForumLearningPathItem(forumRuntime.items[0])).toBe(true)
+    expect(isSupportedLearningPathItem(forumRuntime.items[0])).toBe(true)
+    expect(isOpenableLearningPathItem(forumRuntime.items[0] ?? null, forumRuntime)).toBe(true)
+
+    expect(isThreadLearningPathItem(threadRuntime.items[0])).toBe(true)
+    expect(isSupportedLearningPathItem(threadRuntime.items[0])).toBe(true)
+    expect(isOpenableLearningPathItem(threadRuntime.items[0] ?? null, threadRuntime)).toBe(true)
+  })
+
 })

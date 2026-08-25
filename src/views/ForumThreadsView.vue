@@ -10,9 +10,14 @@ import LoadingState from "@/components/states/LoadingState.vue"
 import {
   buildForumThreadRoute,
   buildForumsRoute,
+  buildLearningPathDetailRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import {
+  hasForumLearningPathRouteContext,
+  parseForumLearningPathRouteContext,
+} from "@/domain/forums/learningPathContext"
 import { useForumsStore } from "@/stores/forums"
 
 const props = defineProps<{
@@ -23,6 +28,12 @@ const props = defineProps<{
   membershipId: string | null
   sessionCourseId: string | null
   source: string | null
+  origin: string | null
+  learningPathEntry: string | null
+  learningPathId: string | null
+  learningPathItemId: string | null
+  learningPathTitle: string | null
+  groupId: string | null
 }>()
 
 const { t } = useI18n()
@@ -48,7 +59,25 @@ const parsedForumId = computed(() => {
   return Number.isInteger(value) && value > 0 ? value : null
 })
 
-const usableContext = computed(() => context.value && parsedForumId.value !== null)
+const hasLearningPathRouteContext = computed(() => hasForumLearningPathRouteContext(props))
+const learningPathContext = computed(() => parseForumLearningPathRouteContext(props))
+const usableContext = computed(
+  () =>
+    context.value &&
+    parsedForumId.value !== null &&
+    (!hasLearningPathRouteContext.value || learningPathContext.value !== null),
+)
+const backRoute = computed(() => {
+  if (!context.value) return null
+
+  return learningPathContext.value
+    ? buildLearningPathDetailRoute(
+        context.value,
+        learningPathContext.value.learningPathId,
+        learningPathContext.value.learningPathTitle || undefined,
+      )
+    : buildForumsRoute(context.value)
+})
 const canCreateThread = computed(
   () =>
     store.threads.data?.allowNewThreads === true &&
@@ -62,9 +91,9 @@ const writeErrorDescription = computed(() =>
 )
 
 async function load(): Promise<void> {
-  if (context.value && parsedForumId.value !== null) {
-    await store.loadThreads(context.value, parsedForumId.value)
-  }
+  if (!usableContext.value || !context.value || parsedForumId.value === null) return
+
+  await store.loadThreads(context.value, parsedForumId.value, learningPathContext.value)
 }
 
 function resetComposer(): void {
@@ -77,7 +106,14 @@ function resetComposer(): void {
 }
 
 async function submitThread(): Promise<void> {
-  if (!context.value || parsedForumId.value === null || !canCreateThread.value) return
+  if (
+    !usableContext.value ||
+    !context.value ||
+    parsedForumId.value === null ||
+    !canCreateThread.value
+  ) {
+    return
+  }
 
   validationError.value = null
   store.resetWrite()
@@ -92,11 +128,16 @@ async function submitThread(): Promise<void> {
     return
   }
 
-  const result = await store.createThread(context.value, parsedForumId.value, {
-    title: title.value,
-    text: text.value,
-    postNotification: postNotification.value,
-  })
+  const result = await store.createThread(
+    context.value,
+    parsedForumId.value,
+    {
+      title: title.value,
+      text: text.value,
+      postNotification: postNotification.value,
+    },
+    learningPathContext.value,
+  )
 
   if (!result) return
 
@@ -111,6 +152,7 @@ async function submitThread(): Promise<void> {
     result.threadId,
     store.threads.data?.forumTitle || props.forumTitle || undefined,
     title.value.trim(),
+    learningPathContext.value,
   )
 
   resetComposer()
@@ -125,11 +167,11 @@ onMounted(load)
 
   <div v-else-if="context && parsedForumId !== null" class="space-y-5">
     <RouterLink
-      :to="buildForumsRoute(context)"
+      :to="backRoute ?? buildForumsRoute(context)"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ t("forums.backToForums") }}
+      {{ learningPathContext ? t("learningPaths.backToList") : t("forums.backToForums") }}
     </RouterLink>
 
     <section class="rounded-2xl bg-white p-4 shadow-sm">
@@ -253,6 +295,7 @@ onMounted(load)
               thread.id,
               store.threads.data?.forumTitle || props.forumTitle || undefined,
               thread.title,
+              learningPathContext,
             )
           "
           class="hover:border-chamilo-300 block min-h-touch rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"

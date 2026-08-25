@@ -425,6 +425,16 @@ export const routes: RouteRecordRaw[] = [
       sessionCourseId:
         typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
       source: typeof route.query.source === "string" ? route.query.source : null,
+      origin: typeof route.query.origin === "string" ? route.query.origin : null,
+      learningPathEntry:
+        typeof route.query.learningPathEntry === "string" ? route.query.learningPathEntry : null,
+      learningPathId:
+        typeof route.query.learningPathId === "string" ? route.query.learningPathId : null,
+      learningPathItemId:
+        typeof route.query.learningPathItemId === "string" ? route.query.learningPathItemId : null,
+      learningPathTitle:
+        typeof route.query.learningPathTitle === "string" ? route.query.learningPathTitle : null,
+      groupId: typeof route.query.gid === "string" ? route.query.gid : null,
     }),
     meta: {
       titleKey: "routes.forumThreads",
@@ -448,6 +458,16 @@ export const routes: RouteRecordRaw[] = [
       sessionCourseId:
         typeof route.query.sessionCourse === "string" ? route.query.sessionCourse : null,
       source: typeof route.query.source === "string" ? route.query.source : null,
+      origin: typeof route.query.origin === "string" ? route.query.origin : null,
+      learningPathEntry:
+        typeof route.query.learningPathEntry === "string" ? route.query.learningPathEntry : null,
+      learningPathId:
+        typeof route.query.learningPathId === "string" ? route.query.learningPathId : null,
+      learningPathItemId:
+        typeof route.query.learningPathItemId === "string" ? route.query.learningPathItemId : null,
+      learningPathTitle:
+        typeof route.query.learningPathTitle === "string" ? route.query.learningPathTitle : null,
+      groupId: typeof route.query.gid === "string" ? route.query.gid : null,
     }),
     meta: {
       titleKey: "routes.forumThread",

@@ -1,4 +1,6 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import { buildForumLearningPathApiQuery } from "@/domain/forums/learningPathContext"
+import type { ForumLearningPathContext } from "@/domain/forums/learningPathContext"
 import type {
   ForumAttachmentSummary,
   ForumAvailabilityStatus,
@@ -176,6 +178,7 @@ export function buildForumsRequest(
 export function buildForumThreadsRequest(
   context: CourseNavigationContext,
   forumId: number,
+  learningPathContext?: ForumLearningPathContext | null,
 ): ForumRequestDefinition {
   const normalizedForumId = asPositiveInteger(forumId, "forum id")
 
@@ -185,6 +188,7 @@ export function buildForumThreadsRequest(
       forum: `/api/forums/${normalizedForumId}`,
       cid: context.courseId,
       ...sessionQuery(context),
+      ...buildForumLearningPathApiQuery(learningPathContext),
       itemsPerPage: 5000,
       "order[threadSticky]": "desc",
       "order[threadDate]": "desc",
@@ -197,6 +201,7 @@ export function buildForumThreadRequest(
   context: CourseNavigationContext,
   forumId: number,
   threadId: number,
+  learningPathContext?: ForumLearningPathContext | null,
 ): ForumRequestDefinition {
   return {
     path: `/api/forum_threads/${asPositiveInteger(threadId, "thread id")}/posts`,
@@ -204,6 +209,7 @@ export function buildForumThreadRequest(
       cid: context.courseId,
       forumId: asPositiveInteger(forumId, "forum id"),
       ...sessionQuery(context),
+      ...buildForumLearningPathApiQuery(learningPathContext),
     },
   }
 }

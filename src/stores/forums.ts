@@ -2,6 +2,7 @@ import { reactive } from "vue"
 import { defineStore } from "pinia"
 
 import type { CourseNavigationContext } from "@/domain/courses/types"
+import type { ForumLearningPathContext } from "@/domain/forums/learningPathContext"
 import type {
   CreateForumReplyInput,
   CreateForumThreadInput,
@@ -120,7 +121,11 @@ export const useForumsStore = defineStore("forums", () => {
     }
   }
 
-  async function loadThreads(context: CourseNavigationContext, forumId: number): Promise<boolean> {
+  async function loadThreads(
+    context: CourseNavigationContext,
+    forumId: number,
+    learningPathContext?: ForumLearningPathContext | null,
+  ): Promise<boolean> {
     const api = service()
     if (!api) {
       threads.status = "error"
@@ -134,7 +139,7 @@ export const useForumsStore = defineStore("forums", () => {
     threads.errorCode = null
 
     try {
-      threads.data = await api.getThreads(context, forumId)
+      threads.data = await api.getThreads(context, forumId, learningPathContext)
       threads.status = "ready"
       return true
     } catch (error) {
@@ -148,6 +153,7 @@ export const useForumsStore = defineStore("forums", () => {
     context: CourseNavigationContext,
     forumId: number,
     threadId: number,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<boolean> {
     const api = service()
     if (!api) {
@@ -162,7 +168,7 @@ export const useForumsStore = defineStore("forums", () => {
     thread.errorCode = null
 
     try {
-      thread.data = await api.getThread(context, forumId, threadId)
+      thread.data = await api.getThread(context, forumId, threadId, learningPathContext)
       thread.status = "ready"
       return true
     } catch (error) {
@@ -176,6 +182,7 @@ export const useForumsStore = defineStore("forums", () => {
     context: CourseNavigationContext,
     forumId: number,
     input: CreateForumThreadInput,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<ForumWriteResult | null> {
     const api = service()
     if (!api) {
@@ -191,7 +198,12 @@ export const useForumsStore = defineStore("forums", () => {
 
     const queueThread = async (uncertainDelivery = false): Promise<ForumWriteResult | null> => {
       try {
-        const request = await api.prepareCreateThreadRequest(context, forumId, input)
+        const request = await api.prepareCreateThreadRequest(
+          context,
+          forumId,
+          input,
+          learningPathContext,
+        )
         const queued = await useOfflineSyncStore().enqueueHttpWrite({
           category: "forum_thread_create",
           request,
@@ -218,7 +230,7 @@ export const useForumsStore = defineStore("forums", () => {
     if (isOfflineNow()) return queueThread()
 
     try {
-      write.result = await api.createThread(context, forumId, input)
+      write.result = await api.createThread(context, forumId, input, learningPathContext)
       write.status = "success"
       return write.result
     } catch (error) {
@@ -234,6 +246,7 @@ export const useForumsStore = defineStore("forums", () => {
     forumId: number,
     threadId: number,
     input: CreateForumReplyInput,
+    learningPathContext?: ForumLearningPathContext | null,
   ): Promise<ForumWriteResult | null> {
     const api = service()
     if (!api) {
@@ -249,7 +262,13 @@ export const useForumsStore = defineStore("forums", () => {
 
     const queueReply = async (uncertainDelivery = false): Promise<ForumWriteResult | null> => {
       try {
-        const request = await api.prepareCreateReplyRequest(context, forumId, threadId, input)
+        const request = await api.prepareCreateReplyRequest(
+          context,
+          forumId,
+          threadId,
+          input,
+          learningPathContext,
+        )
         const queued = await useOfflineSyncStore().enqueueHttpWrite({
           category: "forum_reply_create",
           request,
@@ -276,7 +295,13 @@ export const useForumsStore = defineStore("forums", () => {
     if (isOfflineNow()) return queueReply()
 
     try {
-      write.result = await api.createReply(context, forumId, threadId, input)
+      write.result = await api.createReply(
+        context,
+        forumId,
+        threadId,
+        input,
+        learningPathContext,
+      )
       write.status = "success"
       return write.result
     } catch (error) {
