@@ -19,7 +19,15 @@ export interface LearningPathRuntimeRequest {
   query: Record<string, string | number>
 }
 
-const SUPPORTED_ITEM_TYPES = new Set(["document", "video", "readout_text", "sco", "asset", "quiz"])
+const SUPPORTED_ITEM_TYPES = new Set([
+  "document",
+  "video",
+  "readout_text",
+  "sco",
+  "asset",
+  "quiz",
+  "survey",
+])
 const SCORM_ITEM_TYPES = new Set(["sco", "asset"])
 const COMPLETED_STATUSES = new Set(["completed", "passed", "succeeded", "browsed", "failed"])
 
@@ -291,6 +299,10 @@ export function isScormLearningPathItem(item: LearningPathRuntimeItem | null | u
 
 export function isQuizLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
   return Boolean(item && item.itemType.toLowerCase() === "quiz")
+}
+
+export function isSurveyLearningPathItem(item: LearningPathRuntimeItem | null | undefined): boolean {
+  return Boolean(item && item.itemType.toLowerCase() === "survey")
 }
 
 export function isSupportedLearningPathItem(

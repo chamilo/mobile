@@ -67,6 +67,35 @@ describe("course route context", () => {
     })
   })
 
+  it("preserves learning path context when opening a survey from a lesson", () => {
+    expect(
+      buildSurveyDetailRoute(
+        sessionContext,
+        12,
+        "answer",
+        "Lesson feedback",
+        27,
+        "auto",
+        6,
+        "First lesson",
+      ),
+    ).toEqual({
+      name: "survey-detail",
+      params: { courseId: "4", surveyId: "12" },
+      query: {
+        source: "session",
+        sid: "8",
+        sessionCourse: "17",
+        surveyTitle: "Lesson feedback",
+        mode: "answer",
+        lpItemId: "27",
+        invitationCode: "auto",
+        learningPathId: "6",
+        learningPathTitle: "First lesson",
+      },
+    })
+  })
+
   it("parses a complete direct context", () => {
     expect(
       parseCourseRouteContext({

@@ -111,6 +111,7 @@ export class SurveyApiService {
     mode: SurveyOpenMode,
     invitationLpItemId = 0,
     invitationCode = "",
+    learningPathId = 0,
   ): Promise<SurveyDetail> {
     try {
       const request = buildSurveyDetailRequest(
@@ -119,6 +120,7 @@ export class SurveyApiService {
         mode,
         invitationLpItemId,
         invitationCode,
+        learningPathId,
       )
       const response = await this.httpClient.request<unknown>({
         method: "GET",
@@ -140,6 +142,7 @@ export class SurveyApiService {
     detail: SurveyDetail,
     draft: SurveyAnswerDraft,
     invitationLpItemId = 0,
+    learningPathId = 0,
   ): HttpRequest {
     const request = buildSurveySubmitRequest(
       context,
@@ -147,6 +150,7 @@ export class SurveyApiService {
       invitationLpItemId,
       detail.invitationCode,
       buildSurveySubmissionPayload(detail, draft),
+      learningPathId,
     )
 
     return {
@@ -166,10 +170,17 @@ export class SurveyApiService {
     detail: SurveyDetail,
     draft: SurveyAnswerDraft,
     invitationLpItemId = 0,
+    learningPathId = 0,
   ): Promise<SurveyDetail> {
     try {
       const response = await this.httpClient.request<unknown>(
-        this.buildSubmitRequest(context, detail, draft, invitationLpItemId),
+        this.buildSubmitRequest(
+          context,
+          detail,
+          draft,
+          invitationLpItemId,
+          learningPathId,
+        ),
       )
 
       return normalizeSurveyDetail(response.data)

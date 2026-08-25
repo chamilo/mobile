@@ -9,6 +9,7 @@ import LoadingState from "@/components/states/LoadingState.vue"
 import SurveyProfileFieldInput from "@/components/surveys/SurveyProfileFieldInput.vue"
 import SurveyQuestionInput from "@/components/surveys/SurveyQuestionInput.vue"
 import {
+  buildLearningPathDetailRoute,
   buildSurveysRoute,
   CourseRouteContextError,
   parseCourseRouteContext,
@@ -25,6 +26,8 @@ const props = defineProps<{
   mode: string | null
   invitationLpItemId: string | null
   invitationCode: string | null
+  learningPathId: string | null
+  learningPathTitle: string | null
   sessionId: string | null
   membershipId: string | null
   sessionCourseId: string | null
@@ -59,8 +62,38 @@ const parsedInvitationLpItemId = computed(() => {
   return Number.isInteger(value) && value > 0 ? value : 0
 })
 
+const parsedLearningPathId = computed(() => {
+  if (!props.learningPathId) return 0
+
+  const value = Number(props.learningPathId)
+  return Number.isInteger(value) && value > 0 ? value : 0
+})
+
+const hasLearningPathRouteContext = computed(() => props.learningPathId !== null)
+const validLearningPathRouteContext = computed(
+  () =>
+    !hasLearningPathRouteContext.value ||
+    (parsedLearningPathId.value > 0 && parsedInvitationLpItemId.value > 0),
+)
+
+const backRoute = computed(() => {
+  if (!context.value) return null
+
+  return parsedLearningPathId.value > 0
+    ? buildLearningPathDetailRoute(
+        context.value,
+        parsedLearningPathId.value,
+        props.learningPathTitle ?? undefined,
+      )
+    : buildSurveysRoute(context.value)
+})
+
 const usableContext = computed(
-  () => context.value && parsedSurveyId.value !== null && parsedMode.value !== null,
+  () =>
+    context.value &&
+    parsedSurveyId.value !== null &&
+    parsedMode.value !== null &&
+    validLearningPathRouteContext.value,
 )
 const editable = computed(
   () =>
@@ -133,7 +166,11 @@ async function updateProfileValue(key: string, value: string | string[]): Promis
 
 async function submit(): Promise<void> {
   if (!context.value) return
-  await store.submitSurvey(context.value, parsedInvitationLpItemId.value)
+  await store.submitSurvey(
+    context.value,
+    parsedInvitationLpItemId.value,
+    parsedLearningPathId.value,
+  )
 }
 
 async function load(): Promise<void> {
@@ -144,6 +181,7 @@ async function load(): Promise<void> {
       parsedMode.value,
       parsedInvitationLpItemId.value,
       props.invitationCode ?? "",
+      parsedLearningPathId.value,
     )
   }
 }
@@ -156,11 +194,16 @@ onMounted(load)
 
   <div v-else-if="context && parsedSurveyId !== null && parsedMode !== null" class="space-y-5">
     <RouterLink
-      :to="buildSurveysRoute(context)"
+      v-if="backRoute"
+      :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ t("surveys.backToSurveys") }}
+      {{
+        parsedLearningPathId > 0
+          ? t("surveys.backToLearningPath")
+          : t("surveys.backToSurveys")
+      }}
     </RouterLink>
 
     <LoadingState

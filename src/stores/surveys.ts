@@ -267,6 +267,7 @@ export const useSurveysStore = defineStore("surveys", () => {
     mode: SurveyOpenMode,
     invitationLpItemId = 0,
     invitationCode = "",
+    learningPathId = 0,
   ): Promise<boolean> {
     const api = service()
 
@@ -294,6 +295,7 @@ export const useSurveysStore = defineStore("surveys", () => {
         mode,
         invitationLpItemId,
         invitationCode,
+        learningPathId,
       )
       if (
         !useConnectivityStore().campusAvailable &&
@@ -400,6 +402,7 @@ export const useSurveysStore = defineStore("surveys", () => {
   async function submitSurvey(
     context: CourseNavigationContext,
     invitationLpItemId = 0,
+    learningPathId = 0,
   ): Promise<boolean> {
     const api = service()
     if (!api) {
@@ -423,7 +426,13 @@ export const useSurveysStore = defineStore("surveys", () => {
     detail.errorCode = null
     await persistDraft(context, invitationLpItemId)
 
-    const request = api.buildSubmitRequest(context, detail.data, detail.draft, invitationLpItemId)
+    const request = api.buildSubmitRequest(
+      context,
+      detail.data,
+      detail.draft,
+      invitationLpItemId,
+      learningPathId,
+    )
     const queueSubmission = async (uncertainDelivery = false): Promise<boolean> => {
       const queued = await useOfflineSyncStore().enqueueHttpWrite({
         category: "survey_answer_submit",
@@ -452,7 +461,13 @@ export const useSurveysStore = defineStore("surveys", () => {
     if (shouldUsePreparedData()) return queueSubmission()
 
     try {
-      detail.data = await api.submitSurvey(context, detail.data, detail.draft, invitationLpItemId)
+      detail.data = await api.submitSurvey(
+        context,
+        detail.data,
+        detail.draft,
+        invitationLpItemId,
+        learningPathId,
+      )
       detail.draft.finalizedAt = new Date().toISOString()
       await persistDraft(context, invitationLpItemId)
       detail.submitStatus = "submitted"
