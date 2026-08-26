@@ -761,6 +761,8 @@ export default {
     offlineAttemptNotPrepared:
       "This exercise does not have a prepared attempt on this device. Connect to the campus and update the offline course before opening it again.",
     questionProgress: "Question {current} of {total}",
+    questionTimeLeft: "Question time left",
+    questionTimeReached: "Question time reached. Saving your answer.",
     pageProgress: "Page {current} of {total}",
     section: "Section",
     mediaContext: "Reference content",

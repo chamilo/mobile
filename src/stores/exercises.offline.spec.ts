@@ -226,6 +226,27 @@ describe("exercises store offline prepared runtime", () => {
     Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true })
   })
 
+  it("does not queue timed answers while offline", async () => {
+    const timedRuntime = structuredClone(preparedRuntime) as ExerciseRuntime
+    timedRuntime.settings = {
+      allowTimePerQuestion: true,
+      hasTimedQuestions: true,
+      effectiveOneQuestionPerPage: true,
+    }
+    timedRuntime.questions[0]!.duration = 30
+    await coreFlows.saveExerciseRuntime(campus.id, 7, context, 16, timedRuntime)
+
+    const store = useExercisesStore()
+    await store.loadRuntime(context, 16)
+
+    store.answers[101]!.choice = 1
+    await expect(store.saveCurrentAnswer(context, 16, "none", undefined, null, 12)).resolves.toBe(
+      false,
+    )
+    expect(store.errorCode).toBe("network")
+    expect(useOfflineSyncStore().operations).toHaveLength(0)
+  })
+
   it("opens questions without an API call and restores the queued answer after reload", async () => {
     const store = useExercisesStore()
 
