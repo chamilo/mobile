@@ -4,6 +4,7 @@ import { defineStore } from "pinia"
 import type { CampusProfile } from "@/domain/campus/types"
 import type { CourseNavigationContext } from "@/domain/courses/types"
 import { isImmediateExerciseFeedbackType } from "@/domain/exercises/feedback"
+import { isClientTimedExerciseQuestion } from "@/domain/exercises/questionTimer"
 import { isExerciseFileAnswerType } from "@/domain/exercises/fileAnswers"
 import { buildExerciseLearningPathApiQuery } from "@/domain/exercises/learningPathContext"
 import type { OfflineHttpWritePayload } from "@/domain/offline/types"
@@ -616,6 +617,10 @@ export const useExercisesStore = defineStore("exercises", () => {
     return isImmediateExerciseFeedbackType(runtime.value?.settings.feedbackType)
   }
 
+  function requiresOnlineQuestionTimer(questionDuration: number | null): boolean {
+    return isClientTimedExerciseQuestion(runtime.value?.settings ?? {}, questionDuration)
+  }
+
   async function saveQuestionAnswer(
     context: CourseNavigationContext,
     exerciseId: number,
@@ -623,6 +628,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     navigationAction = "none",
     learningPathContext?: ExerciseLearningPathContext | null,
     file?: File | null,
+    secondsSpent = 0,
   ): Promise<boolean> {
     const question = answerableQuestions.value.find((item) => item.id === questionId)
     const attemptId = runtime.value?.attempt?.attemptId
@@ -634,6 +640,14 @@ export const useExercisesStore = defineStore("exercises", () => {
     clearError()
     lastAnswerFeedback.value = null
 
+    const requiresQuestionTimerConnection = requiresOnlineQuestionTimer(question.duration)
+    if (requiresQuestionTimerConnection && shouldUsePreparedData()) {
+      errorCode.value = "network"
+      errorMessage.value = "Reconnect before submitting a timed question."
+      saving.value = false
+      return false
+    }
+
     if (requiresOnlineAnswerFeedback() && shouldUsePreparedData()) {
       errorCode.value = "network"
       errorMessage.value = "Reconnect before submitting an answer that requires immediate feedback."
@@ -644,7 +658,7 @@ export const useExercisesStore = defineStore("exercises", () => {
       questionId: question.id,
       answer: buildExerciseAnswerPayload(question, answerState),
       reviewLater: answerState.reviewLater,
-      secondsSpent: 0,
+      secondsSpent: Math.max(0, Math.floor(secondsSpent)),
       navigationAction,
     }
     const fileAnswer = isExerciseFileAnswerType(question.type)
@@ -678,7 +692,7 @@ export const useExercisesStore = defineStore("exercises", () => {
             questionId: question.id,
             file,
             reviewLater: answerState.reviewLater,
-            secondsSpent: 0,
+            secondsSpent: Math.max(0, Math.floor(secondsSpent)),
             navigationAction,
           },
           learningPathContext,
@@ -767,7 +781,13 @@ export const useExercisesStore = defineStore("exercises", () => {
       if (!learningPathContext) await saveOfflineState(context, exerciseId)
       return true
     } catch (error) {
-      if (!learningPathContext && isUncertainDeliveryError(error)) await queueAnswer(true)
+      if (
+        !requiresQuestionTimerConnection &&
+        !learningPathContext &&
+        isUncertainDeliveryError(error)
+      ) {
+        await queueAnswer(true)
+      }
       setError(error)
       return false
     } finally {
@@ -781,6 +801,7 @@ export const useExercisesStore = defineStore("exercises", () => {
     navigationAction = "none",
     learningPathContext?: ExerciseLearningPathContext | null,
     file?: File | null,
+    secondsSpent = 0,
   ): Promise<boolean> {
     const questionId = currentQuestion.value?.id
     if (!questionId) return false
@@ -792,6 +813,7 @@ export const useExercisesStore = defineStore("exercises", () => {
       navigationAction,
       learningPathContext,
       file,
+      secondsSpent,
     )
   }
 
@@ -801,10 +823,20 @@ export const useExercisesStore = defineStore("exercises", () => {
     index: number,
     learningPathContext?: ExerciseLearningPathContext | null,
     file?: File | null,
+    secondsSpent = 0,
   ): Promise<boolean> {
     if (index < 0 || index >= answerableQuestions.value.length) return false
     const action = index > currentQuestionIndex.value ? "next" : "previous"
-    if (await saveCurrentAnswer(context, exerciseId, action, learningPathContext, file)) {
+    if (
+      await saveCurrentAnswer(
+        context,
+        exerciseId,
+        action,
+        learningPathContext,
+        file,
+        secondsSpent,
+      )
+    ) {
       if (lastAnswerFeedback.value) return true
       currentQuestionIndex.value = index
       if (!learningPathContext) await saveOfflineState(context, exerciseId)
@@ -821,13 +853,23 @@ export const useExercisesStore = defineStore("exercises", () => {
     learningPathContext?: ExerciseLearningPathContext | null,
     file?: File | null,
     skipCurrentSave = false,
+    currentSecondsSpent = 0,
   ): Promise<number | null> {
     const attemptId = runtime.value?.attempt?.attemptId
     if (!attemptId || hasUnsupportedQuestions.value) return null
     if (rejectOfflineLearningPathRuntime(learningPathContext)) return null
     if (
       !skipCurrentSave &&
-      !(await saveCurrentAnswer(context, exerciseId, "finish", learningPathContext, file))
+      !(
+        await saveCurrentAnswer(
+          context,
+          exerciseId,
+          "finish",
+          learningPathContext,
+          file,
+          currentSecondsSpent,
+        )
+      )
     ) {
       return null
     }

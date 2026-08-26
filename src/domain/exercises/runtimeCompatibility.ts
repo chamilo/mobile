@@ -1,7 +1,13 @@
 import {
+  OFFICE_DOCUMENT_TYPE,
+  ORAL_EXPRESSION_TYPE,
+  UPLOAD_ANSWER_TYPE,
+} from "@/domain/exercises/fileAnswers"
+import {
   exerciseRuntimePagesRequireCampus,
   type ExerciseRuntimePage,
 } from "@/domain/exercises/runtimePages"
+import type { ExerciseQuestion } from "@/domain/exercises/types"
 
 export type ExerciseRuntimeCompatibilityReason =
   | "timed_questions"
@@ -18,9 +24,25 @@ export function exerciseRuntimeCompatibilityReason(
   settings: Record<string, unknown>,
   runtimePages: ExerciseRuntimePage[] = [],
   campusBaseUrl: string | null = null,
+  questions: ExerciseQuestion[] = [],
 ): ExerciseRuntimeCompatibilityReason | null {
   if (settings.allowTimePerQuestion === true && settings.hasTimedQuestions === true) {
-    return "timed_questions"
+    const feedbackType = numberSetting(settings, "feedbackType")
+    const hasUnsupportedTimedFileQuestion = questions.some(
+      (question) =>
+        Number(question.duration ?? 0) > 0 &&
+        [ORAL_EXPRESSION_TYPE, UPLOAD_ANSWER_TYPE, OFFICE_DOCUMENT_TYPE].includes(question.type),
+    )
+
+    if (
+      settings.effectiveOneQuestionPerPage !== true ||
+      [1, 3, 4].includes(feedbackType) ||
+      numberSetting(settings, "reviewAnswers") > 0 ||
+      settings.checkAllAnswersBeforeEndTest === true ||
+      hasUnsupportedTimedFileQuestion
+    ) {
+      return "timed_questions"
+    }
   }
 
   if (settings.blockCategoryQuestions === true) return "blocked_categories"

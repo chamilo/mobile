@@ -37,6 +37,14 @@ import {
   isExerciseQuestionTitleVisible,
 } from "@/domain/exercises/runtimeCompatibility"
 import { localizeExerciseQuestionContent } from "@/domain/exercises/presentation"
+import {
+  createExerciseQuestionTimerAnchor,
+  exerciseQuestionTimerRemainingSeconds,
+  exerciseQuestionTimerSpentSeconds,
+  isClientTimedExerciseQuestion,
+  savedExerciseQuestionSeconds,
+  type ExerciseQuestionTimerAnchor,
+} from "@/domain/exercises/questionTimer"
 import type {
   ExerciseAnswerFeedback as ExerciseAnswerFeedbackState,
   ExerciseAnswerState,
@@ -77,6 +85,7 @@ const store = useExercisesStore()
 const externalLinkPresenter = new BrowserExternalLinkPresenter()
 const confirmedSavedAnswers = ref(false)
 const remainingSeconds = ref<number | null>(null)
+const questionRemainingSeconds = ref<number | null>(null)
 const previewFinished = ref(false)
 const reviewFlowStarted = ref(false)
 const reviewSummaryVisible = ref(false)
@@ -85,6 +94,10 @@ const currentRuntimePageIndex = ref(0)
 const activeFeedback = ref<ExerciseAnswerFeedbackState | null>(null)
 const feedbackActionError = ref("")
 let timer: ReturnType<typeof setInterval> | null = null
+let questionTimer: ReturnType<typeof setInterval> | null = null
+let questionTimerAnchor: ExerciseQuestionTimerAnchor | null = null
+let questionTimerExpiryHandledForQuestionId: number | null = null
+const questionTimerSavedSeconds = ref<Record<number, number>>({})
 
 const context = computed(() => {
   try {
@@ -194,12 +207,25 @@ const hasFinalReview = computed(
 )
 const hasActiveFeedback = computed(() => activeFeedback.value !== null)
 const isTeacherPreview = computed(() => store.runtime?.canManage === true && !store.runtime.attempt)
+const currentTimedQuestion = computed(() => {
+  if (!store.runtime?.attempt || isTeacherPreview.value || visibleQuestions.value.length !== 1) return null
+
+  const activeQuestion = question.value
+  return activeQuestion &&
+    isClientTimedExerciseQuestion(store.runtime.settings, activeQuestion.duration)
+    ? activeQuestion
+    : null
+})
+const isQuestionTimeExpired = computed(
+  () => currentTimedQuestion.value !== null && questionRemainingSeconds.value === 0,
+)
 const runtimeCompatibilityReason = computed(() =>
   store.runtime
     ? exerciseRuntimeCompatibilityReason(
         store.runtime.settings,
         runtimePages.value,
         campusStore.selectedCampus?.baseUrl ?? null,
+        store.runtime.questions,
       )
     : null,
 )
@@ -472,6 +498,114 @@ function stopTimer(): void {
   timer = null
 }
 
+function stopQuestionTimer(): void {
+  if (questionTimer) clearInterval(questionTimer)
+  questionTimer = null
+  questionTimerAnchor = null
+}
+
+function savedQuestionSeconds(questionId: number): number {
+  return Math.max(
+    0,
+    questionTimerSavedSeconds.value[questionId] ??
+      savedExerciseQuestionSeconds(store.runtime?.attempt, questionId),
+  )
+}
+
+function questionSecondsSpent(questionId: number): number {
+  const timedQuestion = store.answerableQuestions.find((item) => item.id === questionId)
+  if (
+    !timedQuestion ||
+    !isClientTimedExerciseQuestion(store.runtime?.settings ?? {}, timedQuestion.duration)
+  ) {
+    return 0
+  }
+
+  if (questionTimerAnchor?.questionId === questionId) {
+    return exerciseQuestionTimerSpentSeconds(questionTimerAnchor)
+  }
+
+  return savedQuestionSeconds(questionId)
+}
+
+function rememberQuestionSeconds(questionId: number, secondsSpent: number): void {
+  if (questionId <= 0) return
+
+  const value = Math.max(0, Math.floor(secondsSpent))
+  questionTimerSavedSeconds.value = {
+    ...questionTimerSavedSeconds.value,
+    [questionId]: value,
+  }
+
+  const timedQuestion = currentTimedQuestion.value
+  if (timedQuestion?.id !== questionId) return
+
+  questionTimerAnchor = createExerciseQuestionTimerAnchor(
+    questionId,
+    timedQuestion.duration,
+    value,
+  )
+  questionRemainingSeconds.value = exerciseQuestionTimerRemainingSeconds(questionTimerAnchor)
+}
+
+async function handleQuestionTimerExpired(): Promise<void> {
+  const activeQuestionId = currentTimedQuestion.value?.id ?? 0
+  if (
+    activeQuestionId <= 0 ||
+    questionTimerExpiryHandledForQuestionId === activeQuestionId ||
+    store.saving ||
+    store.finishing ||
+    hasActiveFeedback.value
+  ) {
+    return
+  }
+
+  questionTimerExpiryHandledForQuestionId = activeQuestionId
+
+  if (navigationIndex.value < navigationTotal.value - 1) {
+    await go(navigationIndex.value + 1)
+    return
+  }
+
+  await requestFinish()
+}
+
+function updateQuestionTimer(): void {
+  const remaining = exerciseQuestionTimerRemainingSeconds(questionTimerAnchor)
+  questionRemainingSeconds.value = remaining
+
+  if (remaining === 0) void handleQuestionTimerExpired()
+}
+
+function syncQuestionTimer(): void {
+  stopQuestionTimer()
+  questionTimerExpiryHandledForQuestionId = null
+
+  const timedQuestion = currentTimedQuestion.value
+  if (!timedQuestion) {
+    questionRemainingSeconds.value = null
+    return
+  }
+
+  const questionId = timedQuestion.id
+  const savedSeconds = savedQuestionSeconds(questionId)
+  questionTimerAnchor = createExerciseQuestionTimerAnchor(
+    questionId,
+    timedQuestion.duration,
+    savedSeconds,
+  )
+  questionRemainingSeconds.value = exerciseQuestionTimerRemainingSeconds(questionTimerAnchor)
+
+  if (!questionTimerAnchor) return
+
+  if (questionRemainingSeconds.value === 0) {
+    void handleQuestionTimerExpired()
+    return
+  }
+
+  questionTimer = setInterval(updateQuestionTimer, 250)
+}
+
 function startTimer(): void {
   stopTimer()
   remainingSeconds.value = store.runtime?.attempt?.remainingSeconds ?? null
@@ -493,6 +627,10 @@ function formatDuration(value: number): string {
   return [hours, minutes, seconds].map((part) => String(part).padStart(2, "0")).join(":")
 }
 
+function handleVisibilityChange(): void {
+  if (document.visibilityState === "visible") updateQuestionTimer()
+}
+
 async function load(): Promise<void> {
   if (!context.value || !validExerciseId.value || invalidLearningPathContext.value) return
   previewFinished.value = false
@@ -500,10 +638,12 @@ async function load(): Promise<void> {
   reviewSummaryVisible.value = false
   confirmedSavedAnswers.value = false
   pendingAnswerFiles.value = {}
+  questionTimerSavedSeconds.value = {}
   clearActiveFeedback()
   await store.loadRuntime(context.value, numericExerciseId.value, learningPathContext.value)
   syncRuntimePageIndex()
   startTimer()
+  syncQuestionTimer()
 }
 
 async function start(): Promise<void> {
@@ -513,6 +653,7 @@ async function start(): Promise<void> {
     pendingAnswerFiles.value = {}
     syncRuntimePageIndex()
     startTimer()
+    syncQuestionTimer()
   }
 }
 
@@ -522,6 +663,7 @@ async function saveQuestionIds(questionIds: number[], navigationAction: string):
 
   for (const [index, questionId] of questionIds.entries()) {
     const action = index === questionIds.length - 1 ? navigationAction : "none"
+    const secondsSpent = questionSecondsSpent(questionId)
     const saved = await store.saveQuestionAnswer(
       context.value,
       numericExerciseId.value,
@@ -529,8 +671,10 @@ async function saveQuestionIds(questionIds: number[], navigationAction: string):
       action,
       learningPathContext.value,
       pendingFileFor(questionId),
+      secondsSpent,
     )
     if (!saved) return false
+    rememberQuestionSeconds(questionId, secondsSpent)
     clearPendingAnswerFile(questionId)
     if (captureAnswerFeedback(questionId, action)) return true
   }
@@ -574,6 +718,7 @@ async function go(index: number): Promise<void> {
     }
   } else {
     const questionId = question.value?.id ?? 0
+    const secondsSpent = questionSecondsSpent(questionId)
     const action = index > store.currentQuestionIndex ? "next" : "previous"
     const saved = await store.goToQuestion(
       context.value,
@@ -581,8 +726,10 @@ async function go(index: number): Promise<void> {
       index,
       learningPathContext.value,
       pendingCurrentFile.value,
+      secondsSpent,
     )
     if (saved && questionId > 0) {
+      rememberQuestionSeconds(questionId, secondsSpent)
       clearPendingAnswerFile(questionId)
       if (captureAnswerFeedback(questionId, action)) return
     }
@@ -599,14 +746,17 @@ async function save(): Promise<void> {
   }
 
   const questionId = question.value?.id ?? 0
+  const secondsSpent = questionSecondsSpent(questionId)
   const saved = await store.saveCurrentAnswer(
     context.value,
     numericExerciseId.value,
     "none",
     learningPathContext.value,
     pendingCurrentFile.value,
+    secondsSpent,
   )
   if (saved && questionId > 0) {
+    rememberQuestionSeconds(questionId, secondsSpent)
     clearPendingAnswerFile(questionId)
     captureAnswerFeedback(questionId, "none")
   }
@@ -624,6 +774,7 @@ async function finish(): Promise<void> {
   }
 
   const questionId = question.value?.id ?? 0
+  const currentSecondsSpent = skipCurrentSave ? 0 : questionSecondsSpent(questionId)
   const attemptId = await store.finishAttempt(
     context.value,
     numericExerciseId.value,
@@ -631,6 +782,7 @@ async function finish(): Promise<void> {
     learningPathContext.value,
     skipCurrentSave ? null : pendingCurrentFile.value,
     skipCurrentSave,
+    currentSecondsSpent,
   )
   if (!attemptId && !skipCurrentSave && questionId > 0 && store.lastAnswerFeedback) {
     clearPendingAnswerFile(questionId)
@@ -667,15 +819,18 @@ async function requestFinish(): Promise<void> {
       if (hasActiveFeedback.value) return
     } else {
       const questionId = question.value?.id ?? 0
+      const secondsSpent = questionSecondsSpent(questionId)
       const saved = await store.saveCurrentAnswer(
         context.value,
         numericExerciseId.value,
         "finish",
         learningPathContext.value,
         pendingCurrentFile.value,
+        secondsSpent,
       )
       if (!saved) return
       if (questionId > 0) {
+        rememberQuestionSeconds(questionId, secondsSpent)
         clearPendingAnswerFile(questionId)
         if (captureAnswerFeedback(questionId, "finish")) return
       }
@@ -713,6 +868,7 @@ function openReviewQuestion(index: number): void {
 async function returnToReview(): Promise<void> {
   if (!context.value) return
   const questionId = question.value?.id ?? 0
+  const secondsSpent = questionSecondsSpent(questionId)
   if (
     !(await store.saveCurrentAnswer(
       context.value,
@@ -720,11 +876,15 @@ async function returnToReview(): Promise<void> {
       "none",
       learningPathContext.value,
       pendingCurrentFile.value,
+      secondsSpent,
     ))
   ) {
     return
   }
-  if (questionId > 0) clearPendingAnswerFile(questionId)
+  if (questionId > 0) {
+    rememberQuestionSeconds(questionId, secondsSpent)
+    clearPendingAnswerFile(questionId)
+  }
 
   reviewSummaryVisible.value = true
   window.scrollTo({ top: 0, behavior: "smooth" })
@@ -734,10 +894,27 @@ watch(
   () => store.runtime?.attempt?.remainingSeconds,
   () => startTimer(),
 )
+watch(
+  () => question.value?.id,
+  () => syncQuestionTimer(),
+)
+watch(
+  () => connectivityStore.campusAvailable,
+  (available) => {
+    if (!available || !isQuestionTimeExpired.value) return
+    questionTimerExpiryHandledForQuestionId = null
+    void handleQuestionTimerExpired()
+  },
+)
 
-onMounted(load)
+onMounted(() => {
+  document.addEventListener("visibilitychange", handleVisibilityChange)
+  void load()
+})
 onBeforeUnmount(() => {
+  document.removeEventListener("visibilitychange", handleVisibilityChange)
   stopTimer()
+  stopQuestionTimer()
   store.resetRuntime()
 })
 </script>
@@ -964,7 +1141,10 @@ onBeforeUnmount(() => {
                     })
               }}
             </span>
-            <span v-if="remainingSeconds !== null">{{ formatDuration(remainingSeconds) }}</span>
+            <span v-if="questionRemainingSeconds !== null">
+              {{ t("exercises.questionTimeLeft") }}: {{ formatDuration(questionRemainingSeconds) }}
+            </span>
+            <span v-else-if="remainingSeconds !== null">{{ formatDuration(remainingSeconds) }}</span>
           </div>
           <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
             <div class="h-full rounded-full bg-chamilo-600" :style="{ width: `${progress}%` }" />
@@ -1015,7 +1195,7 @@ onBeforeUnmount(() => {
             :key="card.question.id"
             :question="card.question"
             :answer="card.answer"
-            :disabled="store.saving || hasActiveFeedback || !isSupportedExerciseQuestion(card.question)"
+            :disabled="store.saving || isQuestionTimeExpired || hasActiveFeedback || !isSupportedExerciseQuestion(card.question)"
             :show-title="showQuestionTitle"
             :review-enabled="reviewEnabled"
             :teacher-preview="isTeacherPreview"
@@ -1038,6 +1218,14 @@ onBeforeUnmount(() => {
         />
 
         <div
+          v-if="isQuestionTimeExpired"
+          class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+          role="status"
+        >
+          {{ t("exercises.questionTimeReached") }}
+        </div>
+
+        <div
           v-if="store.errorCode"
           class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
           role="alert"
@@ -1054,7 +1242,7 @@ onBeforeUnmount(() => {
             v-if="previousNavigationAllowed"
             type="button"
             class="min-h-touch rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-700 disabled:opacity-40"
-            :disabled="navigationIndex === 0 || store.saving"
+            :disabled="navigationIndex === 0 || store.saving || isQuestionTimeExpired"
             @click="go(navigationIndex - 1)"
           >
             <i class="pi pi-arrow-left mr-2" aria-hidden="true" />
@@ -1064,7 +1252,7 @@ onBeforeUnmount(() => {
             v-if="navigationIndex < navigationTotal - 1"
             type="button"
             class="min-h-touch rounded-xl bg-chamilo-700 px-4 font-semibold text-white disabled:opacity-50"
-            :disabled="store.saving"
+            :disabled="store.saving || isQuestionTimeExpired"
             @click="go(navigationIndex + 1)"
           >
             {{ t("actions.next") }}
@@ -1074,7 +1262,7 @@ onBeforeUnmount(() => {
             v-else-if="!isTeacherPreview && visibleQuestionCards.length > 0"
             type="button"
             class="min-h-touch rounded-xl border border-chamilo-700 bg-white px-4 font-semibold text-chamilo-700 disabled:opacity-50"
-            :disabled="store.saving"
+            :disabled="store.saving || isQuestionTimeExpired"
             @click="save"
           >
             {{ store.saving ? t("exercises.saving") : t("exercises.saveAnswer") }}

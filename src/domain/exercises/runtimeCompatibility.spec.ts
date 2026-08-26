@@ -16,11 +16,31 @@ describe("exercise runtime compatibility", () => {
     expect(exerciseRuntimeCompatibilityReason({ feedbackType })).toBeNull()
   })
 
-  it("falls back when per-question timing is active", () => {
+  it("keeps the verified one-question-per-page timer native", () => {
     expect(
       exerciseRuntimeCompatibilityReason({
         allowTimePerQuestion: true,
         hasTimedQuestions: true,
+        effectiveOneQuestionPerPage: true,
+        feedbackType: 0,
+      }),
+    ).toBeNull()
+  })
+
+  it("falls back for timed combinations not covered by the mobile player", () => {
+    expect(
+      exerciseRuntimeCompatibilityReason({
+        allowTimePerQuestion: true,
+        hasTimedQuestions: true,
+        effectiveOneQuestionPerPage: false,
+      }),
+    ).toBe("timed_questions")
+    expect(
+      exerciseRuntimeCompatibilityReason({
+        allowTimePerQuestion: true,
+        hasTimedQuestions: true,
+        effectiveOneQuestionPerPage: true,
+        feedbackType: 1,
       }),
     ).toBe("timed_questions")
   })
