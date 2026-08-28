@@ -32,7 +32,7 @@
     "@capacitor/push-notifications": "8.1.2",
     "@primevue/core": "4.5.5",
     "@primevue/icons": "4.5.5",
-    "axios": "1.16.1",
+    "axios": "1.18.0",
     "pinia": "3.0.4",
     "primeicons": "7.0.0",
     "primevue": "4.5.5",
