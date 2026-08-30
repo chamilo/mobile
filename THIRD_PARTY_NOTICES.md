@@ -1,12 +1,13 @@
 # Third-party notices
 
-Chamilo Mobile remains licensed under AGPL-3.0. It uses these direct official Capacitor components:
+Chamilo Mobile remains licensed under AGPL-3.0. It uses these direct official Capacitor components and runtime libraries:
 
 | Component                       | Version | License | Upstream copyright notice             |
 | ------------------------------- | ------: | ------- | ------------------------------------- |
 | `@capacitor/android`            |   8.4.1 | MIT     | Copyright (c) 2017-present Drifty Co. |
 | `@capacitor/app`                |   8.1.0 | MIT     | Copyright 2020-present Ionic          |
 | `@capacitor/push-notifications` |   8.1.2 | MIT     | Copyright 2020-present Ionic          |
+| `fflate`                        |   0.8.3 | MIT     | Copyright (c) 2026 Arjun Barrett      |
 
 The exact installed JavaScript dependency inventory is generated with:
 

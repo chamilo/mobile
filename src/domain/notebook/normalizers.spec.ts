@@ -11,7 +11,6 @@ describe("notebook normalizers", () => {
       sessionId: null,
       canWrite: true,
       studentView: false,
-      csrfToken: "token",
       sort: "creation_date",
       direction: "ASC",
       totalItems: 1,
@@ -30,9 +29,9 @@ describe("notebook normalizers", () => {
       ],
     })
     expect(result.items[0]?.iid).toBe(2)
-    expect(result.csrfToken).toBe("token")
+    expect(result.canWrite).toBe(true)
   })
-  it("drops csrf for read-only forms", () => {
+  it("normalizes a read-only form without requiring a CSRF field", () => {
     const result = normalizeNotebookFormResponse({
       iid: null,
       title: "",
@@ -41,9 +40,8 @@ describe("notebook normalizers", () => {
       canWrite: false,
       isNew: true,
       fullEditor: true,
-      csrfToken: "unexpected",
       languages: [],
     })
-    expect(result.csrfToken).toBeNull()
+    expect(result.canWrite).toBe(false)
   })
 })

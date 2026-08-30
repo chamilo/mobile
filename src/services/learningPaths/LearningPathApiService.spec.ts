@@ -109,6 +109,8 @@ describe("LearningPathApiService", () => {
         path: "/api/learning_paths/7/runtime/scorm/package",
         query: { cid: 10, sid: 4, itemId: 11 },
         responseType: "arraybuffer",
+        timeoutMs: 600_000,
+        affectsCampusReachability: false,
       }),
     )
     expect(request).toHaveBeenNthCalledWith(

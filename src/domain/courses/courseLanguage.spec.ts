@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { findCourseLanguage } from "@/domain/courses/courseLanguage"
+import { findCourseLanguage, findCourseLanguageById } from "@/domain/courses/courseLanguage"
 import type { CoursesOverview } from "@/domain/courses/types"
 
 const overview: CoursesOverview = {
@@ -107,5 +107,9 @@ describe("course language", () => {
         source: "session",
       }),
     ).toBe("es")
+  })
+
+  it("finds a course language by course id across direct and session enrollments", () => {
+    expect(findCourseLanguageById(overview, 6)).toBe("es")
   })
 })

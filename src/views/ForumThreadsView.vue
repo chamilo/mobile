@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -18,7 +19,9 @@ import {
   hasForumLearningPathRouteContext,
   parseForumLearningPathRouteContext,
 } from "@/domain/forums/learningPathContext"
+import { formatRelativeTime } from "@/domain/i18n/relativeTime"
 import { useForumsStore } from "@/stores/forums"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -39,6 +42,8 @@ const props = defineProps<{
 const { t } = useI18n()
 const router = useRouter()
 const store = useForumsStore()
+const localeStore = useLocaleStore()
+const { interfaceLocale } = storeToRefs(localeStore)
 const showComposer = ref(false)
 const title = ref("")
 const text = ref("")
@@ -89,6 +94,28 @@ const errorDescription = computed(() => t(`forums.errors.${store.threads.errorCo
 const writeErrorDescription = computed(() =>
   t(`forums.errors.${store.write.errorCode ?? "server"}`),
 )
+
+function localizedRoleLabel(label: string): string {
+  const normalized = label.trim().toLowerCase()
+
+  if (["teacher", "trainer", "course manager"].includes(normalized)) {
+    return t("forums.roles.teacher")
+  }
+
+  if (["student", "learner"].includes(normalized)) {
+    return t("forums.roles.student")
+  }
+
+  if (["administrator", "admin"].includes(normalized)) {
+    return t("forums.roles.administrator")
+  }
+
+  return label
+}
+
+function localizedRelativeTime(createdAt: string | null, fallback: string | null): string {
+  return formatRelativeTime(createdAt, interfaceLocale.value, fallback ?? "")
+}
 
 async function load(): Promise<void> {
   if (!usableContext.value || !context.value || parsedForumId.value === null) return
@@ -320,10 +347,10 @@ onMounted(load)
 
               <p v-if="thread.posterFullName" class="mt-2 text-sm text-slate-600">
                 {{ t("forums.threads.startedBy", { name: thread.posterFullName }) }}
-                <span v-if="thread.posterRoleLabel"> · {{ thread.posterRoleLabel }} </span>
+                <span v-if="thread.posterRoleLabel"> · {{ localizedRoleLabel(thread.posterRoleLabel) }} </span>
               </p>
-              <p v-if="thread.relativeTime" class="mt-1 text-xs text-slate-500">
-                {{ thread.relativeTime }}
+              <p v-if="thread.createdAt || thread.relativeTime" class="mt-1 text-xs text-slate-500">
+                {{ localizedRelativeTime(thread.createdAt, thread.relativeTime) }}
               </p>
             </div>
 

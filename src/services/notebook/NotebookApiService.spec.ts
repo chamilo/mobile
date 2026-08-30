@@ -35,4 +35,22 @@ describe("NotebookApiService", () => {
       }),
     )
   })
+  it("creates a note without requiring the removed form CSRF field", async () => {
+    const request = vi.fn().mockResolvedValue({ status: 201, headers: {}, data: {} })
+
+    await new NotebookApiService({ request } as HttpClient).create(context, {
+      title: "My note",
+      content: "Body",
+      language: "fr_FR",
+    })
+
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "POST",
+        path: "/api/notebook",
+        query: expect.objectContaining({ cid: 1 }),
+        body: { title: "My note", content: "Body", language: "fr_FR" },
+      }),
+    )
+  })
 })

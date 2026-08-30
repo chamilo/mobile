@@ -61,26 +61,30 @@ async function goBackToCourses(): Promise<void> {
       <span class="truncate text-slate-600">{{ t("courseHome.breadcrumbCurrent") }}</span>
     </nav>
 
-    <div
+    <section
       v-if="entry.progress !== null"
-      class="relative h-6 overflow-hidden rounded-full bg-slate-100"
-      role="progressbar"
+      class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
       :aria-label="t('courses.progress')"
-      :aria-valuenow="entry.progress"
-      aria-valuemin="0"
-      aria-valuemax="100"
     >
+      <div class="flex items-center justify-between gap-3 text-xs text-slate-600">
+        <span class="font-medium">{{ t("courses.progress") }}</span>
+        <span class="font-semibold text-slate-900">{{ entry.progress }}%</span>
+      </div>
       <div
-        class="absolute inset-y-0 left-0 bg-chamilo-200 transition-[width]"
-        :style="{ width: `${entry.progress}%` }"
-        aria-hidden="true"
-      />
-      <span
-        class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-slate-800"
+        class="mt-2.5 h-2.5 overflow-hidden rounded-full bg-slate-200"
+        role="progressbar"
+        :aria-label="t('courses.progress')"
+        :aria-valuenow="entry.progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
       >
-        {{ entry.progress }}%
-      </span>
-    </div>
+        <div
+          class="h-full rounded-full bg-chamilo-600 transition-[width]"
+          :style="{ width: `${entry.progress}%` }"
+          aria-hidden="true"
+        />
+      </div>
+    </section>
 
     <section
       v-if="introductionText"

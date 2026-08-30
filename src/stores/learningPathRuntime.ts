@@ -19,6 +19,8 @@ import type {
   LearningPathScormCommitPayload,
   LearningPathScormRuntime,
 } from "@/domain/learningPaths/types"
+import { mergeScormRuntimeProgress } from "@/domain/learningPaths/scormProgressRefresh"
+import { shouldReuseScormPackageCache } from "@/domain/learningPaths/scormPackageCachePolicy"
 import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
 import { createDocumentBlobPresenter } from "@/services/documents/DocumentBlobPresenter"
 import {
@@ -29,7 +31,6 @@ import {
 import {
   appendScormLaunchParameters,
   buildScormPackageScope,
-  MAX_SCORM_PACKAGE_SIZE_BYTES,
   scormPackageHost,
   ScormPackageHostError,
 } from "@/services/learningPaths/ScormPackageHost"
@@ -52,6 +53,7 @@ export type LearningPathStoreErrorCode =
   | "scorm_metadata_missing"
   | "scorm_runtime_disabled"
   | "scorm_fixture_mismatch"
+  | "scorm_web_package_unsupported"
   | "scorm_install_failed"
 
 interface PreparedRegularItem {
@@ -184,6 +186,8 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
           return "package_too_large"
         case "fixture_mismatch":
           return "scorm_fixture_mismatch"
+        case "web_package_unsupported":
+          return "scorm_web_package_unsupported"
         case "install_failed":
           return "scorm_install_failed"
       }
@@ -288,7 +292,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
         "The campus did not return the SCORM package entry path and fingerprint.",
       )
     }
-    if (scorm.packageSize > MAX_SCORM_PACKAGE_SIZE_BYTES) {
+    if (scorm.packageSize > scormPackageHost.maxPackageSizeBytes) {
       throw new ScormPackageHostError(
         "too_large",
         "The SCORM package exceeds the mobile runtime size limit.",
@@ -313,16 +317,32 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     }
 
     const scope = buildScormPackageScope(campus.id, scorm.userId, context, learningPathId)
-    const cached = await scormPackageHost.resolve(
-      scope,
-      scorm.packageFingerprint,
-      scorm.packageEntryPath,
-    )
-    if (cached) {
-      return appendScormLaunchParameters(cached, scorm.packageParameters)
+    const reuseCachedPackage = shouldReuseScormPackageCache({
+      isCStudioContent: activeRuntime.isCStudioContent,
+      offline: isOfflineNow(),
+      campusAvailable: useConnectivityStore().campusAvailable,
+    })
+
+    if (reuseCachedPackage) {
+      const cached = await scormPackageHost.resolve(
+        scope,
+        scorm.packageFingerprint,
+        scorm.packageEntryPath,
+      )
+      if (cached) {
+        return appendScormLaunchParameters(cached, scorm.packageParameters)
+      }
     }
 
     const archive = await api.getScormPackage(context, learningPathId, itemId)
+
+    // CStudio mutates its SCORM archive after the initial import without
+    // reliably changing the asset metadata used by packageFingerprint.
+    // Remove the previous package only after a fresh download succeeds so
+    // Mobile does not keep serving an incomplete authoring-time archive.
+    if (!reuseCachedPackage) {
+      await scormPackageHost.remove(scope)
+    }
 
     const installed = await scormPackageHost.install(
       scope,
@@ -632,6 +652,23 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     return queued
   }
 
+  async function refreshScormRuntimeSummary(
+    api: LearningPathApiService,
+    context: CourseNavigationContext,
+    learningPathId: number,
+    currentRuntime: LearningPathRuntime,
+  ): Promise<void> {
+    const refreshed = await api.getRuntime(
+      context,
+      learningPathId,
+      currentRuntime.currentItemId,
+    )
+
+    if (runtime.value !== currentRuntime) return
+
+    mergeScormRuntimeProgress(currentRuntime, refreshed)
+  }
+
   async function performSync(
     context: CourseNavigationContext,
     learningPathId: number,
@@ -678,7 +715,11 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
       }
 
       if (refreshRuntime) {
-        await loadRuntime(api, context, learningPathId, currentRuntime.currentItemId)
+        if (currentItemIsScorm.value) {
+          await refreshScormRuntimeSummary(api, context, learningPathId, currentRuntime)
+        } else {
+          await loadRuntime(api, context, learningPathId, currentRuntime.currentItemId)
+        }
       }
 
       return true

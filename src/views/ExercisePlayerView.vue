@@ -10,7 +10,6 @@ import ExerciseRuntimeQuestionCard from "@/components/exercises/ExerciseRuntimeQ
 import ExerciseStructuralHtml from "@/components/exercises/ExerciseStructuralHtml.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
-import { findCourseLanguage } from "@/domain/courses/courseLanguage"
 import {
   buildExerciseResultRoute,
   buildExercisesRoute,
@@ -55,11 +54,10 @@ import {
   usesExerciseRuntimePages,
 } from "@/domain/exercises/runtimePages"
 import { BrowserExternalLinkPresenter } from "@/services/links/ExternalLinkPresenter"
-import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
-import { useCoursesStore } from "@/stores/courses"
 import { useExercisesStore } from "@/stores/exercises"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -75,13 +73,12 @@ const props = defineProps<{
   learningPathTitle: string | null
 }>()
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
-const authStore = useAuthStore()
 const campusStore = useCampusStore()
 const connectivityStore = useConnectivityStore()
-const coursesStore = useCoursesStore()
 const store = useExercisesStore()
+const localeStore = useLocaleStore()
 const externalLinkPresenter = new BrowserExternalLinkPresenter()
 const confirmedSavedAnswers = ref(false)
 const remainingSeconds = ref<number | null>(null)
@@ -127,11 +124,8 @@ const backRoute = computed(() =>
       : { name: "courses" },
 )
 const errorDescription = computed(() => t(`exercises.errors.${store.errorCode ?? "server"}`))
-const contentLocale = computed(() => authStore.profile?.locale || locale.value)
-const contentFallbackLocales = computed(() => {
-  const courseLanguage = findCourseLanguage(coursesStore.overview, context.value)
-  return courseLanguage ? [courseLanguage] : []
-})
+const contentLocale = computed(() => localeStore.contentLocale)
+const contentFallbackLocales = computed(() => localeStore.contentFallbackLocales)
 const runtimePages = computed(() =>
   store.runtime
     ? normalizeExerciseRuntimePages(store.runtime.settings, store.runtime.questions)

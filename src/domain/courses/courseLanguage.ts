@@ -33,3 +33,22 @@ export function findCourseLanguage(
     )?.course.language ?? null
   )
 }
+
+export function findCourseLanguageById(
+  overview: CoursesOverview,
+  courseId: number,
+): string | null {
+  const direct = overview.directCourses.find((enrollment) => enrollment.course.id === courseId)
+  if (direct) return direct.course.language
+
+  for (const session of [
+    ...overview.currentSessions,
+    ...overview.upcomingSessions,
+    ...overview.pastSessions,
+  ]) {
+    const enrollment = session.courses.find((item) => item.course.id === courseId)
+    if (enrollment) return enrollment.course.language
+  }
+
+  return null
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { resolveScormWebFixture } from "@/services/learningPaths/WebScormFixtureHost"
+import { WebScormFixtureHost, resolveScormWebFixture } from "@/services/learningPaths/WebScormFixtureHost"
 
 describe("resolveScormWebFixture", () => {
   it("resolves the supplied SCORM 1.2 package and strips backend path prefixes", () => {
@@ -41,5 +41,14 @@ describe("resolveScormWebFixture", () => {
         "../sco1.html",
       ),
     ).toBeNull()
+  })
+
+  it("reports real downloaded packages as unsupported by the local web fixture host", async () => {
+    const host = new WebScormFixtureHost()
+    const archive = new TextEncoder().encode("not-a-known-scorm-fixture").buffer
+
+    await expect(host.install("scope", "fingerprint", "index.html", archive)).rejects.toMatchObject({
+      code: "web_package_unsupported",
+    })
   })
 })

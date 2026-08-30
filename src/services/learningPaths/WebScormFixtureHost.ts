@@ -1,5 +1,7 @@
+import { Capacitor } from "@capacitor/core"
+
 import {
-  MAX_SCORM_PACKAGE_SIZE_BYTES,
+  MAX_WEB_SCORM_PACKAGE_SIZE_BYTES,
   type ScormPackageHost,
   ScormPackageHostError,
 } from "@/services/learningPaths/ScormPackageHostTypes"
@@ -130,8 +132,12 @@ async function assertFixtureFileAvailable(url: string): Promise<void> {
 }
 
 export class WebScormFixtureHost implements ScormPackageHost {
+  readonly maxPackageSizeBytes = MAX_WEB_SCORM_PACKAGE_SIZE_BYTES
+
   async assertAvailable(): Promise<void> {
     if (
+      Capacitor.isNativePlatform() ||
+      Capacitor.isPluginAvailable("ChamiloScormPackage") ||
       !import.meta.env.DEV ||
       typeof window === "undefined" ||
       !LOCAL_HOSTNAMES.has(window.location.hostname)
@@ -170,7 +176,7 @@ export class WebScormFixtureHost implements ScormPackageHost {
   ): Promise<string> {
     await this.assertAvailable()
 
-    if (archive.byteLength <= 0 || archive.byteLength > MAX_SCORM_PACKAGE_SIZE_BYTES) {
+    if (archive.byteLength <= 0 || archive.byteLength > this.maxPackageSizeBytes) {
       throw new ScormPackageHostError(
         "too_large",
         "The SCORM package exceeds the mobile runtime size limit.",
@@ -181,8 +187,8 @@ export class WebScormFixtureHost implements ScormPackageHost {
     const resolved = resolveScormWebFixture(archiveSha256, entryPath)
     if (!resolved) {
       throw new ScormPackageHostError(
-        "fixture_mismatch",
-        "The downloaded package does not match the local SCORM test fixtures.",
+        "web_package_unsupported",
+        "Real downloaded SCORM packages are not played by the local web fixture host.",
       )
     }
 

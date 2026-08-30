@@ -24,7 +24,6 @@ export interface NotebookListSnapshot {
   studentView: boolean
   sort: string
   direction: string
-  csrfToken: string | null
 }
 
 export interface NotebookFormSnapshot {
@@ -36,7 +35,6 @@ export interface NotebookFormSnapshot {
   canWrite: boolean
   isNew: boolean
   fullEditor: boolean
-  csrfToken: string | null
 }
 
 export interface NotebookMutationInput {

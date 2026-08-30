@@ -10,6 +10,11 @@ export interface HttpRequest<TBody = unknown> {
   timeoutMs?: number
   signal?: AbortSignal
   responseType?: HttpResponseType
+  /**
+   * Set to false for long-running transfers whose timeout should not mark the
+   * whole campus as unreachable.
+   */
+  affectsCampusReachability?: boolean
 }
 
 export interface HttpResponse<TData> {

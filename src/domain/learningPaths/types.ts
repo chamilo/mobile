@@ -1,5 +1,6 @@
 export interface LearningPathRuntimeItem {
   id: number
+  ref?: string
   title: string
   itemType: string
   parentId: number
@@ -42,6 +43,8 @@ export interface LearningPathRuntime {
   title: string
   lpType: number
   runtimeSupported: boolean
+  isCStudioContent: boolean
+  hideArrowNavigation: boolean
   hideToc: boolean
   accordionToc: boolean
   progress: number

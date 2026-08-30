@@ -86,31 +86,25 @@ export class NotebookApiService {
     }
   }
 
-  async create(
-    context: CourseNavigationContext,
-    input: NotebookMutationInput,
-    csrfToken: string,
-  ): Promise<void> {
-    await this.write("POST", "/api/notebook", context, input, csrfToken)
+  async create(context: CourseNavigationContext, input: NotebookMutationInput): Promise<void> {
+    await this.write("POST", "/api/notebook", context, input)
   }
 
   async update(
     context: CourseNavigationContext,
     iid: number,
     input: NotebookMutationInput,
-    csrfToken: string,
   ): Promise<void> {
-    await this.write("PUT", `/api/notebook/${iid}`, context, input, csrfToken)
+    await this.write("PUT", `/api/notebook/${iid}`, context, input)
   }
 
-  async remove(context: CourseNavigationContext, iid: number, csrfToken: string): Promise<void> {
+  async remove(context: CourseNavigationContext, iid: number): Promise<void> {
     try {
       await this.httpClient.request({
         method: "DELETE",
         path: `/api/notebook/${iid}`,
         query: buildNotebookApiQuery(context),
-        body: { csrfToken },
-        headers: { Accept: "application/ld+json", "Content-Type": "application/ld+json" },
+        headers: { Accept: "application/ld+json" },
       })
     } catch (error) {
       throw mapError(error)
@@ -122,14 +116,13 @@ export class NotebookApiService {
     path: string,
     context: CourseNavigationContext,
     input: NotebookMutationInput,
-    csrfToken: string,
   ): Promise<void> {
     try {
       await this.httpClient.request({
         method,
         path,
         query: buildNotebookApiQuery(context),
-        body: { ...input, csrfToken },
+        body: input,
         headers: { Accept: "application/ld+json", "Content-Type": "application/ld+json" },
       })
     } catch (error) {

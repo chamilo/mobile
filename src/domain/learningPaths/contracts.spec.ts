@@ -51,6 +51,8 @@ describe("learning path runtime contract", () => {
       title: "<strong>Introduction</strong>",
       lpType: 2,
       runtimeSupported: true,
+      isCStudioContent: true,
+      hideArrowNavigation: true,
       hideToc: false,
       accordionToc: true,
       progress: 45,
@@ -107,6 +109,8 @@ describe("learning path runtime contract", () => {
     })
 
     expect(runtime.title).toBe("Introduction")
+    expect(runtime.isCStudioContent).toBe(true)
+    expect(runtime.hideArrowNavigation).toBe(true)
     expect(runtime.scorm.version).toBe("2004")
     expect(runtime.scorm.packageEntryPath).toBe("course/index.html")
     expect(runtime.scorm.packageParameters).toBe("lang=en&mode=review")

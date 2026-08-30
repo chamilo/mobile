@@ -1,6 +1,7 @@
 import type { CourseNavigationContext } from "@/domain/courses/types"
 
-export const MAX_SCORM_PACKAGE_SIZE_BYTES = 100 * 1024 * 1024
+export const MAX_NATIVE_SCORM_PACKAGE_SIZE_BYTES = 100 * 1024 * 1024
+export const MAX_WEB_SCORM_PACKAGE_SIZE_BYTES = 512 * 1024 * 1024
 
 export type ScormPackageHostErrorCode =
   | "unsupported_platform"
@@ -9,6 +10,7 @@ export type ScormPackageHostErrorCode =
   | "runtime_disabled"
   | "too_large"
   | "fixture_mismatch"
+  | "web_package_unsupported"
   | "install_failed"
 
 export class ScormPackageHostError extends Error {
@@ -23,6 +25,7 @@ export class ScormPackageHostError extends Error {
 }
 
 export interface ScormPackageHost {
+  readonly maxPackageSizeBytes: number
   assertAvailable(): Promise<void>
   resolve(scope: string, fingerprint: string, entryPath: string): Promise<string | null>
   install(

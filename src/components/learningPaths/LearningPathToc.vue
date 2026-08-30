@@ -116,7 +116,7 @@ function statusLabel(item: LearningPathRuntimeItem): string {
     return t("learningPaths.status.playerPending")
   }
 
-  const normalizedStatus = item.status.trim().toLowerCase().replace(/\s+/g, "_")
+  const normalizedStatus = item.status.trim().toLowerCase().replace(/[\s-]+/g, "_")
   const key = `learningPaths.status.${normalizedStatus}`
 
   return t(key)

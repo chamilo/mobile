@@ -6,7 +6,6 @@ import CourseUnavailableState from "@/components/courseHome/CourseUnavailableSta
 import { translatedPlainText } from "@/domain/content/translatedHtml"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
-import { findCourseLanguage } from "@/domain/courses/courseLanguage"
 import {
   buildExercisesRoute,
   buildLearningPathDetailRoute,
@@ -17,9 +16,8 @@ import {
   hasExerciseLearningPathRouteContext,
   parseExerciseLearningPathRouteContext,
 } from "@/domain/exercises/learningPathContext"
-import { useAuthStore } from "@/stores/auth"
-import { useCoursesStore } from "@/stores/courses"
 import { useExercisesStore } from "@/stores/exercises"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -36,10 +34,9 @@ const props = defineProps<{
   learningPathTitle: string | null
 }>()
 
-const { t, locale } = useI18n()
-const authStore = useAuthStore()
-const coursesStore = useCoursesStore()
+const { t } = useI18n()
 const store = useExercisesStore()
+const localeStore = useLocaleStore()
 const context = computed(() => {
   try {
     return parseCourseRouteContext(props)
@@ -77,11 +74,8 @@ const scoreVisible = computed(
   () => typeof attempt.value.score === "number" && typeof attempt.value.maxScore === "number",
 )
 const errorDescription = computed(() => t(`exercises.errors.${store.errorCode ?? "server"}`))
-const contentLocale = computed(() => authStore.profile?.locale || locale.value)
-const contentFallbackLocales = computed(() => {
-  const courseLanguage = findCourseLanguage(coursesStore.overview, context.value)
-  return courseLanguage ? [courseLanguage] : []
-})
+const contentLocale = computed(() => localeStore.contentLocale)
+const contentFallbackLocales = computed(() => localeStore.contentFallbackLocales)
 
 function plainText(value: unknown): string {
   return typeof value === "string"

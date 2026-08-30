@@ -187,6 +187,7 @@ function normalizeItem(value: unknown): LearningPathRuntimeItem {
 
   return {
     id: positiveInteger(value.id, "learning path item id"),
+    ref: text(value.ref),
     title: plainText(value.title) || "Learning path item",
     itemType: text(value.itemType).toLowerCase(),
     parentId: Math.max(0, integer(value.parentId)),
@@ -271,6 +272,8 @@ export function normalizeLearningPathRuntime(value: unknown): LearningPathRuntim
     title: plainText(value.title) || "Learning path",
     lpType: integer(value.lpType, 1),
     runtimeSupported: boolean(value.runtimeSupported),
+    isCStudioContent: boolean(value.isCStudioContent),
+    hideArrowNavigation: boolean(value.hideArrowNavigation),
     hideToc: boolean(value.hideToc),
     accordionToc: boolean(value.accordionToc),
     progress: Math.max(0, Math.min(100, integer(value.progress))),

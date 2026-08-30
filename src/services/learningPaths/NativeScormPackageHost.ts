@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin } from "@capacitor/core"
 
 import {
-  MAX_SCORM_PACKAGE_SIZE_BYTES,
+  MAX_NATIVE_SCORM_PACKAGE_SIZE_BYTES,
   type ScormPackageHost,
   ScormPackageHostError,
 } from "@/services/learningPaths/ScormPackageHostTypes"
@@ -33,7 +33,13 @@ interface ChamiloScormPackagePlugin {
   removeCampus(options: { campusId: string }): Promise<void>
 }
 
-const nativePlugin = registerPlugin<ChamiloScormPackagePlugin>("ChamiloScormPackage")
+const NATIVE_SCORM_PLUGIN = "ChamiloScormPackage"
+let nativePlugin: ChamiloScormPackagePlugin | null = null
+
+function getNativePlugin(): ChamiloScormPackagePlugin {
+  nativePlugin ??= registerPlugin<ChamiloScormPackagePlugin>(NATIVE_SCORM_PLUGIN)
+  return nativePlugin
+}
 
 function encodeBase64(buffer: ArrayBuffer): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -57,8 +63,13 @@ function encodeBase64(buffer: ArrayBuffer): Promise<string> {
 }
 
 export class NativeScormPackageHost implements ScormPackageHost {
+  readonly maxPackageSizeBytes = MAX_NATIVE_SCORM_PACKAGE_SIZE_BYTES
+
   isAndroid(): boolean {
-    return Capacitor.getPlatform() === "android"
+    return (
+      Capacitor.getPlatform() === "android" ||
+      Capacitor.isPluginAvailable(NATIVE_SCORM_PLUGIN)
+    )
   }
 
   async assertAvailable(): Promise<void> {
@@ -70,7 +81,7 @@ export class NativeScormPackageHost implements ScormPackageHost {
     }
 
     try {
-      const result = await nativePlugin.status()
+      const result = await getNativePlugin().status()
       if (!result.available) {
         throw new Error("The native SCORM package host reported that it is unavailable.")
       }
@@ -87,7 +98,7 @@ export class NativeScormPackageHost implements ScormPackageHost {
     await this.assertAvailable()
 
     try {
-      const result = await nativePlugin.resolve({ scope, fingerprint, entryPath })
+      const result = await getNativePlugin().resolve({ scope, fingerprint, entryPath })
       if (!result.found || !result.entryUri) {
         return null
       }
@@ -110,7 +121,7 @@ export class NativeScormPackageHost implements ScormPackageHost {
   ): Promise<string> {
     await this.assertAvailable()
 
-    if (archive.byteLength <= 0 || archive.byteLength > MAX_SCORM_PACKAGE_SIZE_BYTES) {
+    if (archive.byteLength <= 0 || archive.byteLength > this.maxPackageSizeBytes) {
       throw new ScormPackageHostError(
         "too_large",
         "The SCORM package exceeds the mobile runtime size limit.",
@@ -118,7 +129,7 @@ export class NativeScormPackageHost implements ScormPackageHost {
     }
 
     try {
-      const result = await nativePlugin.install({
+      const result = await getNativePlugin().install({
         scope,
         fingerprint,
         entryPath,
@@ -142,7 +153,7 @@ export class NativeScormPackageHost implements ScormPackageHost {
     await this.assertAvailable()
 
     try {
-      await nativePlugin.removeScope({ scope })
+      await getNativePlugin().removeScope({ scope })
     } catch (error) {
       throw new ScormPackageHostError(
         "install_failed",
@@ -156,12 +167,15 @@ export class NativeScormPackageHost implements ScormPackageHost {
 export const nativeScormPackageHost = new NativeScormPackageHost()
 
 export async function clearNativeScormCampusPackages(campusId: string): Promise<void> {
-  if (Capacitor.getPlatform() !== "android") {
+  if (
+    Capacitor.getPlatform() !== "android" &&
+    !Capacitor.isPluginAvailable(NATIVE_SCORM_PLUGIN)
+  ) {
     return
   }
 
   try {
-    await nativePlugin.removeCampus({ campusId })
+    await getNativePlugin().removeCampus({ campusId })
   } catch (error) {
     throw new ScormPackageHostError(
       "install_failed",

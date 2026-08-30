@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
@@ -16,7 +17,9 @@ import {
   hasForumLearningPathRouteContext,
   parseForumLearningPathRouteContext,
 } from "@/domain/forums/learningPathContext"
+import { formatRelativeTime } from "@/domain/i18n/relativeTime"
 import { useForumsStore } from "@/stores/forums"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -38,6 +41,8 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const store = useForumsStore()
+const localeStore = useLocaleStore()
+const { interfaceLocale } = storeToRefs(localeStore)
 const showComposer = ref(false)
 const replyTitle = ref("")
 const replyText = ref("")
@@ -93,6 +98,28 @@ const errorDescription = computed(() => t(`forums.errors.${store.thread.errorCod
 const writeErrorDescription = computed(() =>
   t(`forums.errors.${store.write.errorCode ?? "server"}`),
 )
+
+function localizedRoleLabel(label: string): string {
+  const normalized = label.trim().toLowerCase()
+
+  if (["teacher", "trainer", "course manager"].includes(normalized)) {
+    return t("forums.roles.teacher")
+  }
+
+  if (["student", "learner"].includes(normalized)) {
+    return t("forums.roles.student")
+  }
+
+  if (["administrator", "admin"].includes(normalized)) {
+    return t("forums.roles.administrator")
+  }
+
+  return label
+}
+
+function localizedRelativeTime(createdAt: string | null, fallback: string | null): string {
+  return formatRelativeTime(createdAt, interfaceLocale.value, fallback ?? "")
+}
 
 async function load(): Promise<void> {
   if (
@@ -219,11 +246,11 @@ onMounted(load)
       <p v-if="store.thread.data?.posterFullName" class="mt-2 text-sm text-slate-600">
         {{ t("forums.threads.startedBy", { name: store.thread.data.posterFullName }) }}
         <span v-if="store.thread.data.posterRoleLabel">
-          · {{ store.thread.data.posterRoleLabel }}
+          · {{ localizedRoleLabel(store.thread.data.posterRoleLabel) }}
         </span>
       </p>
-      <p v-if="store.thread.data?.relativeTime" class="mt-1 text-xs text-slate-500">
-        {{ store.thread.data.relativeTime }}
+      <p v-if="store.thread.data?.createdAt || store.thread.data?.relativeTime" class="mt-1 text-xs text-slate-500">
+        {{ localizedRelativeTime(store.thread.data.createdAt, store.thread.data.relativeTime) }}
       </p>
 
       <button
@@ -354,9 +381,9 @@ onMounted(load)
                 {{ post.posterFullName || t("forums.unknownAuthor") }}
               </p>
               <p class="mt-0.5 text-xs text-slate-500">
-                <span v-if="post.posterRoleLabel">{{ post.posterRoleLabel }}</span>
-                <span v-if="post.posterRoleLabel && post.relativeTime"> · </span>
-                <span v-if="post.relativeTime">{{ post.relativeTime }}</span>
+                <span v-if="post.posterRoleLabel">{{ localizedRoleLabel(post.posterRoleLabel) }}</span>
+                <span v-if="post.posterRoleLabel && (post.createdAt || post.relativeTime)"> · </span>
+                <span v-if="post.createdAt || post.relativeTime">{{ localizedRelativeTime(post.createdAt, post.relativeTime) }}</span>
               </p>
             </div>
 

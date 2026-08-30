@@ -65,6 +65,7 @@ export const useMessagesStore = defineStore("messages", () => {
   const selectedMessage = ref<MobileMessage | null>(null)
   const recipients = ref<MobileMessageRecipient[]>([])
   const errorCode = ref<MessagesStoreErrorCode | null>(null)
+  let recipientSearchSequence = 0
 
   const unreadCount = computed(
     () => items.value.filter((item) => item.box === "inbox" && !item.read).length,
@@ -82,6 +83,7 @@ export const useMessagesStore = defineStore("messages", () => {
     selectedMessage.value = null
     recipients.value = []
     errorCode.value = null
+    recipientSearchSequence += 1
   }
 
   function service(): MessagesApi | null {
@@ -393,14 +395,18 @@ export const useMessagesStore = defineStore("messages", () => {
       return false
     }
 
+    const searchSequence = ++recipientSearchSequence
     recipientStatus.value = "loading"
     errorCode.value = null
 
     try {
-      recipients.value = await api.searchRecipients(normalizedQuery)
+      const results = await api.searchRecipients(normalizedQuery)
+      if (searchSequence !== recipientSearchSequence) return false
+      recipients.value = results
       recipientStatus.value = "ready"
       return true
     } catch (error) {
+      if (searchSequence !== recipientSearchSequence) return false
       recipients.value = []
       recipientStatus.value = "error"
       errorCode.value = mapError(error)
@@ -415,8 +421,11 @@ export const useMessagesStore = defineStore("messages", () => {
   }
 
   function clearRecipients(): void {
+    recipientSearchSequence += 1
+    const hadRecipientError = recipientStatus.value === "error"
     recipients.value = []
     recipientStatus.value = "idle"
+    if (hadRecipientError) errorCode.value = null
   }
 
   function replaceItem(message: MobileMessage): void {

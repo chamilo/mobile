@@ -2,11 +2,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
+import type { CStudioChamiloResource } from "@/domain/learningPaths/cstudioResource"
 import type {
   LearningPathRuntime,
   LearningPathRuntimeItem,
   LearningPathScormCommitPayload,
 } from "@/domain/learningPaths/types"
+import { installCStudioScormBridge } from "@/services/learningPaths/CStudioScormBridge"
 import {
   createScormRuntimeApi,
   type ScormRuntimeContext,
@@ -28,14 +30,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   navigate: [request: string]
+  committed: [payload: LearningPathScormCommitPayload]
+  cstudioResource: [resource: CStudioChamiloResource]
 }>()
 
 const { t } = useI18n()
+const frame = ref<HTMLIFrameElement | null>(null)
 const frameReady = ref(false)
 const frameLoading = ref(true)
 const isLocalWebFixture = computed(() => props.entryUrl.includes("/__scorm-fixtures/"))
 let context: ScormRuntimeContext | null = null
 let periodicTimer: ReturnType<typeof setInterval> | null = null
+let cstudioBridgeCleanup: (() => void) | null = null
 
 function clearWindowApi(): void {
   const target = window as ScormWindow
@@ -46,7 +52,13 @@ function clearWindowApi(): void {
   if (target.api_1484_11 === context?.api2004) delete target.api_1484_11
 }
 
+function clearCStudioBridge(): void {
+  cstudioBridgeCleanup?.()
+  cstudioBridgeCleanup = null
+}
+
 function destroyRuntime(): void {
+  clearCStudioBridge()
   clearWindowApi()
   context?.destroy()
   context = null
@@ -77,7 +89,10 @@ async function createRuntime(): Promise<void> {
     userId: scorm.userId,
     lpType: scorm.lpType,
     itemType: scorm.itemType,
-    commit: props.commit,
+    commit: async (payload) => {
+      await props.commit(payload)
+      emit("committed", payload)
+    },
     beacon: (payload) => {
       void props.commit(payload)
       return true
@@ -85,6 +100,12 @@ async function createRuntime(): Promise<void> {
     onNavigate: (request) => emit("navigate", request),
     hasNextItem: props.runtime.nextItemId > 0,
     hasPreviousItem: props.runtime.previousItemId > 0,
+    navigationTargets: props.runtime.items
+      .filter(({ ref }) => Boolean(ref?.trim()))
+      .map(({ ref, available, isSection }) => ({
+        ref: ref?.trim() ?? "",
+        available: available && !isSection,
+      })),
   })
 
   const target = window as ScormWindow
@@ -109,9 +130,34 @@ async function flush(reason = "flush"): Promise<void> {
   await context?.flush(reason)
 }
 
+function installCStudioBridge(): void {
+  clearCStudioBridge()
+
+  try {
+    const contentDocument = frame.value?.contentDocument
+    if (!contentDocument) return
+
+    const hasCStudioResource = Boolean(
+      contentDocument.querySelector(
+        ".cstudio-chamilo-resource, iframe.cstudio-chamilo-resource-frame",
+      ),
+    )
+    if (!props.runtime.isCStudioContent && !hasCStudioResource) return
+
+    cstudioBridgeCleanup = installCStudioScormBridge(contentDocument, {
+      openLabel: t("learningPaths.cstudioOpenInMobile"),
+      unavailableLabel: t("learningPaths.cstudioResourceUnavailable"),
+      onOpen: (resource) => emit("cstudioResource", resource),
+    })
+  } catch {
+    context?.logLms("CStudio resource bridge is not available for this frame.", 2)
+  }
+}
+
 function handleLoad(): void {
   frameLoading.value = false
   context?.logLms("SCORM content iframe loaded.", 2)
+  installCStudioBridge()
 }
 
 function handleVisibilityChange(): void {
@@ -161,12 +207,13 @@ defineExpose({ flush })
 
     <iframe
       v-if="frameReady"
+      ref="frame"
       :key="`${item.id}-${runtime.scorm.itemViewId}-${entryUrl}`"
       :src="entryUrl"
       :title="item.title"
       class="h-[68dvh] min-h-[480px] w-full bg-white"
       sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-downloads"
-      referrerpolicy="no-referrer"
+      referrerpolicy="same-origin"
       @load="handleLoad"
     />
   </div>

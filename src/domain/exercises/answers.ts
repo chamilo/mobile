@@ -50,9 +50,7 @@ export function isSupportedExerciseQuestion(question: ExerciseQuestion): boolean
 
 export function hasUnsupportedExerciseQuestions(questions: ExerciseQuestion[]): boolean {
   return questions.some(
-    (question) =>
-      !isStructuralExerciseQuestion(question) &&
-      !isSupportedExerciseQuestion(question),
+    (question) => !isStructuralExerciseQuestion(question) && !isSupportedExerciseQuestion(question),
   )
 }
 
@@ -70,9 +68,7 @@ export function isExerciseAnswerProvided(
     if (!hasEveryAnswer) return false
     if (question.type !== 22) return true
 
-    return question.choices.every(
-      (choice) => Number(state.degreeCertainty[choice.id] ?? 0) > 0,
-    )
+    return question.choices.every((choice) => Number(state.degreeCertainty[choice.id] ?? 0) > 0)
   }
   if (FILL_BLANK_TYPES.includes(question.type)) {
     const positions =
@@ -232,10 +228,15 @@ export function applySavedExerciseAnswer(
     return
   }
   if (question.type === 18) {
-    state.order = [...rows]
+    const availableIds = question.draggable?.items.map((item) => item.id) ?? []
+    const availableIdSet = new Set(availableIds)
+    const savedOrder = [...rows]
       .sort((left, right) => Number(left.answer) - Number(right.answer))
       .map((row) => Number(row.position || 0))
-      .filter((id) => id > 0)
+      .filter((id) => id > 0 && availableIdSet.has(id))
+    const savedIdSet = new Set(savedOrder)
+
+    state.order = [...savedOrder, ...availableIds.filter((id) => !savedIdSet.has(id))]
     return
   }
   if (question.type === ANNOTATION_TYPE) {

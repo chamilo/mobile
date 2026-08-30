@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed, ref, watch } from "vue"
 import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
@@ -40,6 +40,16 @@ const busy = computed(
 const serviceError = computed(() =>
   errorCode.value ? t(`messages.errors.${errorCode.value}`) : null,
 )
+const recipientSearchError = computed(() =>
+  recipientStatus.value === "error" ? serviceError.value : null,
+)
+
+watch(recipientQuery, () => {
+  validationMessage.value = null
+  if (recipientStatus.value !== "idle" || recipients.value.length > 0) {
+    messagesStore.clearRecipients()
+  }
+})
 
 async function searchRecipients(): Promise<void> {
   validationMessage.value = null
@@ -148,6 +158,7 @@ async function submit(): Promise<void> {
                 autocomplete="off"
                 class="min-h-touch min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-chamilo-600 focus:ring-2 focus:ring-chamilo-100"
                 :placeholder="t('messages.composeForm.recipientPlaceholder')"
+                @keydown.enter.prevent="searchRecipients"
               />
               <button
                 type="button"
@@ -162,6 +173,32 @@ async function submit(): Promise<void> {
                 <span class="sr-only">{{ t("messages.composeForm.searchRecipient") }}</span>
               </button>
             </div>
+
+            <p
+              v-if="recipientStatus === 'loading'"
+              class="mt-2 text-sm text-slate-500"
+              role="status"
+              aria-live="polite"
+            >
+              {{ t("messages.composeForm.recipientSearching") }}
+            </p>
+
+            <p
+              v-else-if="recipientStatus === 'ready' && recipients.length === 0"
+              class="mt-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"
+              role="status"
+              aria-live="polite"
+            >
+              {{ t("messages.composeForm.recipientNoResults") }}
+            </p>
+
+            <p
+              v-else-if="recipientSearchError"
+              class="mt-2 rounded-xl bg-red-50 p-3 text-sm text-red-800"
+              role="alert"
+            >
+              {{ recipientSearchError }}
+            </p>
 
             <ul
               v-if="recipients.length > 0"
@@ -214,7 +251,7 @@ async function submit(): Promise<void> {
         </label>
 
         <p
-          v-if="validationMessage || serviceError"
+          v-if="validationMessage || (serviceError && recipientStatus !== 'error')"
           class="rounded-xl bg-red-50 p-3 text-sm text-red-800"
           role="alert"
         >

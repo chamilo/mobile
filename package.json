@@ -1,6 +1,6 @@
 {
   "name": "@chamilo/mobile",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.10",
   "private": true,
   "type": "module",
   "packageManager": "yarn@4.17.1",
@@ -33,6 +33,7 @@
     "@primevue/core": "4.5.5",
     "@primevue/icons": "4.5.5",
     "axios": "1.16.1",
+    "fflate": "0.8.3",
     "pinia": "3.0.4",
     "primeicons": "7.0.0",
     "primevue": "4.5.5",

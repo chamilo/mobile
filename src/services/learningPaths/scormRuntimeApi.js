@@ -68,7 +68,9 @@ const WRITE_ONLY_ELEMENTS = new Set([
   "cmi.session_time",
 ])
 
-// Simplified adl.nav.request support: continue/previous/exit-family only, no sequencing, no choice/jump targets.
+// SCORM 2004 navigation support used by Chamilo Mobile. Linear requests are always available
+// when the surrounding learning path exposes a sibling. Targeted choice/jump requests are
+// resolved against manifest item identifiers supplied by the runtime contract.
 const ADL_ELEMENT_NAMES = new Set([
   "adl.nav.request",
   "adl.nav.request_valid.continue",
@@ -79,6 +81,10 @@ const ADL_READ_ONLY_ELEMENTS = new Set([
   "adl.nav.request_valid.continue",
   "adl.nav.request_valid.previous",
 ])
+
+const TARGET_NAVIGATION_REQUEST = /^\{target=([^}]+)\}(choice|jump)$/
+const TARGET_NAVIGATION_VALID_ELEMENT =
+  /^adl\.nav\.request_valid\.(choice|jump)\.\{target=([^}]+)\}$/
 
 const ADL_NAV_REQUEST_KEYWORDS = new Set([
   "_none_",
@@ -105,7 +111,7 @@ function isReadOnlyElement(name) {
   if (name.endsWith("._children") || name.endsWith("._count")) {
     return true
   }
-  if (ADL_READ_ONLY_ELEMENTS.has(name)) {
+  if (ADL_READ_ONLY_ELEMENTS.has(name) || TARGET_NAVIGATION_VALID_ELEMENT.test(name)) {
     return true
   }
 
@@ -120,7 +126,25 @@ function isValidElementName(name, is2004) {
     return true
   }
 
-  return Boolean(is2004) && ADL_ELEMENT_NAMES.has(name)
+  return Boolean(is2004) && (ADL_ELEMENT_NAMES.has(name) || TARGET_NAVIGATION_VALID_ELEMENT.test(name))
+}
+
+function parseTargetedNavigationRequest(value) {
+  const match = String(value ?? "").trim().match(TARGET_NAVIGATION_REQUEST)
+  if (!match) {
+    return null
+  }
+
+  return { target: match[1], action: match[2] }
+}
+
+function parseTargetNavigationValidElement(name) {
+  const match = String(name ?? "").match(TARGET_NAVIGATION_VALID_ELEMENT)
+  if (!match) {
+    return null
+  }
+
+  return { action: match[1], target: match[2] }
 }
 
 function getSetValueError(name, value, is2004) {
@@ -161,7 +185,7 @@ function getSetValueError(name, value, is2004) {
 
   if (name === "adl.nav.request") {
     const isKeyword = ADL_NAV_REQUEST_KEYWORDS.has(normalizedValue)
-    const isTargeted = /^\{target=.*\}(choice|jump)$/.test(normalizedValue)
+    const isTargeted = Boolean(parseTargetedNavigationRequest(normalizedValue))
     if (!isKeyword && !isTargeted) {
       return "406"
     }
@@ -233,6 +257,13 @@ function setDynamicCount(values, name) {
     values[countKey] = String(count)
   }
 
+  const interactionObjectiveMatch = name.match(/^cmi\.interactions\.(\d+)\.objectives\.(\d+)\./)
+  if (interactionObjectiveMatch) {
+    const countKey = `cmi.interactions.${interactionObjectiveMatch[1]}.objectives._count`
+    const count = Math.max(Number(values[countKey] || 0), Number(interactionObjectiveMatch[2]) + 1)
+    values[countKey] = String(count)
+  }
+
   const commentMatch = name.match(/^cmi\.comments_from_learner\.(\d+)\./)
   if (commentMatch) {
     const count = Math.max(
@@ -261,10 +292,21 @@ export function createScormRuntimeApi({
   onNavigate,
   hasNextItem = false,
   hasPreviousItem = false,
+  navigationTargets = [],
 }) {
   const values = { ...(initialValues || {}) }
   const is2004 = String(version) === "2004"
   const errors = is2004 ? ERROR_MESSAGES_2004 : ERROR_MESSAGES_12
+  const availableNavigationTargets = new Map()
+
+  for (const target of Array.isArray(navigationTargets) ? navigationTargets : []) {
+    const ref = String(target?.ref ?? "").trim()
+    if (!ref || ref.includes("}")) {
+      continue
+    }
+
+    availableNavigationTargets.set(ref, target?.available !== false)
+  }
 
   if (is2004) {
     if (!("adl.nav.request" in values)) {
@@ -272,6 +314,12 @@ export function createScormRuntimeApi({
     }
     values["adl.nav.request_valid.continue"] = hasNextItem ? "true" : "false"
     values["adl.nav.request_valid.previous"] = hasPreviousItem ? "true" : "false"
+
+    for (const [target, available] of availableNavigationTargets) {
+      const value = available ? "true" : "false"
+      values[`adl.nav.request_valid.choice.{target=${target}}`] = value
+      values[`adl.nav.request_valid.jump.{target=${target}}`] = value
+    }
   }
   let initialized = false
   let terminated = false
@@ -436,7 +484,14 @@ export function createScormRuntimeApi({
     }
 
     const commitPromise = queueCommit("terminate", true)
-    if (onNavigate && ACTIONABLE_NAV_REQUESTS.has(pendingNavRequest)) {
+    const targetedRequest = parseTargetedNavigationRequest(pendingNavRequest)
+    const targetAvailable = targetedRequest
+      ? availableNavigationTargets.get(targetedRequest.target) === true
+      : false
+    if (
+      onNavigate &&
+      (ACTIONABLE_NAV_REQUESTS.has(pendingNavRequest) || targetAvailable)
+    ) {
       void commitPromise.then(() => onNavigate(pendingNavRequest))
     }
 
@@ -464,6 +519,11 @@ export function createScormRuntimeApi({
     if (WRITE_ONLY_ELEMENTS.has(name)) {
       setError(is2004 ? "405" : "404")
       return ""
+    }
+    const targetValidity = is2004 ? parseTargetNavigationValidElement(name) : null
+    if (targetValidity && !Object.prototype.hasOwnProperty.call(values, name)) {
+      clearError()
+      return availableNavigationTargets.get(targetValidity.target) === true ? "true" : "false"
     }
     if (!Object.prototype.hasOwnProperty.call(values, name)) {
       setError("401")

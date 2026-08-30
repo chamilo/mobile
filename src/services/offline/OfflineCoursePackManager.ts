@@ -34,7 +34,7 @@ import type { HttpClient } from "@/services/http/HttpClient"
 import { LearningPathApiService } from "@/services/learningPaths/LearningPathApiService"
 import {
   buildScormPackageScope,
-  MAX_SCORM_PACKAGE_SIZE_BYTES,
+  MAX_NATIVE_SCORM_PACKAGE_SIZE_BYTES,
   scormPackageHost,
 } from "@/services/learningPaths/ScormPackageHost"
 import { CourseLinksApiService } from "@/services/links/CourseLinksApiService"
@@ -522,7 +522,7 @@ export class OfflineCoursePackManager {
       return
     }
 
-    if (scorm.packageSize > MAX_SCORM_PACKAGE_SIZE_BYTES) {
+    if (scorm.packageSize > MAX_NATIVE_SCORM_PACKAGE_SIZE_BYTES) {
       context.warnings.push({
         tool: "learning-paths",
         code: "scorm_package_too_large",
