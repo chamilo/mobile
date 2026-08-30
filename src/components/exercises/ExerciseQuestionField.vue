@@ -7,6 +7,7 @@ import {
   exerciseAnnotationPointFromClientCoordinates,
   exerciseAnnotationPointPercent,
 } from "@/domain/exercises/annotation"
+import { exerciseChoiceContent } from "@/domain/exercises/answerContent"
 import { answerKind } from "@/domain/exercises/answers"
 import {
   exerciseFileAccept,
@@ -452,7 +453,21 @@ watch(
           class="mt-1"
           @change="update({ choice: choice.id })"
         />
-        <span>{{ plainText(choice.answer) }}</span>
+        <div v-if="question.type === 17" class="min-w-0 flex-1 space-y-2">
+          <img
+            v-for="(image, imageIndex) in exerciseChoiceContent(choice.answer).images"
+            :key="`${choice.id}-image-${imageIndex}`"
+            :src="image.src"
+            :alt="image.alt"
+            :width="image.width"
+            :height="image.height"
+            class="max-h-48 max-w-full object-contain"
+          />
+          <span v-if="exerciseChoiceContent(choice.answer).text">
+            {{ exerciseChoiceContent(choice.answer).text }}
+          </span>
+        </div>
+        <span v-else>{{ plainText(choice.answer) }}</span>
       </label>
     </div>
 

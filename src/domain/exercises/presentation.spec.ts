@@ -32,8 +32,7 @@ function questionFixture(): ExerciseQuestion {
     calculated: null,
     reading: {
       speed: 175,
-      text:
-        '<span class="mce-translatehtml" lang="en">Reading text</span><span class="mce-translatehtml" lang="es">Texto de lectura</span>',
+      text: '<span class="mce-translatehtml" lang="en">Reading text</span><span class="mce-translatehtml" lang="es">Texto de lectura</span>',
     },
     onlyoffice: null,
     annotation: null,
@@ -49,5 +48,26 @@ describe("exercise presentation", () => {
     expect(localized.title).toBe("Pregunta")
     expect(localized.choices).toEqual([{ id: 10, answer: "Sí", position: 1 }])
     expect(localized.reading?.text).toBe("Texto de lectura")
+  })
+
+  it("preserves translated HTML for unique-answer image choices", () => {
+    const question = questionFixture()
+    question.type = 17
+    question.typeLabel = "Unique answer with images"
+    question.reading = null
+    question.choices = [
+      {
+        id: 20,
+        answer:
+          '<span class="mce-translatehtml" lang="en"><img src="data:image/png;base64,aW1hZ2U=" alt="English image"></span><span class="mce-translatehtml" lang="es"><img src="data:image/png;base64,aW1hZ2U=" alt="Spanish image"></span>',
+        position: 1,
+      },
+    ]
+
+    const localized = localizeExerciseQuestionContent(question, "es")
+
+    expect(localized.choices[0]?.answer).toContain("<img")
+    expect(localized.choices[0]?.answer).toContain("Spanish image")
+    expect(localized.choices[0]?.answer).not.toContain("English image")
   })
 })

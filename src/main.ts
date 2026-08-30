@@ -5,7 +5,7 @@ import "primeicons/primeicons.css"
 import "@/assets/main.css"
 
 import App from "@/App.vue"
-import { i18n } from "@/i18n"
+import { applyInterfaceLocale, i18n } from "@/i18n"
 import { primeVue } from "@/plugins/primevue"
 import { router } from "@/router"
 import { registerAuthGuards } from "@/router/authGuards"
@@ -18,9 +18,12 @@ import {
 import { browserCampusCacheRepository } from "@/services/cache/BrowserCampusCacheRepository"
 import { registerNativeAppListeners } from "@/services/native/registerNativeAppListeners"
 import { clearOfflineCampusData } from "@/services/offline/clearOfflineCampusData"
+import { findCourseLanguageById } from "@/domain/courses/courseLanguage"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useConnectivityStore } from "@/stores/connectivity"
+import { useCoursesStore } from "@/stores/courses"
+import { useLocaleStore } from "@/stores/locale"
 import { useOfflineSyncStore } from "@/stores/offlineSync"
 import { usePushNotificationsStore } from "@/stores/pushNotifications"
 
@@ -34,10 +37,82 @@ const campusStore = useCampusStore(pinia)
 const connectivityStore = useConnectivityStore(pinia)
 const authStore = useAuthStore(pinia)
 const offlineSyncStore = useOfflineSyncStore(pinia)
+const coursesStore = useCoursesStore(pinia)
+const localeStore = useLocaleStore(pinia)
 
 campusStore.initialize()
 connectivityStore.initialize()
 connectivityStore.setActiveCampus(campusStore.selectedCampusId)
+localeStore.activateCampus(campusStore.selectedCampus)
+applyInterfaceLocale(localeStore.interfaceLocale, localeStore.interfaceBundleLocale)
+
+watch(
+  () => campusStore.selectedCampus,
+  (campus) => {
+    localeStore.activateCampus(campus)
+  },
+)
+
+watch(
+  [
+    () => authStore.status,
+    () => authStore.profile?.locale ?? null,
+    () => campusStore.selectedCampus,
+    () => connectivityStore.deviceOnline,
+  ],
+  ([status, profileLocale, campus, online]) => {
+    if (status === "authenticated" && campus) {
+      localeStore.setUserLocale(profileLocale)
+      if (online && !authStore.isOfflineSession) {
+        void localeStore.refreshCampusConfiguration(campus)
+      }
+      return
+    }
+
+    localeStore.clearUserContext()
+  },
+  { immediate: true },
+)
+
+watch(
+  [
+    () => router.currentRoute.value.params.courseId,
+    () => coursesStore.overview,
+    () => campusStore.selectedCampus,
+    () => authStore.status,
+    () => connectivityStore.deviceOnline,
+    () => authStore.isOfflineSession,
+  ],
+  ([routeCourseId, overview, campus, authStatus, online, offlineSession]) => {
+    const rawCourseId = Array.isArray(routeCourseId) ? routeCourseId[0] : routeCourseId
+    const parsedCourseId = typeof rawCourseId === "string" ? Number(rawCourseId) : Number.NaN
+
+    if (
+      authStatus !== "authenticated" ||
+      !campus ||
+      !Number.isInteger(parsedCourseId) ||
+      parsedCourseId <= 0
+    ) {
+      localeStore.clearCourseContext()
+      return
+    }
+
+    const courseLanguage = findCourseLanguageById(overview, parsedCourseId)
+    void localeStore.setCourseContext(
+      campus,
+      parsedCourseId,
+      courseLanguage,
+      online && !offlineSession,
+    )
+  },
+  { immediate: true, deep: false },
+)
+
+watch(
+  [() => localeStore.interfaceLocale, () => localeStore.interfaceBundleLocale],
+  ([locale, bundleLocale]) => applyInterfaceLocale(locale, bundleLocale),
+  { immediate: true },
+)
 
 const pushNotificationsStore = usePushNotificationsStore(pinia)
 void pushNotificationsStore.initialize(router)

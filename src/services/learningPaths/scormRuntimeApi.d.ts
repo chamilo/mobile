@@ -10,6 +10,11 @@ export interface ScormRuntimeContext {
   destroy(): void
 }
 
+export interface ScormNavigationTarget {
+  ref: string
+  available: boolean
+}
+
 export interface CreateScormRuntimeOptions {
   version: string
   initialValues: Record<string, string>
@@ -28,6 +33,7 @@ export interface CreateScormRuntimeOptions {
   onNavigate?(request: string): void | Promise<void>
   hasNextItem?: boolean
   hasPreviousItem?: boolean
+  navigationTargets?: ScormNavigationTarget[]
 }
 
 export function createScormRuntimeApi(options: CreateScormRuntimeOptions): ScormRuntimeContext

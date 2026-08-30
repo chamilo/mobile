@@ -205,7 +205,8 @@ export class LearningPathApiService {
           Accept: "application/zip",
         },
         responseType: "arraybuffer",
-        timeoutMs: 120_000,
+        timeoutMs: 600_000,
+        affectsCampusReachability: false,
       })
 
       if (!(response.data instanceof ArrayBuffer)) {

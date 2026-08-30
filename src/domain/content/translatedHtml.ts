@@ -15,9 +15,9 @@ function buildLocaleCandidates(locale: string | null | undefined): string[] {
     if (value && !candidates.includes(value)) candidates.push(value)
   }
 
-  addCandidate(isoCode)
   addCandidate(normalizedLocale)
   addCandidate(normalizedLocale.replace("_", "-"))
+  addCandidate(isoCode)
 
   return candidates
 }

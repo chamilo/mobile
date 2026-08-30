@@ -11,7 +11,9 @@ import {
   parseCourseRouteContext,
   CourseRouteContextError,
 } from "@/domain/courses/routeContext"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import { useCourseProgressStore } from "@/stores/courseProgress"
+import { useLocaleStore } from "@/stores/locale"
 const props = defineProps<{
   courseId: string
   sessionId: string | null
@@ -22,6 +24,8 @@ const props = defineProps<{
 const { t } = useI18n()
 const store = useCourseProgressStore()
 const { status, snapshot, items, errorCode } = storeToRefs(store)
+const localeStore = useLocaleStore()
+const { contentLocale, contentFallbackLocales } = storeToRefs(localeStore)
 const context = computed(() => {
   try {
     return parseCourseRouteContext(props)
@@ -31,6 +35,9 @@ const context = computed(() => {
   }
 })
 const errorDescription = computed(() => t(`courseProgress.errors.${errorCode.value ?? "server"}`))
+function plainContent(value: string): string {
+  return translatedPlainText(value, contentLocale.value, contentFallbackLocales.value)
+}
 async function load() {
   if (context.value) await store.load(context.value)
 }
@@ -87,7 +94,7 @@ onMounted(load)
             <div>
               <h2 class="text-base font-semibold text-slate-900">{{ thematic.title }}</h2>
               <p v-if="thematic.content" class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-                {{ thematic.content }}
+                {{ plainContent(thematic.content) }}
               </p>
             </div>
             <span
@@ -104,7 +111,7 @@ onMounted(load)
               <li v-for="plan in thematic.plans" :key="plan.iid" class="rounded-xl bg-slate-50 p-3">
                 <p class="text-sm font-semibold">{{ plan.title }}</p>
                 <p v-if="plan.description" class="mt-1 whitespace-pre-wrap text-sm text-slate-600">
-                  {{ plan.description }}
+                  {{ plainContent(plan.description) }}
                 </p>
               </li>
             </ul>
@@ -126,7 +133,9 @@ onMounted(load)
                   aria-hidden="true"
                 />
                 <div>
-                  <p class="whitespace-pre-wrap text-sm text-slate-700">{{ advance.content }}</p>
+                  <p class="whitespace-pre-wrap text-sm text-slate-700">
+                    {{ plainContent(advance.content) }}
+                  </p>
                   <p v-if="advance.formattedStartDate" class="mt-1 text-xs text-slate-500">
                     {{ advance.formattedStartDate }}
                   </p>

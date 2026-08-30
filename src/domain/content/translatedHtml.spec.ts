@@ -24,6 +24,15 @@ describe("translated HTML", () => {
     expect(translatedPlainText(html, "fr_FR")).toBe("Français")
   })
 
+  it("prefers an exact regional translation before its generic language", () => {
+    const html = [
+      '<span class="mce-translatehtml" lang="es">Español genérico</span>',
+      '<span class="mce-translatehtml" lang="es_MX">Español de México</span>',
+    ].join("")
+
+    expect(translatedPlainText(html, "es_MX")).toBe("Español de México")
+  })
+
   it("falls back to the course language when the viewer locale is unavailable", () => {
     const html = [
       '<span class="mce-translatehtml" lang="de">Deutsch</span>',

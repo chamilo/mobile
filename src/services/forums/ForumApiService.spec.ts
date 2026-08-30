@@ -55,4 +55,39 @@ describe("ForumApiService learning path writes", () => {
 
     expect(request.query).toEqual({ cid: 16, sid: 4, gid: 3 })
   })
+  it("accepts the current Chamilo reply response contract", async () => {
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        data: { token: "forum-token" },
+      })
+      .mockResolvedValueOnce({
+        status: 201,
+        headers: { "content-type": "application/json" },
+        data: {
+          postId: 44,
+          threadId: 15,
+          attachments: [],
+          requiresApproval: false,
+          message: "Reply added.",
+        },
+      })
+
+    const api = new ForumApiService({ request } as unknown as HttpClient)
+    const result = await api.createReply(context, 8, 15, {
+      title: "Re: Question",
+      text: "Reply",
+      postNotification: true,
+    })
+
+    expect(result).toEqual({
+      postId: 44,
+      threadId: 15,
+      requiresApproval: false,
+      message: "Reply added.",
+    })
+    expect(request).toHaveBeenCalledTimes(2)
+  })
 })

@@ -17,7 +17,9 @@ export class ObservedCampusHttpClient implements HttpClient {
 
       return response
     } catch (error) {
-      reportCampusRequestFailure(this.campusId, error)
+      if (request.affectsCampusReachability !== false) {
+        reportCampusRequestFailure(this.campusId, error)
+      }
       throw error
     }
   }

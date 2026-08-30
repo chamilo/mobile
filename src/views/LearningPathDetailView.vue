@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
+import { useRouter } from "vue-router"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
 import LearningPathContentViewer from "@/components/learningPaths/LearningPathContentViewer.vue"
@@ -10,8 +11,11 @@ import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import {
   buildAssignmentDetailRoute,
+  buildCourseLinksRoute,
+  buildDocumentsRoute,
   buildExercisePlayerRoute,
   buildForumThreadRoute,
+  buildForumsRoute,
   buildForumThreadsRoute,
   buildLearningPathsRoute,
   buildSurveyDetailRoute,
@@ -33,6 +37,9 @@ import {
   isSurveyLearningPathItem,
   isThreadLearningPathItem,
 } from "@/domain/learningPaths/contracts"
+import type { CStudioChamiloResource } from "@/domain/learningPaths/cstudioResource"
+import { resolveScormTargetedNavigationItem } from "@/domain/learningPaths/scormNavigation"
+import { shouldRefreshScormProgress } from "@/domain/learningPaths/scormProgressRefresh"
 import type {
   LearningPathRuntimeItem,
   LearningPathScormCommitPayload,
@@ -40,6 +47,7 @@ import type {
 import { useLearningPathRuntimeStore } from "@/stores/learningPathRuntime"
 
 const SYNC_INTERVAL_MS = 30_000
+const SCORM_PROGRESS_REFRESH_DELAY_MS = 1_200
 
 const props = defineProps<{
   courseId: string
@@ -52,9 +60,11 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const router = useRouter()
 const store = useLearningPathRuntimeStore()
 const scormPlayer = ref<InstanceType<typeof LearningPathScormPlayer> | null>(null)
 let syncTimer: ReturnType<typeof setInterval> | null = null
+let scormProgressRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
 const context = computed(() => {
   try {
@@ -182,6 +192,24 @@ function itemTypeLabel(itemType: string): string {
   return itemType.replace(/_/g, " ") || t("learningPaths.item")
 }
 
+function statusLabel(status: string): string {
+  const normalizedStatus = status.trim().toLowerCase().replace(/[\s-]+/g, "_")
+  const supportedStatuses = new Set([
+    "locked",
+    "not_attempted",
+    "incomplete",
+    "completed",
+    "passed",
+    "succeeded",
+    "browsed",
+    "failed",
+  ])
+
+  return supportedStatuses.has(normalizedStatus)
+    ? t(`learningPaths.status.${normalizedStatus}`)
+    : status
+}
+
 function formatDuration(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
@@ -221,6 +249,72 @@ async function commitScorm(payload: LearningPathScormCommitPayload): Promise<voi
   )
 }
 
+
+function scheduleScormProgressRefresh(payload: LearningPathScormCommitPayload): void {
+  if (!shouldRefreshScormProgress(payload)) return
+
+  if (scormProgressRefreshTimer) {
+    clearTimeout(scormProgressRefreshTimer)
+  }
+
+  scormProgressRefreshTimer = setTimeout(() => {
+    scormProgressRefreshTimer = null
+    void sync(true)
+  }, SCORM_PROGRESS_REFRESH_DELAY_MS)
+}
+
+async function openCStudioResource(resource: CStudioChamiloResource): Promise<void> {
+  const activeContext = context.value
+  if (!activeContext) return
+
+  await scormPlayer.value?.flush("cstudio-resource")
+
+  if (resource.type === "document" || resource.type === "video") {
+    await router.push(buildDocumentsRoute(activeContext))
+    return
+  }
+
+  if (resource.type === "link") {
+    await router.push(buildCourseLinksRoute(activeContext))
+    return
+  }
+
+  if (resource.type === "quiz") {
+    await router.push(buildExercisePlayerRoute(activeContext, resource.id))
+    return
+  }
+
+  if (resource.type === "student_publication") {
+    await router.push(buildAssignmentDetailRoute(activeContext, resource.id, resource.title))
+    return
+  }
+
+  if (resource.type === "forum") {
+    await router.push(buildForumThreadsRoute(activeContext, resource.id, resource.title))
+    return
+  }
+
+  if (resource.type === "thread") {
+    if (resource.forumId) {
+      await router.push(
+        buildForumThreadRoute(
+          activeContext,
+          resource.forumId,
+          resource.id,
+          undefined,
+          resource.title,
+        ),
+      )
+      return
+    }
+
+    await router.push(buildForumsRoute(activeContext))
+    return
+  }
+
+  await router.push(buildSurveyDetailRoute(activeContext, resource.id, "answer", resource.title))
+}
+
 async function handleScormNavigation(request: string): Promise<void> {
   if (request === "continue" && nextItem.value) {
     await selectItem(nextItem.value.id)
@@ -229,6 +323,14 @@ async function handleScormNavigation(request: string): Promise<void> {
   if (request === "previous" && previousItem.value) {
     await selectItem(previousItem.value.id)
     return
+  }
+
+  if (store.runtime) {
+    const targetItem = resolveScormTargetedNavigationItem(store.runtime.items, request)
+    if (targetItem) {
+      await selectItem(targetItem.id)
+      return
+    }
   }
 
   if (["exit", "exitAll", "suspendAll", "abandon", "abandonAll"].includes(request)) {
@@ -285,6 +387,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (syncTimer) {
     clearInterval(syncTimer)
+  }
+  if (scormProgressRefreshTimer) {
+    clearTimeout(scormProgressRefreshTimer)
   }
 
   document.removeEventListener("visibilitychange", handleVisibilityChange)
@@ -418,7 +523,7 @@ onBeforeUnmount(() => {
         <p class="mt-1 text-xs capitalize text-slate-500">
           {{ itemTypeLabel(store.currentItem.itemType) }}
           ·
-          {{ store.currentItem.status }}
+          {{ statusLabel(store.currentItem.status) }}
         </p>
 
         <div
@@ -442,7 +547,9 @@ onBeforeUnmount(() => {
           :runtime="store.runtime"
           :item="store.currentItem"
           :commit="commitScorm"
+          @committed="scheduleScormProgressRefresh"
           @navigate="handleScormNavigation"
+          @cstudio-resource="openCStudioResource"
         />
 
         <LearningPathContentViewer
@@ -592,7 +699,7 @@ onBeforeUnmount(() => {
           {{ contentErrorDescription }}
         </p>
 
-        <div class="mt-4 grid grid-cols-2 gap-2">
+        <div v-if="!store.runtime.hideArrowNavigation" class="mt-4 grid grid-cols-2 gap-2">
           <button
             type="button"
             class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 font-semibold text-slate-800 disabled:opacity-40"

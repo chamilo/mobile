@@ -98,7 +98,7 @@ export const useNotebookStore = defineStore("notebook", () => {
     input: NotebookMutationInput,
   ): Promise<boolean> {
     const api = service()
-    if (!api || !form.value?.canWrite || !form.value.csrfToken) {
+    if (!api || !form.value?.canWrite) {
       errorCode.value = "access_denied"
       return false
     }
@@ -109,7 +109,6 @@ export const useNotebookStore = defineStore("notebook", () => {
     mutationStatus.value = "loading"
     errorCode.value = null
     const activeForm = form.value
-    const csrfToken = activeForm.csrfToken as string
     const queueSave = async (uncertainDelivery = false): Promise<boolean> => {
       const isUpdate = activeForm.iid !== null
       const queued = await useOfflineSyncStore().enqueueHttpWrite({
@@ -121,7 +120,7 @@ export const useNotebookStore = defineStore("notebook", () => {
           method: isUpdate ? "PUT" : "POST",
           path: isUpdate ? `/api/notebook/${activeForm.iid}` : "/api/notebook",
           query: buildNotebookApiQuery(context),
-          body: { ...input, csrfToken },
+          body: input,
           headers: {
             Accept: "application/ld+json",
             "Content-Type": "application/ld+json",
@@ -135,8 +134,8 @@ export const useNotebookStore = defineStore("notebook", () => {
     if (isOfflineNow()) return queueSave()
 
     try {
-      if (activeForm.iid) await api.update(context, activeForm.iid, input, csrfToken)
-      else await api.create(context, input, csrfToken)
+      if (activeForm.iid) await api.update(context, activeForm.iid, input)
+      else await api.create(context, input)
       mutationStatus.value = "ready"
       return true
     } catch (error) {
@@ -150,12 +149,11 @@ export const useNotebookStore = defineStore("notebook", () => {
     const api = service()
     if (!api) return false
     const latestForm = await api.getForm(context, iid)
-    if (!latestForm.canWrite || !latestForm.csrfToken) {
+    if (!latestForm.canWrite) {
       errorCode.value = "access_denied"
       return false
     }
     mutationStatus.value = "loading"
-    const csrfToken = latestForm.csrfToken as string
     const queueRemove = async (uncertainDelivery = false): Promise<boolean> => {
       const queued = await useOfflineSyncStore().enqueueHttpWrite({
         category: "notebook_delete",
@@ -166,11 +164,7 @@ export const useNotebookStore = defineStore("notebook", () => {
           method: "DELETE",
           path: `/api/notebook/${iid}`,
           query: buildNotebookApiQuery(context),
-          body: { csrfToken },
-          headers: {
-            Accept: "application/ld+json",
-            "Content-Type": "application/ld+json",
-          },
+          headers: { Accept: "application/ld+json" },
         },
       })
       if (queued && !uncertainDelivery) {
@@ -189,7 +183,7 @@ export const useNotebookStore = defineStore("notebook", () => {
     if (isOfflineNow()) return queueRemove()
 
     try {
-      await api.remove(context, iid, csrfToken)
+      await api.remove(context, iid)
       mutationStatus.value = "ready"
       return await loadList(context)
     } catch (error) {

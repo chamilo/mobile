@@ -123,6 +123,8 @@ const learningPathRuntime = {
   title: "Offline lesson",
   lpType: 1,
   runtimeSupported: true,
+  isCStudioContent: false,
+  hideArrowNavigation: false,
   hideToc: false,
   accordionToc: false,
   progress: 0,

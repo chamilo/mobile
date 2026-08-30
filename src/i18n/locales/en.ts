@@ -374,6 +374,8 @@ export default {
       recipient: "Recipient",
       recipientPlaceholder: "Type a name or username",
       recipientSearchMinimum: "Enter at least two characters to search for a recipient.",
+      recipientSearching: "Searching recipients...",
+      recipientNoResults: "No recipients matched this search.",
       searchRecipient: "Search recipient",
       changeRecipient: "Change recipient",
       subject: "Subject",
@@ -636,6 +638,8 @@ export default {
     scormLocalFixture:
       "Local SCORM fixture mode is active. Runtime commits are sent to the selected campus.",
     scormSaving: "Saving SCORM progress...",
+    cstudioOpenInMobile: "Open in Chamilo Mobile",
+    cstudioResourceUnavailable: "This embedded Chamilo resource cannot be opened safely in Mobile.",
     preparing: "Preparing content...",
     unsupportedItem:
       "This item requires a player that is not enabled yet. It was not marked as completed.",
@@ -677,9 +681,11 @@ export default {
         "Chamilo could not create an active SCORM attempt for this learning path item.",
       scorm_fixture_mismatch:
         "The downloaded SCORM package does not match the local SCORM 1.2 or 2004 test fixtures.",
+      scorm_web_package_unsupported:
+        "This real SCORM package cannot be played by the local web development fixture host. Test it in the Android app.",
       scorm_install_failed:
         "The SCORM package could not be prepared or its launch file was not found.",
-      package_too_large: "This SCORM package is larger than the current 100 MB mobile limit.",
+      package_too_large: "This SCORM package exceeds the size limit of the current playback environment.",
       conflict: "This learning path action is no longer available for the current attempt.",
       server: "The campus returned an unexpected learning path error.",
     },
@@ -900,6 +906,7 @@ export default {
     emptyDescription: "No visible forums are available in this course context.",
     uncategorized: "Other forums",
     unknownAuthor: "Unknown author",
+    roles: { teacher: "Teacher", student: "Learner", administrator: "Administrator" },
     availability: {
       open: "Open",
       not_started: "Not started",
@@ -1340,6 +1347,7 @@ export default {
     emptyDescription: "Add your first private note for this course.",
     errorTitle: "Notebook could not be loaded",
     deleteConfirmation: "Delete this note permanently?",
+    readOnlyNotice: "This notebook is read-only in the current course context.",
     fields: {
       title: "Title",
       content: "Content",

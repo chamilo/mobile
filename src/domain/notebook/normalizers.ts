@@ -75,7 +75,6 @@ export function normalizeNotebookListResponse(value: unknown): NotebookListSnaps
     studentView: booleanValue(record.studentView),
     sort: stringValue(record.sort, "creation_date"),
     direction: stringValue(record.direction, "ASC"),
-    csrfToken: canWrite ? nullableString(record.csrfToken) : null,
   }
 }
 
@@ -93,6 +92,5 @@ export function normalizeNotebookFormResponse(value: unknown): NotebookFormSnaps
     canWrite,
     isNew: booleanValue(record.isNew),
     fullEditor: booleanValue(record.fullEditor),
-    csrfToken: canWrite ? nullableString(record.csrfToken) : null,
   }
 }

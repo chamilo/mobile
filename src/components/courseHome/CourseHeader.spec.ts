@@ -63,12 +63,14 @@ describe("CourseHeader", () => {
     expect(wrapper.text()).not.toContain("Mobile course home")
     expect(wrapper.text()).toContain("Course home")
     expect(wrapper.text()).toContain("July session")
+    expect(wrapper.text()).toContain("Progress")
     expect(wrapper.text()).toContain("55%")
-    expect(wrapper.text()).not.toContain("Progress")
 
     const progressbar = wrapper.get('[role="progressbar"]')
     expect(progressbar.attributes("aria-valuenow")).toBe("55")
-    expect(progressbar.element.previousElementSibling?.tagName).toBe("NAV")
+    expect(progressbar.classes()).toContain("bg-slate-200")
+    expect(progressbar.get("div").classes()).toContain("bg-chamilo-600")
+    expect(progressbar.get("div").attributes("style")).toContain("width: 55%")
 
     await wrapper.get("nav button").trigger("click")
     await flushPromises()

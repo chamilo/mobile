@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -51,6 +53,8 @@ public class ChamiloScormPackagePlugin extends Plugin {
             }
 
             call.resolve(result(entry));
+        } catch (IOException exception) {
+            call.resolve(notFoundResult());
         } catch (Exception exception) {
             call.reject("The cached SCORM package could not be resolved.", exception);
         }
@@ -70,15 +74,14 @@ public class ChamiloScormPackagePlugin extends Plugin {
 
         File temporary = null;
         try {
+            // The backend fingerprint is a package version/cache key. It is intentionally not the
+            // SHA-256 digest of the ZIP bytes, so it must never be compared with sha256(archive).
             validateFingerprint(fingerprint);
-            String normalizedEntryPath = normalizePath(entryPath);
+            String normalizedEntryPath = ScormPackageFileResolver.normalizeLaunchPath(entryPath);
             byte[] archive = Base64.decode(archiveBase64, Base64.DEFAULT);
             if (archive.length <= 0 || archive.length > MAX_COMPRESSED_SIZE) {
                 call.reject("The SCORM package exceeds the supported size.");
                 return;
-            }
-            if (!fingerprint.equals(sha256(archive))) {
-                throw new IOException("The SCORM package fingerprint does not match the downloaded archive.");
             }
 
             File scopeRoot = scopeRoot(scope);
@@ -90,10 +93,7 @@ public class ChamiloScormPackagePlugin extends Plugin {
             }
 
             extractArchive(archive, temporary);
-            File entry = safeChild(temporary, normalizedEntryPath);
-            if (!entry.isFile()) {
-                throw new IOException("The SCORM launch file is missing from the package.");
-            }
+            ScormPackageFileResolver.resolveLaunchFile(temporary, normalizedEntryPath);
 
             deleteRecursively(target);
             if (!temporary.renameTo(target)) {
@@ -102,7 +102,7 @@ public class ChamiloScormPackagePlugin extends Plugin {
             temporary = null;
 
             removeStalePackages(scopeRoot, target);
-            File activeEntry = safeChild(target, normalizedEntryPath);
+            File activeEntry = ScormPackageFileResolver.resolveLaunchFile(target, normalizedEntryPath);
             call.resolve(result(activeEntry));
         } catch (Exception exception) {
             if (temporary != null) {
@@ -136,6 +136,7 @@ public class ChamiloScormPackagePlugin extends Plugin {
         long totalUncompressed = 0;
         int entryCount = 0;
         byte[] buffer = new byte[BUFFER_SIZE];
+        Set<String> extractedFilePaths = new HashSet<>();
 
         try (ZipInputStream input = new ZipInputStream(
             new BufferedInputStream(new ByteArrayInputStream(archive)),
@@ -148,8 +149,15 @@ public class ChamiloScormPackagePlugin extends Plugin {
                     throw new IOException("The SCORM package contains too many files.");
                 }
 
-                String normalized = normalizePath(entry.getName());
-                File target = safeChild(destination, normalized);
+                String normalized = ScormPackageFileResolver.normalizeArchiveEntry(entry.getName());
+                if (normalized.isEmpty()) {
+                    if (entry.isDirectory()) {
+                        input.closeEntry();
+                        continue;
+                    }
+                    throw new IOException("The SCORM package contains an invalid file path.");
+                }
+                File target = ScormPackageFileResolver.safeChild(destination, normalized);
 
                 if (entry.isDirectory()) {
                     if (!target.mkdirs() && !target.isDirectory()) {
@@ -157,6 +165,10 @@ public class ChamiloScormPackagePlugin extends Plugin {
                     }
                     input.closeEntry();
                     continue;
+                }
+
+                if (!extractedFilePaths.add(normalized)) {
+                    throw new IOException("The SCORM package contains duplicate file paths.");
                 }
 
                 File parent = target.getParentFile();
@@ -199,7 +211,10 @@ public class ChamiloScormPackagePlugin extends Plugin {
 
     private File resolveEntry(String scope, String fingerprint, String entryPath) throws Exception {
         validateFingerprint(fingerprint);
-        return safeChild(new File(scopeRoot(scope), fingerprint), normalizePath(entryPath));
+        return ScormPackageFileResolver.resolveLaunchFile(
+            new File(scopeRoot(scope), fingerprint),
+            ScormPackageFileResolver.normalizeLaunchPath(entryPath)
+        );
     }
 
     private File scopeRoot(String scope) throws Exception {
@@ -239,46 +254,6 @@ public class ChamiloScormPackagePlugin extends Plugin {
         }
     }
 
-    private String normalizePath(String value) {
-        String path = value.replace('\\', '/').trim();
-        while (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        if (path.isEmpty() || path.indexOf('\0') >= 0 || path.matches("^[A-Za-z]:.*")) {
-            throw new IllegalArgumentException("The SCORM package path is invalid.");
-        }
-
-        StringBuilder normalized = new StringBuilder();
-        for (String segment : path.split("/")) {
-            if (segment.isEmpty() || ".".equals(segment)) {
-                continue;
-            }
-            if ("..".equals(segment)) {
-                throw new IllegalArgumentException("The SCORM package path is unsafe.");
-            }
-            if (normalized.length() > 0) {
-                normalized.append('/');
-            }
-            normalized.append(segment);
-        }
-
-        if (normalized.length() == 0) {
-            throw new IllegalArgumentException("The SCORM package path is empty.");
-        }
-
-        return normalized.toString();
-    }
-
-    private File safeChild(File root, String relativePath) throws IOException {
-        File rootCanonical = root.getCanonicalFile();
-        File child = new File(rootCanonical, relativePath).getCanonicalFile();
-        String rootPath = rootCanonical.getPath() + File.separator;
-        if (!child.getPath().startsWith(rootPath)) {
-            throw new IOException("The SCORM package path escapes its cache directory.");
-        }
-        return child;
-    }
-
     private JSObject result(File entry) {
         JSObject result = new JSObject();
         result.put("found", true);
@@ -293,12 +268,8 @@ public class ChamiloScormPackagePlugin extends Plugin {
     }
 
     private String sha256(String value) throws NoSuchAlgorithmException {
-        return sha256(value.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String sha256(byte[] value) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hash = digest.digest(value);
+        byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
         StringBuilder output = new StringBuilder(hash.length * 2);
         for (byte item : hash) {
             output.append(String.format(Locale.ROOT, "%02x", item));

@@ -1,14 +1,17 @@
-import { translatedPlainText } from "@/domain/content/translatedHtml"
+import { filterTranslatedHtml, translatedPlainText } from "@/domain/content/translatedHtml"
 import type { ExerciseChoice, ExerciseQuestion } from "@/domain/exercises/types"
 
 function localizeChoice(
   choice: ExerciseChoice,
   locale: string,
   fallbackLocales: string[],
+  preserveHtml = false,
 ): ExerciseChoice {
   return {
     ...choice,
-    answer: translatedPlainText(choice.answer, locale, fallbackLocales),
+    answer: preserveHtml
+      ? filterTranslatedHtml(choice.answer, locale, fallbackLocales)
+      : translatedPlainText(choice.answer, locale, fallbackLocales),
   }
 }
 
@@ -17,11 +20,15 @@ export function localizeExerciseQuestionContent(
   locale: string,
   fallbackLocales: string[] = [],
 ): ExerciseQuestion {
+  const preserveChoiceHtml = question.type === 17
+
   return {
     ...question,
     title: translatedPlainText(question.title, locale, fallbackLocales),
     description: translatedPlainText(question.description, locale, fallbackLocales),
-    choices: question.choices.map((choice) => localizeChoice(choice, locale, fallbackLocales)),
+    choices: question.choices.map((choice) =>
+      localizeChoice(choice, locale, fallbackLocales, preserveChoiceHtml),
+    ),
     trueFalseOptions: question.trueFalseOptions.map((option) => ({
       ...option,
       title: translatedPlainText(option.title, locale, fallbackLocales),

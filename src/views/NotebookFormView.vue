@@ -107,8 +107,9 @@ onMounted(load)
           v-model="title"
           name="notebook-title"
           maxlength="255"
-          class="min-h-touch w-full rounded-xl border px-3 py-2"
+          class="min-h-touch w-full rounded-xl border px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
           :class="titleError ? 'border-red-500' : 'border-slate-300'"
+          :disabled="!form.canWrite"
         />
         <p v-if="titleError" class="mt-1 text-sm text-red-700">
           {{ t("notebook.errors.validation") }}
@@ -123,7 +124,8 @@ onMounted(load)
           v-model="content"
           name="notebook-content"
           rows="10"
-          class="w-full rounded-xl border border-slate-300 px-3 py-2"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
+          :disabled="!form.canWrite"
         />
       </div>
       <div v-if="form.languages.length">
@@ -134,12 +136,20 @@ onMounted(load)
           id="notebook-language"
           v-model="language"
           name="notebook-language"
-          class="min-h-touch w-full rounded-xl border border-slate-300 px-3"
+          class="min-h-touch w-full rounded-xl border border-slate-300 px-3 disabled:bg-slate-100 disabled:text-slate-500"
+          :disabled="!form.canWrite"
         >
           <option v-for="option in form.languages" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
+      </div>
+      <div
+        v-if="!form.canWrite"
+        class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+        role="status"
+      >
+        {{ t("notebook.readOnlyNotice") }}
       </div>
       <div
         v-if="errorCode && errorCode !== 'validation'"
