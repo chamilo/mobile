@@ -22,7 +22,7 @@ describe("AppHeader", () => {
     expect(wrapper.find('[data-testid="brand-fallback"]').exists()).toBe(false)
   })
 
-  it("shows CH when no campus logo is available", () => {
+  it("shows portal initials when no campus logo is available", () => {
     const wrapper = mount(AppHeader, {
       props: {
         brandName: "Chamilo Mobile",
@@ -32,10 +32,10 @@ describe("AppHeader", () => {
       },
     })
 
-    expect(wrapper.get('[data-testid="brand-fallback"]').text()).toBe("CH")
+    expect(wrapper.get('[data-testid="brand-fallback"]').text()).toBe("CM")
   })
 
-  it("returns to CH when the image cannot be loaded", async () => {
+  it("uses the portal initials when the image cannot be loaded", async () => {
     const wrapper = mount(AppHeader, {
       props: {
         brandName: "Testing campus",
@@ -48,6 +48,21 @@ describe("AppHeader", () => {
     await wrapper.get("img").trigger("error")
 
     expect(wrapper.find("img").exists()).toBe(false)
-    expect(wrapper.get('[data-testid="brand-fallback"]').text()).toBe("CH")
+    expect(wrapper.get('[data-testid="brand-fallback"]').text()).toBe("TC")
+  })
+
+  it("reserves the top safe area for native status bars and camera cutouts", () => {
+    const wrapper = mount(AppHeader, {
+      props: {
+        brandName: "Testing campus",
+        title: "My courses",
+        logoUrl: null,
+        logoAlt: "Campus logo",
+      },
+    })
+
+    expect(wrapper.get('[data-testid="app-header"]').classes()).toContain(
+      "pt-[env(safe-area-inset-top)]",
+    )
   })
 })

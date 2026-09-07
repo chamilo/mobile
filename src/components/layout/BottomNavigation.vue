@@ -24,18 +24,18 @@ const items = [
 
 <template>
   <nav
-    class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]"
+    class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 pt-2 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] shadow-lg backdrop-blur"
     :aria-label="t('app.name')"
   >
-    <div class="mx-auto grid max-w-screen-sm grid-cols-3">
+    <div class="mx-auto grid max-w-screen-sm grid-cols-3 gap-1 px-2">
       <RouterLink
         v-for="item in items"
         :key="item.name"
         :to="{ name: item.name }"
-        class="flex min-h-16 min-w-touch flex-col items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-chamilo-700"
+        class="flex min-h-14 min-w-touch flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-chamilo-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-chamilo-600"
         active-class="bg-chamilo-50 text-chamilo-700"
       >
-        <i :class="item.icon" aria-hidden="true" />
+        <i :class="item.icon" class="text-lg" aria-hidden="true" />
         <span>{{ t(item.labelKey) }}</span>
       </RouterLink>
     </div>
