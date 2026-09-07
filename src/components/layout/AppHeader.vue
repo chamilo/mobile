@@ -22,6 +22,20 @@ const emit = defineEmits<{
 
 const imageFailed = ref(false)
 const showLogo = computed(() => Boolean(props.logoUrl) && !imageFailed.value)
+const brandInitials = computed(() => {
+  const words = props.brandName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (words.length === 0) return "CH"
+  if (words.length === 1) return words[0]?.slice(0, 2).toUpperCase() || "CH"
+
+  const first = words[0]?.[0] ?? ""
+  const last = words[words.length - 1]?.[0] ?? ""
+
+  return `${first}${last}`.toUpperCase() || "CH"
+})
 
 watch(
   () => props.logoUrl,
@@ -36,7 +50,10 @@ function handleLogoError(): void {
 </script>
 
 <template>
-  <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+  <header
+    data-testid="app-header"
+    class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur"
+  >
     <div class="mx-auto flex min-h-16 max-w-screen-sm items-center gap-3 px-4">
       <button
         v-if="showMenuButton"
@@ -69,14 +86,19 @@ function handleLogoError(): void {
         class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-chamilo-700 text-sm font-bold text-white"
         aria-hidden="true"
       >
-        CH
+        {{ brandInitials }}
       </div>
 
-      <div class="min-w-0">
-        <p class="truncate text-xs font-medium uppercase tracking-wide text-chamilo-700">
+      <div class="min-w-0 flex-1">
+        <p
+          class="truncate text-xs font-medium uppercase tracking-wide text-chamilo-700"
+          :title="brandName"
+        >
           {{ brandName }}
         </p>
-        <h1 class="truncate text-lg font-semibold text-slate-900">{{ title }}</h1>
+        <h1 class="truncate text-lg font-semibold text-slate-900" :title="title">
+          {{ title }}
+        </h1>
       </div>
     </div>
   </header>

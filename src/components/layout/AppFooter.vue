@@ -26,7 +26,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <footer class="pt-8 text-center text-[10px] leading-4 text-slate-400">
+  <footer class="pt-8 text-center text-xs leading-5 text-slate-500">
     {{ t("app.version", { version: displayedVersion }) }}
   </footer>
 </template>

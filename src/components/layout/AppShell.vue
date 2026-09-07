@@ -208,8 +208,12 @@ onBeforeUnmount(() => {
 
     <main
       id="main-content"
-      class="mx-auto w-full max-w-screen-sm px-4 py-6"
-      :class="showBottomNavigation ? 'pb-24' : 'pb-8'"
+      class="mx-auto w-full max-w-screen-sm py-6 [padding-left:calc(1rem+env(safe-area-inset-left))] [padding-right:calc(1rem+env(safe-area-inset-right))]"
+      :class="
+        showBottomNavigation
+          ? 'pb-[calc(6rem+env(safe-area-inset-bottom))]'
+          : 'pb-[calc(2rem+env(safe-area-inset-bottom))]'
+      "
     >
       <RouterView />
       <AppFooter :version="appVersion" />

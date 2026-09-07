@@ -78,7 +78,7 @@ watch(
 
       <aside
         id="app-navigation-drawer"
-        class="absolute inset-y-0 left-0 flex w-[min(86vw,22rem)] flex-col bg-white shadow-2xl"
+        class="absolute inset-y-0 left-0 flex w-[min(86vw,22rem)] flex-col bg-white pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] shadow-2xl"
         role="dialog"
         aria-modal="true"
         :aria-label="t('navigation.menu')"
