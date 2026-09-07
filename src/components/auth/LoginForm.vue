@@ -10,12 +10,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  submit: [credentials: AuthCredentials]
+  submit: [credentials: AuthCredentials, rememberMe: boolean]
 }>()
 
 const { t } = useI18n()
 const username = ref("")
 const password = ref("")
+const rememberMe = ref(true)
 const validationError = ref<string | null>(null)
 
 function submit(): void {
@@ -39,8 +40,9 @@ function submit(): void {
     password: password.value,
   }
 
+  const persistSession = rememberMe.value
   password.value = ""
-  emit("submit", credentials)
+  emit("submit", credentials, persistSession)
 }
 </script>
 
@@ -77,6 +79,19 @@ function submit(): void {
         class="focus:ring-chamilo-200 mt-2 min-h-touch w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-chamilo-600 focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
       />
     </div>
+
+    <label
+      class="flex min-h-touch cursor-pointer items-center gap-3 rounded-xl px-1 py-1 text-sm text-slate-700"
+    >
+      <input
+        v-model="rememberMe"
+        name="rememberMe"
+        type="checkbox"
+        class="size-5 rounded border-slate-300 text-chamilo-700 focus:ring-2 focus:ring-chamilo-200"
+        :disabled="props.busy"
+      />
+      <span>{{ t("auth.form.rememberMe") }}</span>
+    </label>
 
     <div
       v-if="validationError || props.errorMessage"

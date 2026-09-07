@@ -17,7 +17,7 @@ describe("LoginForm", () => {
     expect(wrapper.emitted("submit")).toBeUndefined()
   })
 
-  it("emits credentials and clears the password field", async () => {
+  it("emits credentials with remember me enabled by default and clears the password field", async () => {
     const wrapper = mount(LoginForm, {
       props: { busy: false, errorMessage: null },
       global: { plugins: [i18n] },
@@ -27,7 +27,27 @@ describe("LoginForm", () => {
     await wrapper.get('input[name="password"]').setValue("secret")
     await wrapper.get("form").trigger("submit")
 
-    expect(wrapper.emitted("submit")?.[0]).toEqual([{ username: "student", password: "secret" }])
+    expect(wrapper.emitted("submit")?.[0]).toEqual([
+      { username: "student", password: "secret" },
+      true,
+    ])
     expect((wrapper.get('input[name="password"]').element as HTMLInputElement).value).toBe("")
+  })
+
+  it("emits remember me disabled without changing the credentials payload", async () => {
+    const wrapper = mount(LoginForm, {
+      props: { busy: false, errorMessage: null },
+      global: { plugins: [i18n] },
+    })
+
+    await wrapper.get('input[name="username"]').setValue("student")
+    await wrapper.get('input[name="password"]').setValue("secret")
+    await wrapper.get('input[name="rememberMe"]').setValue(false)
+    await wrapper.get("form").trigger("submit")
+
+    expect(wrapper.emitted("submit")?.[0]).toEqual([
+      { username: "student", password: "secret" },
+      false,
+    ])
   })
 })

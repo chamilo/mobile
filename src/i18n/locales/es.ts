@@ -89,10 +89,12 @@ export default {
     description: "Usa tu nombre de usuario y contraseña de Chamilo para el campus seleccionado.",
     campusLabel: "Campus seleccionado",
     chooseAnotherCampus: "Elegir otro campus",
-    passwordNotice: "La contraseña solo se envía al campus seleccionado y nunca se guarda en esta aplicación.",
+    passwordNotice:
+      "La contraseña solo se envía al campus seleccionado y nunca se guarda en esta aplicación. Si activas Recordarme, solo se almacena de forma segura el token de sesión.",
     form: {
       username: "Nombre de usuario",
       password: "Contraseña",
+      rememberMe: "Recordarme",
       submit: "Ingresar",
       signingIn: "Ingresando...",
     },

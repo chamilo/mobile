@@ -89,10 +89,12 @@ export default {
     description: "Utilisez votre nom d'utilisateur et votre mot de passe Chamilo pour le campus sélectionné.",
     campusLabel: "Campus sélectionné",
     chooseAnotherCampus: "Choisir un autre campus",
-    passwordNotice: "Votre mot de passe est envoyé uniquement au campus sélectionné et n'est jamais stocké par l'application.",
+    passwordNotice:
+      "Votre mot de passe est envoyé uniquement au campus sélectionné et n'est jamais stocké par l'application. Si Se souvenir de moi est activé, seul le jeton de session est stocké de façon sécurisée.",
     form: {
       username: "Nom d'utilisateur",
       password: "Mot de passe",
+      rememberMe: "Se souvenir de moi",
       submit: "Connectez-vous",
       signingIn: "Connexion...",
     },
