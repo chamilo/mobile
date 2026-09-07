@@ -109,6 +109,34 @@ export default {
       timeout: "El campus tardó demasiado en responder. Inténtalo de nuevo.",
     },
   },
+  biometrics: {
+    title: "Desbloqueo biométrico",
+    description: "Usa la biometría del dispositivo para desbloquear una sesión de Chamilo recordada.",
+    enable: "Activar desbloqueo biométrico",
+    disable: "Desactivar desbloqueo biométrico",
+    enabling: "Activando...",
+    disabling: "Desactivando...",
+    availability: {
+      available: "La autenticación biométrica fuerte está disponible en este dispositivo.",
+      not_enrolled: "Configura primero una huella u otra biometría fuerte en los ajustes de Android.",
+      unavailable: "La autenticación biométrica fuerte no está disponible en este dispositivo.",
+      temporary_unavailable: "La autenticación biométrica no está disponible temporalmente.",
+      unsupported: "El desbloqueo biométrico no es compatible con esta plataforma.",
+    },
+    status: {
+      enabled: "El desbloqueo biométrico está activado para este campus.",
+      disabled: "El desbloqueo biométrico está desactivado.",
+      remember_me_required:
+        "Vuelve a iniciar sesión con Recordarme activado antes de activar el desbloqueo biométrico.",
+      cancelled: "La verificación biométrica fue cancelada.",
+      error: "No se pudo completar la verificación biométrica.",
+    },
+    prompt: {
+      title: "Desbloquear Chamilo",
+      subtitle: "Verifica tu identidad para restaurar la sesión recordada.",
+      cancel: "Usar contraseña",
+    },
+  },
   profile: {
     accountTitle: "Datos de la cuenta",
     email: "Correo electrónico",

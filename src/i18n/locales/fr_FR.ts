@@ -109,6 +109,34 @@ export default {
       timeout: "Le campus a mis trop de temps à répondre. Réessayez.",
     },
   },
+  biometrics: {
+    title: "Déverrouillage biométrique",
+    description: "Utilisez la biométrie de l'appareil pour déverrouiller une session Chamilo mémorisée.",
+    enable: "Activer le déverrouillage biométrique",
+    disable: "Désactiver le déverrouillage biométrique",
+    enabling: "Activation...",
+    disabling: "Désactivation...",
+    availability: {
+      available: "L'authentification biométrique forte est disponible sur cet appareil.",
+      not_enrolled: "Configurez d'abord une empreinte ou une autre biométrie forte dans les réglages Android.",
+      unavailable: "L'authentification biométrique forte n'est pas disponible sur cet appareil.",
+      temporary_unavailable: "L'authentification biométrique est temporairement indisponible.",
+      unsupported: "Le déverrouillage biométrique n'est pas pris en charge sur cette plateforme.",
+    },
+    status: {
+      enabled: "Le déverrouillage biométrique est activé pour ce campus.",
+      disabled: "Le déverrouillage biométrique est désactivé.",
+      remember_me_required:
+        "Reconnectez-vous avec Se souvenir de moi activé avant d'activer le déverrouillage biométrique.",
+      cancelled: "La vérification biométrique a été annulée.",
+      error: "La vérification biométrique n'a pas pu être effectuée.",
+    },
+    prompt: {
+      title: "Déverrouiller Chamilo",
+      subtitle: "Vérifiez votre identité pour restaurer la session mémorisée.",
+      cancel: "Utiliser le mot de passe",
+    },
+  },
   profile: {
     accountTitle: "Détails du compte",
     email: "E-mail",

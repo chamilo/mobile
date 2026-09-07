@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
+import {
+  getBiometricUnlockStateForCampus,
+  setBiometricUnlockForCampus,
+  type BiometricUnlockState,
+  type BiometricUnlockToggleResult,
+} from "@/services/auth/createTokenStorage"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 import { useOfflineSyncStore } from "@/stores/offlineSync"
@@ -25,6 +31,14 @@ const {
   canEnable: canEnablePush,
 } = storeToRefs(pushNotificationsStore)
 const busy = ref(false)
+const biometricBusy = ref(false)
+const biometricResult = ref<BiometricUnlockToggleResult | null>(null)
+const biometricState = ref<BiometricUnlockState>({
+  supportedPlatform: false,
+  availability: "unsupported",
+  enabled: false,
+  rememberedSession: true,
+})
 
 const pushStatusMessage = computed(() => {
   if (pushErrorCode.value) {
@@ -33,6 +47,44 @@ const pushStatusMessage = computed(() => {
 
   return t(`notifications.status.${pushStatus.value}`)
 })
+
+const biometricStatusMessage = computed(() => {
+  if (
+    biometricResult.value === "cancelled" ||
+    biometricResult.value === "error" ||
+    biometricResult.value === "remember_me_required"
+  ) {
+    return t(`biometrics.status.${biometricResult.value}`)
+  }
+
+  if (
+    biometricState.value.enabled &&
+    biometricState.value.availability !== "available"
+  ) {
+    return t(`biometrics.availability.${biometricState.value.availability}`)
+  }
+
+  if (biometricState.value.enabled) {
+    return t("biometrics.status.enabled")
+  }
+
+  if (!biometricState.value.rememberedSession) {
+    return t("biometrics.status.remember_me_required")
+  }
+
+  if (biometricState.value.availability === "available") {
+    return t("biometrics.status.disabled")
+  }
+
+  return t(`biometrics.availability.${biometricState.value.availability}`)
+})
+
+const canEnableBiometrics = computed(
+  () =>
+    biometricState.value.availability === "available" &&
+    biometricState.value.rememberedSession &&
+    !biometricState.value.enabled,
+)
 
 const initials = computed(() => {
   const name = profile.value?.fullName.trim() ?? ""
@@ -45,6 +97,33 @@ const initials = computed(() => {
   return name.slice(0, 2).toUpperCase()
 })
 
+async function refreshBiometricState(): Promise<void> {
+  const campusId = selectedCampus.value?.id
+
+  if (!campusId) return
+
+  biometricState.value = await getBiometricUnlockStateForCampus(campusId)
+}
+
+async function toggleBiometricUnlock(): Promise<void> {
+  const campusId = selectedCampus.value?.id
+
+  if (!campusId || biometricBusy.value) return
+
+  biometricBusy.value = true
+  biometricResult.value = null
+
+  try {
+    biometricResult.value = await setBiometricUnlockForCampus(
+      campusId,
+      !biometricState.value.enabled,
+    )
+    await refreshBiometricState()
+  } finally {
+    biometricBusy.value = false
+  }
+}
+
 async function logout(): Promise<void> {
   busy.value = true
   await authStore.signOut()
@@ -54,6 +133,10 @@ async function logout(): Promise<void> {
     await router.replace({ name: "login" })
   }
 }
+
+onMounted(() => {
+  void refreshBiometricState()
+})
 </script>
 
 <template>
@@ -99,6 +182,62 @@ async function logout(): Promise<void> {
           <dd class="mt-1 text-sm text-slate-900">{{ profile.timezone }}</dd>
         </div>
       </dl>
+    </section>
+
+    <section
+      v-if="biometricState.supportedPlatform"
+      class="rounded-2xl bg-white p-5 shadow-sm"
+      aria-labelledby="biometric-title"
+    >
+      <div class="flex items-start gap-3">
+        <div
+          class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-chamilo-100 text-chamilo-800"
+          aria-hidden="true"
+        >
+          <i class="pi pi-shield text-lg" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 id="biometric-title" class="text-lg font-semibold text-slate-900">
+            {{ t("biometrics.title") }}
+          </h2>
+          <p class="mt-1 text-sm leading-6 text-slate-600">
+            {{ t("biometrics.description") }}
+          </p>
+          <p
+            class="mt-3 text-sm font-medium text-slate-800"
+            role="status"
+            aria-live="polite"
+          >
+            {{ biometricStatusMessage }}
+          </p>
+        </div>
+      </div>
+
+      <button
+        v-if="biometricState.enabled || biometricState.availability === 'available'"
+        type="button"
+        class="mt-4 flex min-h-touch w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        :class="
+          biometricState.enabled
+            ? 'border border-slate-300 bg-white text-slate-800'
+            : 'bg-chamilo-700 text-white'
+        "
+        :disabled="
+          biometricBusy || (!biometricState.enabled && !canEnableBiometrics)
+        "
+        @click="toggleBiometricUnlock"
+      >
+        <i :class="biometricBusy ? 'pi pi-spin pi-spinner' : 'pi pi-shield'" aria-hidden="true" />
+        {{
+          biometricBusy
+            ? biometricState.enabled
+              ? t("biometrics.disabling")
+              : t("biometrics.enabling")
+            : biometricState.enabled
+              ? t("biometrics.disable")
+              : t("biometrics.enable")
+        }}
+      </button>
     </section>
 
     <section
