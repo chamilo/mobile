@@ -139,6 +139,34 @@ export default {
       unsupported: "Secure authentication is not available on this platform yet.",
     },
   },
+  biometrics: {
+    title: "Biometric unlock",
+    description: "Use your device biometrics to unlock a remembered Chamilo session.",
+    enable: "Enable biometric unlock",
+    disable: "Disable biometric unlock",
+    enabling: "Enabling...",
+    disabling: "Disabling...",
+    availability: {
+      available: "Strong biometric authentication is available on this device.",
+      not_enrolled: "Set up a fingerprint or another strong biometric in Android settings first.",
+      unavailable: "Strong biometric authentication is not available on this device.",
+      temporary_unavailable: "Biometric authentication is temporarily unavailable.",
+      unsupported: "Biometric unlock is not supported on this platform.",
+    },
+    status: {
+      enabled: "Biometric unlock is enabled for this campus.",
+      disabled: "Biometric unlock is disabled.",
+      remember_me_required:
+        "Sign in again with Remember me enabled before activating biometric unlock.",
+      cancelled: "Biometric verification was cancelled.",
+      error: "Biometric verification could not be completed.",
+    },
+    prompt: {
+      title: "Unlock Chamilo",
+      subtitle: "Verify your identity to restore your remembered session.",
+      cancel: "Use password",
+    },
+  },
   profile: {
     accountTitle: "Account details",
     email: "Email",

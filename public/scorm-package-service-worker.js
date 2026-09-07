@@ -1,4 +1,4 @@
-/* global self, caches, Response, Headers, URL, fetch */
+/* global self, caches, Response, Headers, URL */
 
 const SCORM_RESOURCE_PREFIX = "/__scorm-web-packages/"
 const SCORM_PACKAGE_PATH_PATTERN =
