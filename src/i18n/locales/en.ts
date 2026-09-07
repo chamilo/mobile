@@ -114,10 +114,11 @@ export default {
     campusLabel: "Selected campus",
     chooseAnotherCampus: "Choose another campus",
     passwordNotice:
-      "Your password is sent only to the selected campus and is never stored by this app.",
+      "Your password is sent only to the selected campus and is never stored by this app. When Remember me is enabled, only the session token is stored securely.",
     form: {
       username: "Username",
       password: "Password",
+      rememberMe: "Remember me",
       submit: "Sign in",
       signingIn: "Signing in...",
     },

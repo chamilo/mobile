@@ -6,6 +6,7 @@ import { useRoute, useRouter } from "vue-router"
 
 import LoginForm from "@/components/auth/LoginForm.vue"
 import type { AuthCredentials } from "@/domain/auth/types"
+import { setRememberMeForCampus } from "@/services/auth/createTokenStorage"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
 
@@ -28,7 +29,11 @@ function getSafeRedirect(): string | null {
     : null
 }
 
-async function signIn(credentials: AuthCredentials): Promise<void> {
+async function signIn(credentials: AuthCredentials, rememberMe: boolean): Promise<void> {
+  if (selectedCampus.value) {
+    setRememberMeForCampus(selectedCampus.value.id, rememberMe)
+  }
+
   const authenticated = await authStore.signIn(credentials)
 
   if (!authenticated) {
