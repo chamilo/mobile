@@ -22,7 +22,15 @@ export class BiometricProtectedTokenStorage implements TokenStorage {
       return null
     }
 
-    return this.source.loadPersistentToken(campusId)
+    const persistentToken = await this.source.loadPersistentToken(campusId)
+
+    if (!persistentToken) {
+      return null
+    }
+
+    await this.source.saveSessionToken(campusId, persistentToken)
+
+    return persistentToken
   }
 
   async save(campusId: string, token: StoredToken): Promise<void> {

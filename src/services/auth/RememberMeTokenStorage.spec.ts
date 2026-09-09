@@ -28,13 +28,16 @@ const token: StoredToken = {
 }
 
 describe("RememberMeTokenStorage", () => {
-  it("persists tokens by default to preserve the existing mobile session behavior", async () => {
+  it("persists remembered tokens while keeping a current-process copy", async () => {
     const persistent = new MemoryTokenStorage()
-    const storage = new RememberMeTokenStorage(persistent)
+    const session = new InMemoryTokenStorage()
+    const storage = new RememberMeTokenStorage(persistent, session)
 
     await storage.save("campus-1", token)
 
     expect(await persistent.load("campus-1")).toEqual(token)
+    expect(await storage.loadSessionToken("campus-1")).toEqual(token)
+    expect(await storage.load("campus-1")).toEqual(token)
   })
 
   it("keeps a non-remembered token only in the current app process", async () => {
@@ -62,6 +65,20 @@ describe("RememberMeTokenStorage", () => {
 
     const afterRestart = new RememberMeTokenStorage(persistent)
     expect(await afterRestart.load("campus-1")).toEqual(token)
+  })
+
+  it("can cache an unlocked persistent token for the current process", async () => {
+    const persistent = new MemoryTokenStorage()
+    const session = new InMemoryTokenStorage()
+    const storage = new RememberMeTokenStorage(persistent, session)
+    await persistent.save("campus-1", token)
+
+    expect(await storage.loadSessionToken("campus-1")).toBeNull()
+
+    await storage.saveSessionToken("campus-1", token)
+
+    expect(await storage.loadSessionToken("campus-1")).toEqual(token)
+    expect(await persistent.load("campus-1")).toEqual(token)
   })
 
   it("removes both persistent and process-only tokens on logout", async () => {
