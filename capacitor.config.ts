@@ -1,3 +1,5 @@
+/// <reference types="@capacitor/push-notifications" />
+
 import type { CapacitorConfig } from "@capacitor/cli"
 
 const pushNotificationsEnabled = process.env.CHAMILO_ENABLE_PUSH === "1"
@@ -21,6 +23,11 @@ const config: CapacitorConfig = {
   webDir: "dist",
   android: {
     includePlugins: androidPlugins,
+  },
+  plugins: {
+    PushNotifications: {
+      presentationOptions: ["sound", "alert"],
+    },
   },
 }
 
