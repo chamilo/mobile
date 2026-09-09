@@ -25,6 +25,10 @@ export class RememberMeTokenStorage implements TokenStorage {
     return this.persistentStorage.load(campusId)
   }
 
+  saveSessionToken(campusId: string, token: StoredToken): Promise<void> {
+    return this.sessionStorage.save(campusId, token)
+  }
+
   async load(campusId: string): Promise<StoredToken | null> {
     const sessionToken = await this.loadSessionToken(campusId)
 
@@ -35,8 +39,8 @@ export class RememberMeTokenStorage implements TokenStorage {
     const rememberMe = this.rememberMeByCampus.get(campusId) ?? true
 
     if (rememberMe) {
-      await this.sessionStorage.remove(campusId)
       await this.persistentStorage.save(campusId, token)
+      await this.sessionStorage.save(campusId, token)
       return
     }
 

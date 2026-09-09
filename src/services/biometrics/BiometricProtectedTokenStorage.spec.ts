@@ -53,24 +53,35 @@ describe("BiometricProtectedTokenStorage", () => {
     expect(lock.unlockCalls).toBe(0)
   })
 
-  it("loads a remembered token after biometric unlock", async () => {
+  it("returns a remembered token from the current process without requesting biometrics again", async () => {
     const { rememberMe, lock, storage } = createStorage()
     rememberMe.setRememberMe("campus-a", true)
     await storage.save("campus-a", token)
+    lock.unlockCalls = 0
+
+    await expect(storage.load("campus-a")).resolves.toEqual(token)
+    expect(lock.unlockCalls).toBe(0)
+  })
+
+  it("unlocks a restored remembered token once and caches it for the current process", async () => {
+    const { persistent, lock, storage } = createStorage()
+    await persistent.save("campus-a", token)
     lock.unlockResult = "unlocked"
 
     await expect(storage.load("campus-a")).resolves.toEqual(token)
+    await expect(storage.load("campus-a")).resolves.toEqual(token)
+
     expect(lock.unlockCalls).toBe(1)
   })
 
-  it("keeps the remembered token locked when authentication is cancelled", async () => {
-    const { persistent, rememberMe, lock, storage } = createStorage()
-    rememberMe.setRememberMe("campus-a", true)
-    await storage.save("campus-a", token)
+  it("keeps a restored remembered token locked when authentication is cancelled", async () => {
+    const { persistent, lock, storage } = createStorage()
+    await persistent.save("campus-a", token)
     lock.unlockResult = "cancelled"
 
     await expect(storage.load("campus-a")).resolves.toBeNull()
     expect(await persistent.load("campus-a")).toEqual(token)
+    expect(lock.unlockCalls).toBe(1)
   })
 
   it("clears biometric preference when Remember me is disabled", async () => {
