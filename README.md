@@ -20,6 +20,7 @@ Implemented:
 - Android back-button handling;
 - personal social messaging with inbox, sent messages, compose, reply, search, read state, stars and per-user deletion;
 - Android push permission, FCM token registration and authenticated logout cleanup;
+- iOS APNs permission/device-token registration source, sharing the authenticated installation lifecycle;
 - safe message opening from Android notification actions;
 - Android biometric session unlock;
 - iOS `ChamiloBiometric` LocalAuthentication bridge source for Touch ID / Face ID;
@@ -35,7 +36,7 @@ Not implemented or not validated yet:
 - message attachment upload/download in the mobile messaging UI;
 - iOS Keychain secure-token bridge Xcode/simulator/device validation;
 - iOS Touch ID / Face ID Xcode/simulator/device validation;
-- iOS push notifications/APNs configuration;
+- iOS APNs signing credentials and physical delivery validation;
 - iOS native document handling;
 - iOS native SCORM package hosting/offline runtime;
 - iOS build, signing, simulator/device validation or TestFlight/App Store delivery;
@@ -147,7 +148,7 @@ The generated `ios/` project is source and should be reviewed and committed. Xco
 
 ### Current iOS capability boundary
 
-The preparation configuration includes only `@capacitor/app` on iOS. This prevents the Android push configuration from being treated as validated iOS push support.
+The iOS plugin allowlist keeps push opt-in behind the same explicit build flags used by Android. When push is enabled, `@capacitor/push-notifications` is included for iOS and the native AppDelegate forwards APNs registration callbacks to Capacitor.
 
 The iOS source now includes an app-local `ChamiloSecureStorage` implementation backed by Apple Keychain. It keeps the existing `campusId/token` key contract, uses a device-only Keychain accessibility class, and is registered explicitly from a custom Capacitor bridge view controller. Because this batch is prepared on Linux, Xcode compilation and a real Keychain round trip are still unvalidated.
 
@@ -158,7 +159,7 @@ The following native Chamilo bridges are still Android-only and must be implemen
 - native document open/save;
 - native SCORM package hosting.
 
-Push delivery also remains disabled on iOS until APNs/Firebase iOS configuration is implemented and validated. Remember me is now wired to the Keychain-backed bridge in source, but must not be described as validated on iPhone until the Xcode/device checks pass.
+iOS push source now uses the APNs device token produced by the official Capacitor Push Notifications plugin and registers it with the campus as platform `ios`. Delivery requires the Chamilo backend APNs provider to be configured with Apple provider credentials and still needs Xcode/device validation. No Firebase Apple SDK or `GoogleService-Info.plist` is required by this direct APNs path. Remember me is wired to the Keychain-backed bridge in source, but must not be described as validated on iPhone until the Xcode/device checks pass.
 
 When a Mac becomes available, the first validation commands are:
 

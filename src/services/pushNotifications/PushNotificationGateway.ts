@@ -1,3 +1,5 @@
+export type PushPlatform = "android" | "ios"
+
 export type PushPermissionState = "prompt" | "prompt-with-rationale" | "granted" | "denied"
 
 export interface PushNotificationRegistrationError {
@@ -14,6 +16,7 @@ export interface PushNotificationListenerHandle {
 }
 
 export interface PushNotificationGateway {
+  getPlatform(): PushPlatform | null
   isAvailable(): boolean
   checkPermissions(): Promise<PushPermissionState>
   requestPermissions(): Promise<PushPermissionState>
