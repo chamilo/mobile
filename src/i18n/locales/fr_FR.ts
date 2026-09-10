@@ -118,7 +118,7 @@ export default {
     disabling: "Désactivation...",
     availability: {
       available: "L'authentification biométrique forte est disponible sur cet appareil.",
-      not_enrolled: "Configurez d'abord une empreinte ou une autre biométrie forte dans les réglages Android.",
+      not_enrolled: "Configurez d'abord la biométrie dans les réglages de votre appareil.",
       unavailable: "L'authentification biométrique forte n'est pas disponible sur cet appareil.",
       temporary_unavailable: "L'authentification biométrique est temporairement indisponible.",
       unsupported: "Le déverrouillage biométrique n'est pas pris en charge sur cette plateforme.",

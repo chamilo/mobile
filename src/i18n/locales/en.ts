@@ -148,7 +148,7 @@ export default {
     disabling: "Disabling...",
     availability: {
       available: "Strong biometric authentication is available on this device.",
-      not_enrolled: "Set up a fingerprint or another strong biometric in Android settings first.",
+      not_enrolled: "Set up biometrics in your device settings first.",
       unavailable: "Strong biometric authentication is not available on this device.",
       temporary_unavailable: "Biometric authentication is temporarily unavailable.",
       unsupported: "Biometric unlock is not supported on this platform.",

@@ -118,7 +118,7 @@ export default {
     disabling: "Desactivando...",
     availability: {
       available: "La autenticación biométrica fuerte está disponible en este dispositivo.",
-      not_enrolled: "Configura primero una huella u otra biometría fuerte en los ajustes de Android.",
+      not_enrolled: "Configura primero la biometría en los ajustes de tu dispositivo.",
       unavailable: "La autenticación biométrica fuerte no está disponible en este dispositivo.",
       temporary_unavailable: "La autenticación biométrica no está disponible temporalmente.",
       unsupported: "El desbloqueo biométrico no es compatible con esta plataforma.",

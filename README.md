@@ -22,6 +22,7 @@ Implemented:
 - Android push permission, FCM token registration and authenticated logout cleanup;
 - safe message opening from Android notification actions;
 - Android biometric session unlock;
+- iOS `ChamiloBiometric` LocalAuthentication bridge source for Touch ID / Face ID;
 - native shell safe-area handling;
 - reproducible JavaScript dependency-license report;
 - debug APK build and physical Android installation;
@@ -33,7 +34,7 @@ Not implemented or not validated yet:
 - public HTTPS test campus;
 - message attachment upload/download in the mobile messaging UI;
 - iOS Keychain secure-token bridge Xcode/simulator/device validation;
-- iOS biometrics;
+- iOS Touch ID / Face ID Xcode/simulator/device validation;
 - iOS push notifications/APNs configuration;
 - iOS native document handling;
 - iOS native SCORM package hosting/offline runtime;
@@ -150,9 +151,10 @@ The preparation configuration includes only `@capacitor/app` on iOS. This preven
 
 The iOS source now includes an app-local `ChamiloSecureStorage` implementation backed by Apple Keychain. It keeps the existing `campusId/token` key contract, uses a device-only Keychain accessibility class, and is registered explicitly from a custom Capacitor bridge view controller. Because this batch is prepared on Linux, Xcode compilation and a real Keychain round trip are still unvalidated.
 
+The iOS source now also includes a `ChamiloBiometric` implementation backed by Apple LocalAuthentication. It uses the existing app-level biometric session gate, supports the same `status()` / `authenticate()` contract as Android, and adds the required Face ID privacy usage description. It does not cryptographically bind the Keychain item to biometrics; it protects access to an already remembered secure session in the same way as the Android implementation. Xcode compilation and real Touch ID / Face ID behavior remain unvalidated.
+
 The following native Chamilo bridges are still Android-only and must be implemented and validated separately before iOS can be considered functionally complete:
 
-- biometric unlock;
 - native document open/save;
 - native SCORM package hosting.
 
@@ -165,7 +167,7 @@ yarn ios:sync
 yarn ios:open
 ```
 
-Then validate the Xcode build and run a Keychain persistence/logout round trip before enabling additional iOS-native capabilities.
+Then validate the Xcode build, run a Keychain persistence/logout round trip, and verify biometric enable/cancel/unlock behavior with Touch ID or Face ID before enabling additional iOS-native capabilities.
 
 Do not commit Apple signing material, provisioning profiles, private keys or `GoogleService-Info.plist`.
 

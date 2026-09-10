@@ -5,5 +5,6 @@ final class ChamiloBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(ChamiloSecureStoragePlugin())
+        bridge?.registerPluginInstance(ChamiloBiometricPlugin())
     }
 }
