@@ -27,6 +27,7 @@ Implemented:
 - Android biometric session unlock;
 - iOS `ChamiloBiometric` LocalAuthentication bridge source for Touch ID / Face ID;
 - native shell safe-area handling;
+- Chamilo-branded native launcher icons and splash screens on Android and iOS, derived from the verified Chamilo 3 theme logo;
 - reproducible JavaScript dependency-license report;
 - debug APK build and physical Android installation;
 - iOS Capacitor dependency, SPM project-generation scripts and a restricted iOS plugin allowlist for preparation work.
@@ -149,6 +150,8 @@ That command:
 The generated `ios/` project is source and should be reviewed and committed. Xcode build/signing is intentionally not claimed by this Linux step.
 
 ### Current iOS capability boundary
+
+Native launcher and splash assets on both platforms are derived from `var/themes/chamilo3/images/header-logo.svg` in `chamilo/chamilo-lms`; the source SHA-256 used for this batch is `75074184256990e7ccc9598514e48b1172d647bec1eaba429db6bf7505ccbb70`. The app icon uses the official chameleon/book mark cropped from that SVG, while launch screens use the complete official wordmark on a white background.
 
 The iOS plugin allowlist keeps push opt-in behind the same explicit build flags used by Android. When push is enabled, `@capacitor/push-notifications` is included for iOS and the native AppDelegate forwards APNs registration callbacks to Capacitor.
 
