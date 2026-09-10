@@ -29,7 +29,7 @@ const NATIVE_SCORM_PLUGIN = "ChamiloScormPackage"
 
 export function resolveScormPackageHost(): ScormPackageHost {
   if (
-    Capacitor.getPlatform() === "android" ||
+    (Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios") ||
     Capacitor.isPluginAvailable(NATIVE_SCORM_PLUGIN)
   ) {
     return nativeScormPackageHost
@@ -62,7 +62,7 @@ export const scormPackageHost: ScormPackageHost = {
 
 export async function clearScormCampusPackages(campusId: string): Promise<void> {
   if (
-    Capacitor.getPlatform() === "android" ||
+    (Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios") ||
     Capacitor.isPluginAvailable(NATIVE_SCORM_PLUGIN)
   ) {
     await clearNativeScormCampusPackages(campusId)

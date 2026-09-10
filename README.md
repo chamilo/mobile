@@ -22,6 +22,7 @@ Implemented:
 - Android push permission, FCM token registration and authenticated logout cleanup;
 - iOS APNs permission/device-token registration source, sharing the authenticated installation lifecycle;
 - iOS `ChamiloDocument` bridge source using Quick Look for preview and the system document picker for export;
+- iOS `ChamiloScormPackage` bridge source for private SCORM package extraction and local WebView hosting;
 - safe message opening from Android notification actions;
 - Android biometric session unlock;
 - iOS `ChamiloBiometric` LocalAuthentication bridge source for Touch ID / Face ID;
@@ -39,7 +40,7 @@ Not implemented or not validated yet:
 - iOS Touch ID / Face ID Xcode/simulator/device validation;
 - iOS APNs signing credentials and physical delivery validation;
 - iOS native document open/save Xcode/simulator/device validation;
-- iOS native SCORM package hosting/offline runtime;
+- iOS native SCORM package hosting/offline runtime Xcode/simulator/device validation;
 - iOS build, signing, simulator/device validation or TestFlight/App Store delivery;
 - store publication and release signing.
 
@@ -157,9 +158,7 @@ The iOS source now also includes a `ChamiloBiometric` implementation backed by A
 
 The iOS `ChamiloDocument` bridge now mirrors the existing document presenter contract: it writes the authenticated blob to a temporary app file, previews supported formats with Quick Look, and exports copies through the system document picker. This source still requires Xcode/simulator/device validation before iOS document handling can be described as validated.
 
-The following native Chamilo bridge is still Android-only and must be implemented and validated separately before iOS can be considered functionally complete:
-
-- native SCORM package hosting.
+The iOS source now also includes a `ChamiloScormPackage` implementation that mirrors the existing Android native contract. It stores packages in the app-private Application Support directory, excludes that cache from iCloud backup, rejects unsafe archive paths and symbolic links, preserves the existing 100 MB compressed / 1 GB extracted limits, and returns a local file URL that the existing `Capacitor.convertFileSrc()` path exposes to the SCORM iframe. ZIP extraction is pinned to `ZIPFoundation` 0.9.20 through the Xcode project; the dependency decision is recorded in `docs/adr/0001-ios-scorm-zipfoundation.md`. Xcode compilation and real SCORM 1.2 / 2004 execution remain unvalidated until macOS/iPhone testing.
 
 iOS push source now uses the APNs device token produced by the official Capacitor Push Notifications plugin and registers it with the campus as platform `ios`. Delivery requires the Chamilo backend APNs provider to be configured with Apple provider credentials and still needs Xcode/device validation. No Firebase Apple SDK or `GoogleService-Info.plist` is required by this direct APNs path. Remember me is wired to the Keychain-backed bridge in source, but must not be described as validated on iPhone until the Xcode/device checks pass.
 

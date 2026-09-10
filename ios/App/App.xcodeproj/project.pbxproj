@@ -15,6 +15,9 @@
 		C8A0A0042D80000100000001 /* ChamiloBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A0A0032D80000100000001 /* ChamiloBridgeViewController.swift */; };
 		C8A0A0062D80000100000001 /* ChamiloBiometricPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A0A0052D80000100000001 /* ChamiloBiometricPlugin.swift */; };
 		C8A0A00A2D80000100000001 /* ChamiloDocumentPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A0A0092D80000100000001 /* ChamiloDocumentPlugin.swift */; };
+		C8A0A00C2D80000100000001 /* ChamiloScormPackagePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A0A00B2D80000100000001 /* ChamiloScormPackagePlugin.swift */; };
+		C8A0A00E2D80000100000001 /* ScormPackageFileResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A0A00D2D80000100000001 /* ScormPackageFileResolver.swift */; };
+		C8A0A0112D80000100000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C8A0A0102D80000100000001 /* ZIPFoundation */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
@@ -30,6 +33,8 @@
 		C8A0A0032D80000100000001 /* ChamiloBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChamiloBridgeViewController.swift; sourceTree = "<group>"; };
 		C8A0A0052D80000100000001 /* ChamiloBiometricPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChamiloBiometricPlugin.swift; sourceTree = "<group>"; };
 		C8A0A0092D80000100000001 /* ChamiloDocumentPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChamiloDocumentPlugin.swift; sourceTree = "<group>"; };
+		C8A0A00B2D80000100000001 /* ChamiloScormPackagePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChamiloScormPackagePlugin.swift; sourceTree = "<group>"; };
+		C8A0A00D2D80000100000001 /* ScormPackageFileResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScormPackageFileResolver.swift; sourceTree = "<group>"; };
 		C8A0A0072D80000100000001 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -45,6 +50,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+				C8A0A0112D80000100000001 /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,6 +83,8 @@
 				C8A0A0012D80000100000001 /* ChamiloSecureStoragePlugin.swift */,
 				C8A0A0052D80000100000001 /* ChamiloBiometricPlugin.swift */,
 				C8A0A0092D80000100000001 /* ChamiloDocumentPlugin.swift */,
+				C8A0A00B2D80000100000001 /* ChamiloScormPackagePlugin.swift */,
+				C8A0A00D2D80000100000001 /* ScormPackageFileResolver.swift */,
 				C8A0A0072D80000100000001 /* App.entitlements */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -106,6 +114,7 @@
 			name = App;
 			packageProductDependencies = (
 				4D22ABE82AF431CB00220026 /* CapApp-SPM */,
+				C8A0A0102D80000100000001 /* ZIPFoundation */,
 			);
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
@@ -143,6 +152,7 @@
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
 				D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */,
+				C8A0A00F2D80000100000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
@@ -179,6 +189,8 @@
 				C8A0A0022D80000100000001 /* ChamiloSecureStoragePlugin.swift in Sources */,
 				C8A0A0062D80000100000001 /* ChamiloBiometricPlugin.swift in Sources */,
 				C8A0A00A2D80000100000001 /* ChamiloDocumentPlugin.swift in Sources */,
+				C8A0A00C2D80000100000001 /* ChamiloScormPackagePlugin.swift in Sources */,
+				C8A0A00E2D80000100000001 /* ScormPackageFileResolver.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,11 +403,28 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		C8A0A00F2D80000100000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.9.20;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+
 /* Begin XCSwiftPackageProductDependency section */
 		4D22ABE82AF431CB00220026 /* CapApp-SPM */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */;
 			productName = "CapApp-SPM";
+		};
+		C8A0A0102D80000100000001 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C8A0A00F2D80000100000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

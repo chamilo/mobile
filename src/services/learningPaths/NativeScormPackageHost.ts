@@ -65,15 +65,15 @@ function encodeBase64(buffer: ArrayBuffer): Promise<string> {
 export class NativeScormPackageHost implements ScormPackageHost {
   readonly maxPackageSizeBytes = MAX_NATIVE_SCORM_PACKAGE_SIZE_BYTES
 
-  isAndroid(): boolean {
+  isNativePlatform(): boolean {
     return (
-      Capacitor.getPlatform() === "android" ||
+      (Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios") ||
       Capacitor.isPluginAvailable(NATIVE_SCORM_PLUGIN)
     )
   }
 
   async assertAvailable(): Promise<void> {
-    if (!this.isAndroid()) {
+    if (!this.isNativePlatform()) {
       throw new ScormPackageHostError(
         "unsupported_platform",
         "SCORM playback is unavailable on this platform.",
@@ -88,7 +88,7 @@ export class NativeScormPackageHost implements ScormPackageHost {
     } catch (error) {
       throw new ScormPackageHostError(
         "plugin_unavailable",
-        "The Android SCORM package host is not registered in this APK.",
+        "The native SCORM package host is not registered in this application.",
         error,
       )
     }
@@ -168,7 +168,7 @@ export const nativeScormPackageHost = new NativeScormPackageHost()
 
 export async function clearNativeScormCampusPackages(campusId: string): Promise<void> {
   if (
-    Capacitor.getPlatform() !== "android" &&
+    (Capacitor.getPlatform() !== "android" && Capacitor.getPlatform() !== "ios") &&
     !Capacitor.isPluginAvailable(NATIVE_SCORM_PLUGIN)
   ) {
     return

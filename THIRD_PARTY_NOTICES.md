@@ -2,13 +2,14 @@
 
 Chamilo Mobile remains licensed under AGPL-3.0. It uses these direct official Capacitor components and runtime libraries:
 
-| Component                       | Version | License    | Upstream copyright notice             |
-| ------------------------------- | ------: | ---------- | ------------------------------------- |
-| `@capacitor/android`            |   8.4.1 | MIT        | Copyright (c) 2017-present Drifty Co. |
-| `@capacitor/app`                |   8.1.0 | MIT        | Copyright 2020-present Ionic          |
-| `@capacitor/push-notifications` |   8.1.2 | MIT        | Copyright 2020-present Ionic          |
-| `fflate`                        |   0.8.3 | MIT        | Copyright (c) 2026 Arjun Barrett      |
-| `androidx.biometric:biometric`  |   1.1.0 | Apache-2.0 | Android Open Source Project            |
+| Component                       | Version | License    | Upstream copyright notice                         |
+| ------------------------------- | ------: | ---------- | ------------------------------------------------- |
+| `@capacitor/android`            |   8.4.1 | MIT        | Copyright (c) 2017-present Drifty Co.             |
+| `@capacitor/app`                |   8.1.0 | MIT        | Copyright 2020-present Ionic                      |
+| `@capacitor/push-notifications` |   8.1.2 | MIT        | Copyright 2020-present Ionic                      |
+| `fflate`                        |   0.8.3 | MIT        | Copyright (c) 2026 Arjun Barrett                  |
+| `ZIPFoundation`                 |  0.9.20 | MIT        | Copyright (c) 2017-2025 Thomas Zoechling          |
+| `androidx.biometric:biometric`  |   1.1.0 | Apache-2.0 | Android Open Source Project                       |
 
 The exact installed JavaScript dependency inventory is generated with:
 
@@ -16,7 +17,7 @@ The exact installed JavaScript dependency inventory is generated with:
 yarn licenses:audit
 ```
 
-The resulting `reports/LICENSE_AUDIT.md` records package metadata and lockfile hashes. It is an engineering gate, not legal advice. Android and Gradle dependencies retain their upstream licenses and must receive a dedicated release review before public store distribution.
+The resulting `reports/LICENSE_AUDIT.md` records JavaScript package metadata and lockfile hashes. It is an engineering gate, not legal advice. Android/Gradle and iOS/Swift Package Manager dependencies retain their upstream licenses and must receive a dedicated release review before public store distribution.
 
 ## MIT License
 

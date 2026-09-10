@@ -411,7 +411,7 @@ export class OfflineCoursePackManager {
           let activeRuntime = runtime
 
           if (
-            Capacitor.getPlatform() === "android" &&
+            (Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios") &&
             (activeRuntime.currentItemId !== item.id ||
               !activeRuntime.scorm.enabled ||
               !activeRuntime.scorm.packageEntryPath ||
@@ -499,11 +499,11 @@ export class OfflineCoursePackManager {
   ): Promise<void> {
     const scorm = runtime.scorm
 
-    if (Capacitor.getPlatform() !== "android") {
+    if (Capacitor.getPlatform() !== "android" && Capacitor.getPlatform() !== "ios") {
       context.warnings.push({
         tool: "learning-paths",
-        code: "scorm_android_only",
-        message: `${itemTitle}: persistent SCORM packages are prepared on Android only.`,
+        code: "scorm_native_only",
+        message: `${itemTitle}: persistent SCORM packages are prepared on Android and iOS only.`,
       })
       return
     }
