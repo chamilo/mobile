@@ -21,6 +21,7 @@ Implemented:
 - personal social messaging with inbox, sent messages, compose, reply, search, read state, stars and per-user deletion;
 - Android push permission, FCM token registration and authenticated logout cleanup;
 - iOS APNs permission/device-token registration source, sharing the authenticated installation lifecycle;
+- iOS `ChamiloDocument` bridge source using Quick Look for preview and the system document picker for export;
 - safe message opening from Android notification actions;
 - Android biometric session unlock;
 - iOS `ChamiloBiometric` LocalAuthentication bridge source for Touch ID / Face ID;
@@ -37,7 +38,7 @@ Not implemented or not validated yet:
 - iOS Keychain secure-token bridge Xcode/simulator/device validation;
 - iOS Touch ID / Face ID Xcode/simulator/device validation;
 - iOS APNs signing credentials and physical delivery validation;
-- iOS native document handling;
+- iOS native document open/save Xcode/simulator/device validation;
 - iOS native SCORM package hosting/offline runtime;
 - iOS build, signing, simulator/device validation or TestFlight/App Store delivery;
 - store publication and release signing.
@@ -154,9 +155,10 @@ The iOS source now includes an app-local `ChamiloSecureStorage` implementation b
 
 The iOS source now also includes a `ChamiloBiometric` implementation backed by Apple LocalAuthentication. It uses the existing app-level biometric session gate, supports the same `status()` / `authenticate()` contract as Android, and adds the required Face ID privacy usage description. It does not cryptographically bind the Keychain item to biometrics; it protects access to an already remembered secure session in the same way as the Android implementation. Xcode compilation and real Touch ID / Face ID behavior remain unvalidated.
 
-The following native Chamilo bridges are still Android-only and must be implemented and validated separately before iOS can be considered functionally complete:
+The iOS `ChamiloDocument` bridge now mirrors the existing document presenter contract: it writes the authenticated blob to a temporary app file, previews supported formats with Quick Look, and exports copies through the system document picker. This source still requires Xcode/simulator/device validation before iOS document handling can be described as validated.
 
-- native document open/save;
+The following native Chamilo bridge is still Android-only and must be implemented and validated separately before iOS can be considered functionally complete:
+
 - native SCORM package hosting.
 
 iOS push source now uses the APNs device token produced by the official Capacitor Push Notifications plugin and registers it with the campus as platform `ios`. Delivery requires the Chamilo backend APNs provider to be configured with Apple provider credentials and still needs Xcode/device validation. No Firebase Apple SDK or `GoogleService-Info.plist` is required by this direct APNs path. Remember me is wired to the Keychain-backed bridge in source, but must not be described as validated on iPhone until the Xcode/device checks pass.
