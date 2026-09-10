@@ -13,6 +13,7 @@ import {
 import {
   MobilePushInstallationApiService,
   MobilePushInstallationResponseError,
+  type MobilePushPlatform,
 } from "@/services/pushNotifications/MobilePushInstallationApiService"
 import { nativePushNotificationGateway } from "@/services/pushNotifications/NativePushNotificationGateway"
 import type {
@@ -44,7 +45,11 @@ export type PushNotificationErrorCode =
   | "server"
 
 export interface PushInstallationApi {
-  register(installationId: string, token: string): Promise<unknown>
+  register(
+    installationId: string,
+    token: string,
+    platform: MobilePushPlatform,
+  ): Promise<unknown>
   remove(installationId: string): Promise<void>
 }
 
@@ -140,8 +145,9 @@ export const usePushNotificationsStore = defineStore("pushNotifications", () => 
 
   async function registerToken(token: string): Promise<void> {
     const session = activeSession
+    const platform = gateway.getPlatform()
 
-    if (!session || !token.trim()) {
+    if (!session || !token.trim() || !platform) {
       return
     }
 
@@ -150,7 +156,7 @@ export const usePushNotificationsStore = defineStore("pushNotifications", () => 
 
     try {
       const installation = repository.prepare(session.campus.id, session.userId)
-      await apiFactory(session.campus).register(installation.installationId, token)
+      await apiFactory(session.campus).register(installation.installationId, token, platform)
 
       if (
         activeSession?.campus.id !== session.campus.id ||

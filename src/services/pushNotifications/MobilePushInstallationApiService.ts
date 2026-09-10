@@ -1,8 +1,10 @@
 import type { HttpClient } from "@/services/http/HttpClient"
 
+export type MobilePushPlatform = "android" | "ios"
+
 export interface MobilePushInstallationRegistration {
   installationId: string
-  platform: "android"
+  platform: MobilePushPlatform
   createdAt: string
   lastSeenAt: string
 }
@@ -10,7 +12,7 @@ export interface MobilePushInstallationRegistration {
 interface MobilePushInstallationRequest {
   installationId: string
   token: string
-  platform: "android"
+  platform: MobilePushPlatform
 }
 
 export class MobilePushInstallationResponseError extends Error {
@@ -32,7 +34,7 @@ function parseRegistration(value: unknown): MobilePushInstallationRegistration {
   if (
     typeof registration.installationId !== "string" ||
     !registration.installationId ||
-    registration.platform !== "android" ||
+    (registration.platform !== "android" && registration.platform !== "ios") ||
     typeof registration.createdAt !== "string" ||
     !registration.createdAt ||
     typeof registration.lastSeenAt !== "string" ||
@@ -57,6 +59,7 @@ export class MobilePushInstallationApiService {
   async register(
     installationId: string,
     token: string,
+    platform: MobilePushPlatform,
   ): Promise<MobilePushInstallationRegistration> {
     const response = await this.httpClient.request<unknown, MobilePushInstallationRequest>({
       method: "POST",
@@ -68,7 +71,7 @@ export class MobilePushInstallationApiService {
       body: {
         installationId,
         token,
-        platform: "android",
+        platform,
       },
     })
 

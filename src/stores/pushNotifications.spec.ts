@@ -33,6 +33,7 @@ const campus: CampusProfile = {
 
 class MockPushNotificationGateway implements PushNotificationGateway {
   permission: "prompt" | "prompt-with-rationale" | "granted" | "denied" = "granted"
+  platform: "android" | "ios" = "android"
   registerCalls = 0
   unregisterCalls = 0
   registrationListener: ((token: string) => void | Promise<void>) | null = null
@@ -40,6 +41,10 @@ class MockPushNotificationGateway implements PushNotificationGateway {
     | ((error: PushNotificationRegistrationError) => void | Promise<void>)
     | null = null
   actionListener: ((action: PushNotificationAction) => void | Promise<void>) | null = null
+
+  getPlatform(): "android" | "ios" {
+    return this.platform
+  }
 
   isAvailable(): boolean {
     return true
@@ -160,12 +165,31 @@ describe("push notifications store", () => {
 
     await gateway.emitToken("fcm-token")
 
-    expect(register).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", "fcm-token")
+    expect(register).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      "fcm-token",
+      "android",
+    )
     expect(repository.state).toMatchObject({
       userId: 7,
       registeredAt: expect.any(String),
     })
     expect(store.status).toBe("registered")
+  })
+
+  it("registers an iOS APNs token with the iOS platform", async () => {
+    gateway.platform = "ios"
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+    await store.enable()
+    await gateway.emitToken("apns-device-token")
+
+    expect(register).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      "apns-device-token",
+      "ios",
+    )
   })
 
   it("opens the matching message only for the active campus installation", async () => {
@@ -244,7 +268,7 @@ describe("push notifications store", () => {
     expect(store.activeCampusId).toBeNull()
   })
 
-  it("does not register when Android notification permission is denied", async () => {
+  it("does not register when native notification permission is denied", async () => {
     gateway.permission = "denied"
     const store = usePushNotificationsStore()
     await store.initialize(router)

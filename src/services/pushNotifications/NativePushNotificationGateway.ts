@@ -5,15 +5,23 @@ import type {
   PushNotificationGateway,
   PushNotificationListenerHandle,
   PushPermissionState,
+  PushPlatform,
 } from "@/services/pushNotifications/PushNotificationGateway"
 
 const pushBuildEnabled = import.meta.env.VITE_PUSH_NOTIFICATIONS_ENABLED === "true"
 
 export class NativePushNotificationGateway implements PushNotificationGateway {
+  getPlatform(): PushPlatform | null {
+    const platform = Capacitor.getPlatform()
+
+    return platform === "android" || platform === "ios" ? platform : null
+  }
+
   isAvailable(): boolean {
     return (
       pushBuildEnabled &&
-      Capacitor.getPlatform() === "android" &&
+      Capacitor.isNativePlatform() &&
+      this.getPlatform() !== null &&
       Capacitor.isPluginAvailable("PushNotifications")
     )
   }

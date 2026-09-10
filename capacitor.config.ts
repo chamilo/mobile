@@ -7,7 +7,7 @@ const pushClientEnabled = process.env.VITE_PUSH_NOTIFICATIONS_ENABLED === "true"
 
 if (pushNotificationsEnabled !== pushClientEnabled) {
   throw new Error(
-    "Android push notifications require CHAMILO_ENABLE_PUSH=1 and VITE_PUSH_NOTIFICATIONS_ENABLED=true together.",
+    "Native push notifications require CHAMILO_ENABLE_PUSH=1 and VITE_PUSH_NOTIFICATIONS_ENABLED=true together.",
   )
 }
 
@@ -16,6 +16,7 @@ const iosPlugins = ["@capacitor/app"]
 
 if (pushNotificationsEnabled) {
   androidPlugins.push("@capacitor/push-notifications")
+  iosPlugins.push("@capacitor/push-notifications")
 }
 
 const config: CapacitorConfig = {
