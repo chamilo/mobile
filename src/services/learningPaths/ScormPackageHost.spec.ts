@@ -45,6 +45,12 @@ describe("SCORM package host selection", () => {
     expect(resolveScormPackageHost()).toBe(nativeScormPackageHost)
   })
 
+  it("uses the native host on iOS", () => {
+    capacitorState.platform = "ios"
+
+    expect(resolveScormPackageHost()).toBe(nativeScormPackageHost)
+  })
+
   it("prefers the registered native plugin even if the platform snapshot says web", () => {
     capacitorState.nativePluginAvailable = true
 
@@ -55,6 +61,10 @@ describe("SCORM package host selection", () => {
     expect(scormPackageHost.maxPackageSizeBytes).toBe(512 * 1024 * 1024)
 
     capacitorState.platform = "android"
+
+    expect(scormPackageHost.maxPackageSizeBytes).toBe(100 * 1024 * 1024)
+
+    capacitorState.platform = "ios"
 
     expect(scormPackageHost.maxPackageSizeBytes).toBe(100 * 1024 * 1024)
   })

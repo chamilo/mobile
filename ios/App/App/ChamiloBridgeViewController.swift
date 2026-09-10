@@ -7,5 +7,6 @@ final class ChamiloBridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(ChamiloSecureStoragePlugin())
         bridge?.registerPluginInstance(ChamiloBiometricPlugin())
         bridge?.registerPluginInstance(ChamiloDocumentPlugin())
+        bridge?.registerPluginInstance(ChamiloScormPackagePlugin())
     }
 }
