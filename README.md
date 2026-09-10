@@ -11,6 +11,7 @@ Implemented:
 - campus profiles and browser/native transport interfaces;
 - JWT login, current-user profile and logout;
 - secure native JWT persistence on Android;
+- iOS `ChamiloSecureStorage` Keychain bridge source, wired into the Capacitor bridge controller;
 - direct courses and session courses;
 - mobile-owned course home;
 - read-only announcements with sanitized HTML and isolated cache;
@@ -31,7 +32,7 @@ Not implemented or not validated yet:
 - authenticated attachment downloads;
 - public HTTPS test campus;
 - message attachment upload/download in the mobile messaging UI;
-- iOS native secure token storage;
+- iOS Keychain secure-token bridge Xcode/simulator/device validation;
 - iOS biometrics;
 - iOS push notifications/APNs configuration;
 - iOS native document handling;
@@ -147,14 +148,15 @@ The generated `ios/` project is source and should be reviewed and committed. Xco
 
 The preparation configuration includes only `@capacitor/app` on iOS. This prevents the Android push configuration from being treated as validated iOS push support.
 
+The iOS source now includes an app-local `ChamiloSecureStorage` implementation backed by Apple Keychain. It keeps the existing `campusId/token` key contract, uses a device-only Keychain accessibility class, and is registered explicitly from a custom Capacitor bridge view controller. Because this batch is prepared on Linux, Xcode compilation and a real Keychain round trip are still unvalidated.
+
 The following native Chamilo bridges are still Android-only and must be implemented and validated separately before iOS can be considered functionally complete:
 
-- secure token storage;
 - biometric unlock;
 - native document open/save;
 - native SCORM package hosting.
 
-The current iOS preparation therefore does **not** claim Remember me persistence, biometric unlock, push delivery, native document handling or native SCORM on iOS.
+Push delivery also remains disabled on iOS until APNs/Firebase iOS configuration is implemented and validated. Remember me is now wired to the Keychain-backed bridge in source, but must not be described as validated on iPhone until the Xcode/device checks pass.
 
 When a Mac becomes available, the first validation commands are:
 
@@ -163,7 +165,7 @@ yarn ios:sync
 yarn ios:open
 ```
 
-Then validate the Xcode build and secure storage before enabling additional iOS-native capabilities.
+Then validate the Xcode build and run a Keychain persistence/logout round trip before enabling additional iOS-native capabilities.
 
 Do not commit Apple signing material, provisioning profiles, private keys or `GoogleService-Info.plist`.
 
@@ -189,7 +191,7 @@ campusId/settings
 campusId/push-installation
 ```
 
-JWTs use native secure storage on Android. Passwords are never stored, and JWTs and push tokens must not be logged or passed in query strings.
+JWTs use native secure storage on Android. iOS now has a Keychain-backed implementation in source, with Xcode/device validation still pending. Passwords are never stored, and JWTs and push tokens must not be logged or passed in query strings.
 
 ## Native transport security
 
