@@ -52,3 +52,16 @@ coverage/
 *.pem
 android/key.properties
 android/app/google-services.json
+
+# iOS native build/user state
+ios/App/DerivedData/
+ios/App/Pods/
+ios/App/CapApp-SPM/.build/
+ios/App/CapApp-SPM/.swiftpm/
+**/xcuserdata/
+
+# iOS signing and private configuration
+*.cer
+*.mobileprovision
+*.p8
+ios/App/App/GoogleService-Info.plist

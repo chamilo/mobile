@@ -24,6 +24,7 @@ const directNames = new Set([
 const requiredDirectPackages = new Map([
   ["@capacitor/android", { version: "8.4.1", license: "MIT" }],
   ["@capacitor/app", { version: "8.1.0", license: "MIT" }],
+  ["@capacitor/ios", { version: "8.4.1", license: "MIT" }],
   ["@capacitor/push-notifications", { version: "8.1.2", license: "MIT" }],
 ])
 

@@ -10,7 +10,7 @@ Implemented:
 
 - campus profiles and browser/native transport interfaces;
 - JWT login, current-user profile and logout;
-- secure native JWT persistence;
+- secure native JWT persistence on Android;
 - direct courses and session courses;
 - mobile-owned course home;
 - read-only announcements with sanitized HTML and isolated cache;
@@ -20,26 +20,43 @@ Implemented:
 - personal social messaging with inbox, sent messages, compose, reply, search, read state, stars and per-user deletion;
 - Android push permission, FCM token registration and authenticated logout cleanup;
 - safe message opening from Android notification actions;
+- Android biometric session unlock;
+- native shell safe-area handling;
 - reproducible JavaScript dependency-license report;
-- debug APK build and physical installation.
+- debug APK build and physical Android installation;
+- iOS Capacitor dependency, SPM project-generation scripts and a restricted iOS plugin allowlist for preparation work.
 
-Not implemented yet:
+Not implemented or not validated yet:
 
 - authenticated attachment downloads;
 - public HTTPS test campus;
 - message attachment upload/download in the mobile messaging UI;
-- iOS push notifications, biometrics or background sync;
+- iOS native secure token storage;
+- iOS biometrics;
+- iOS push notifications/APNs configuration;
+- iOS native document handling;
+- iOS native SCORM package hosting/offline runtime;
+- iOS build, signing, simulator/device validation or TestFlight/App Store delivery;
 - store publication and release signing.
 
 ## Requirements
 
+Shared development requirements:
+
 ```text
 Node >=22.12.0 <23
 Yarn 4.17.1 through Corepack
+```
+
+Android requirements:
+
+```text
 Java 21
 Android SDK Platform 36
 Android SDK Build Tools 35+
 ```
+
+A macOS/Xcode environment is still required to compile, sign, run and distribute the iOS application. The repository can prepare the Capacitor iOS project before that validation step.
 
 ## Install
 
@@ -75,8 +92,7 @@ Configure the local SDK without committing its path:
 ```bash
 export ANDROID_HOME="$HOME/Android/Sdk"
 export PATH="$PATH:$ANDROID_HOME/platform-tools"
-printf 'sdk.dir=%s
-' "$ANDROID_HOME" > android/local.properties
+printf 'sdk.dir=%s\n' "$ANDROID_HOME" > android/local.properties
 ```
 
 Synchronize and build:
@@ -92,40 +108,64 @@ The debug APK is generated at:
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Install on an authorized device:
-
-```bash
-adb install -r android/app/build/outputs/apk/debug/app-debug.apk
-```
-
 `android/local.properties`, Gradle outputs, copied web assets, APKs and signing material are not committed.
 
 ### Firebase Cloud Messaging
 
-Register the Android application ID `org.chamilo.mobile` in the Firebase project, then copy the
-project-specific configuration to:
+Register the Android application ID `org.chamilo.mobile` in the Firebase project, then copy the project-specific configuration to:
 
 ```text
 android/app/google-services.json
 ```
 
-Never commit this file. After adding it, synchronize and build again:
+Never commit this file. After adding it, synchronize and build again with the Android push build flags enabled.
+
+The selected Chamilo campus must expose the authenticated `POST /api/mobile_push_installations` and `DELETE /api/mobile_push_installations/{installationId}` operations. The app stores only a campus-scoped installation UUID and registration owner; the FCM token is sent to the selected campus and is not persisted by the web layer.
+
+The message inbox remains available without Firebase. It uses the authenticated `/api/mobile_messages` and `/api/mobile_message_recipients` operations. Firebase only adds native delivery. A notification action opens a message only when its installation identifier matches the active campus and authenticated user.
+
+## iOS preparation
+
+The repository declares `@capacitor/ios` at the same Capacitor platform version used by Android/Core/CLI and provides an SPM-based project-generation command.
+
+On Linux, after applying the iOS preparation batch, run:
 
 ```bash
-yarn android:sync
-yarn android:build:debug
+yarn ios:prepare:linux
 ```
 
-The selected Chamilo campus must expose the authenticated
-`POST /api/mobile_push_installations` and
-`DELETE /api/mobile_push_installations/{installationId}` operations. The app stores only a
-campus-scoped installation UUID and registration owner; the FCM token is sent to the selected
-campus and is not persisted by the web layer.
+That command:
 
-The message inbox remains available without Firebase. It uses the authenticated
-`/api/mobile_messages` and `/api/mobile_message_recipients` operations. Firebase only adds native
-delivery while Android is in the background or closed. A notification action opens a message only
-when its installation identifier matches the active campus and authenticated user.
+1. updates `yarn.lock` for the newly declared `@capacitor/ios` dependency;
+2. builds the Vue application;
+3. creates `ios/` with `cap add ios --packagemanager SPM`, or synchronizes it when it already exists;
+4. verifies that the Xcode project and `CapApp-SPM/Package.swift` were generated.
+
+The generated `ios/` project is source and should be reviewed and committed. Xcode build/signing is intentionally not claimed by this Linux step.
+
+### Current iOS capability boundary
+
+The preparation configuration includes only `@capacitor/app` on iOS. This prevents the Android push configuration from being treated as validated iOS push support.
+
+The following native Chamilo bridges are still Android-only and must be implemented and validated separately before iOS can be considered functionally complete:
+
+- secure token storage;
+- biometric unlock;
+- native document open/save;
+- native SCORM package hosting.
+
+The current iOS preparation therefore does **not** claim Remember me persistence, biometric unlock, push delivery, native document handling or native SCORM on iOS.
+
+When a Mac becomes available, the first validation commands are:
+
+```bash
+yarn ios:sync
+yarn ios:open
+```
+
+Then validate the Xcode build and secure storage before enabling additional iOS-native capabilities.
+
+Do not commit Apple signing material, provisioning profiles, private keys or `GoogleService-Info.plist`.
 
 ## Architecture boundaries
 
@@ -149,8 +189,7 @@ campusId/settings
 campusId/push-installation
 ```
 
-JWTs use native secure storage on Android. Passwords are never stored, and JWTs and FCM tokens must
-not be logged or passed in query strings.
+JWTs use native secure storage on Android. Passwords are never stored, and JWTs and push tokens must not be logged or passed in query strings.
 
 ## Native transport security
 
@@ -170,4 +209,4 @@ THIRD_PARTY_NOTICES.md
 reports/LICENSE_AUDIT.md
 ```
 
-The JavaScript audit is an engineering safeguard. Android/Gradle release notices require a dedicated review before public store distribution.
+The JavaScript audit is an engineering safeguard. Android/Gradle and future iOS/SPM release notices require dedicated review before public store distribution.
