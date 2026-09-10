@@ -17,9 +17,10 @@ const persistentTokenStorage: TokenStorage = Capacitor.isNativePlatform()
 
 const rememberMeTokenStorage = new RememberMeTokenStorage(persistentTokenStorage)
 const biometricProtectedTokenStorage = new BiometricProtectedTokenStorage(rememberMeTokenStorage)
-const usesAndroidBiometrics =
-  Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android"
-const tokenStorage: TokenStorage = usesAndroidBiometrics
+const platform = Capacitor.getPlatform()
+const usesNativeBiometrics =
+  Capacitor.isNativePlatform() && (platform === "android" || platform === "ios")
+const tokenStorage: TokenStorage = usesNativeBiometrics
   ? biometricProtectedTokenStorage
   : rememberMeTokenStorage
 

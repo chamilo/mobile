@@ -15,7 +15,11 @@ export class NativeBiometricGateway implements BiometricGateway {
   constructor(private readonly plugin: ChamiloBiometricPlugin = chamiloBiometricPlugin) {}
 
   isSupportedPlatform(): boolean {
-    return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android"
+    if (!Capacitor.isNativePlatform()) return false
+
+    const platform = Capacitor.getPlatform()
+
+    return platform === "android" || platform === "ios"
   }
 
   async getAvailability(): Promise<BiometricAvailability> {
