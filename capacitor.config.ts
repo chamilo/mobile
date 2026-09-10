@@ -12,6 +12,7 @@ if (pushNotificationsEnabled !== pushClientEnabled) {
 }
 
 const androidPlugins = ["@capacitor/app"]
+const iosPlugins = ["@capacitor/app"]
 
 if (pushNotificationsEnabled) {
   androidPlugins.push("@capacitor/push-notifications")
@@ -23,6 +24,9 @@ const config: CapacitorConfig = {
   webDir: "dist",
   android: {
     includePlugins: androidPlugins,
+  },
+  ios: {
+    includePlugins: iosPlugins,
   },
   plugins: {
     PushNotifications: {
