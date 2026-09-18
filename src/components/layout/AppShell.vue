@@ -208,11 +208,11 @@ onBeforeUnmount(() => {
 
     <main
       id="main-content"
-      class="mx-auto w-full max-w-screen-sm py-6 [padding-left:calc(1rem+env(safe-area-inset-left))] [padding-right:calc(1rem+env(safe-area-inset-right))]"
+      class="mx-auto w-full max-w-screen-sm py-3 [padding-left:calc(0.75rem+env(safe-area-inset-left))] [padding-right:calc(0.75rem+env(safe-area-inset-right))]"
       :class="
         showBottomNavigation
-          ? 'pb-[calc(6rem+env(safe-area-inset-bottom))]'
-          : 'pb-[calc(2rem+env(safe-area-inset-bottom))]'
+          ? 'pb-[calc(4.75rem+env(safe-area-inset-bottom))]'
+          : 'pb-[calc(1.25rem+env(safe-area-inset-bottom))]'
       "
     >
       <RouterView />

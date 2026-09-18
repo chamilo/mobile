@@ -23,10 +23,7 @@ const emit = defineEmits<{
 const imageFailed = ref(false)
 const showLogo = computed(() => Boolean(props.logoUrl) && !imageFailed.value)
 const brandInitials = computed(() => {
-  const words = props.brandName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
+  const words = props.brandName.trim().split(/\s+/).filter(Boolean)
 
   if (words.length === 0) return "CH"
   if (words.length === 1) return words[0]?.slice(0, 2).toUpperCase() || "CH"
@@ -52,9 +49,9 @@ function handleLogoError(): void {
 <template>
   <header
     data-testid="app-header"
-    class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur"
+    class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] backdrop-blur"
   >
-    <div class="mx-auto flex min-h-16 max-w-screen-sm items-center gap-3 px-4">
+    <div class="mx-auto flex min-h-14 max-w-screen-sm items-center gap-2 px-3">
       <button
         v-if="showMenuButton"
         type="button"
@@ -68,12 +65,12 @@ function handleLogoError(): void {
 
       <div
         v-if="showLogo"
-        class="flex h-10 min-w-10 max-w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white px-1 ring-1 ring-slate-200"
+        class="flex h-9 min-w-9 max-w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white px-1 ring-1 ring-slate-200"
       >
         <img
           :src="logoUrl ?? undefined"
           :alt="logoAlt"
-          class="max-h-8 max-w-20 object-contain"
+          class="max-h-7 max-w-16 object-contain"
           decoding="async"
           fetchpriority="high"
           @error="handleLogoError"
@@ -83,7 +80,7 @@ function handleLogoError(): void {
       <div
         v-else
         data-testid="brand-fallback"
-        class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-chamilo-700 text-sm font-bold text-white"
+        class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-chamilo-700 text-xs font-bold text-white"
         aria-hidden="true"
       >
         {{ brandInitials }}
@@ -91,12 +88,12 @@ function handleLogoError(): void {
 
       <div class="min-w-0 flex-1">
         <p
-          class="truncate text-xs font-medium uppercase tracking-wide text-chamilo-700"
+          class="truncate text-[0.65rem] font-medium uppercase tracking-wide text-chamilo-700"
           :title="brandName"
         >
           {{ brandName }}
         </p>
-        <h1 class="truncate text-lg font-semibold text-slate-900" :title="title">
+        <h1 class="truncate text-base font-semibold text-slate-900" :title="title">
           {{ title }}
         </h1>
       </div>

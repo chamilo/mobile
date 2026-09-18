@@ -82,23 +82,16 @@ onMounted(load)
     </RouterLink>
 
     <section class="rounded-2xl bg-white p-4 shadow-sm">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-wide text-chamilo-700">
-            {{ t("courseDescription.eyebrow") }}
-          </p>
-          <h1 class="mt-1 text-xl font-semibold text-slate-900">
-            {{ t("courseDescription.title") }}
-          </h1>
-          <p class="mt-2 text-sm text-slate-600">
-            {{ t("courseDescription.description") }}
-          </p>
-        </div>
-        <span
-          class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
-        >
-          {{ t("courseDescription.readOnly") }}
-        </span>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-chamilo-700">
+          {{ t("courseDescription.eyebrow") }}
+        </p>
+        <h1 class="mt-1 text-xl font-semibold text-slate-900">
+          {{ t("courseDescription.title") }}
+        </h1>
+        <p class="mt-2 text-sm text-slate-600">
+          {{ t("courseDescription.description") }}
+        </p>
       </div>
     </section>
 
