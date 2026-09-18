@@ -46,6 +46,26 @@ describe("native Chamilo branding", () => {
     }
   })
 
+  it("keeps the Android notification icon resources and manifest reference", () => {
+    const sizes = {
+      mdpi: 24,
+      hdpi: 36,
+      xhdpi: 48,
+      xxhdpi: 72,
+      xxxhdpi: 96,
+    } as const
+
+    for (const [density, size] of Object.entries(sizes)) {
+      expect(
+        pngDimensions(`android/app/src/main/res/drawable-${density}/ic_stat_chamilo.png`),
+      ).toEqual({ width: size, height: size })
+    }
+
+    const manifest = projectFile("android/app/src/main/AndroidManifest.xml").toString("utf8")
+    expect(manifest).toContain("com.google.firebase.messaging.default_notification_icon")
+    expect(manifest).toContain("@drawable/ic_stat_chamilo")
+  })
+
   it("keeps the existing Android splash resource dimensions", () => {
     const splashSizes = {
       "drawable/splash.png": [480, 320],

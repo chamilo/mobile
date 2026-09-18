@@ -5,10 +5,12 @@ export type AuthenticatedCampusSessionListener = (
   userId: number,
 ) => void | Promise<void>
 export type BeforeCampusSessionClearListener = (campus: CampusProfile) => void | Promise<void>
+export type BeforeCampusLogoutListener = (campus: CampusProfile) => void | Promise<void>
 export type ActiveCampusSessionResetListener = () => void | Promise<void>
 
 const authenticatedSessionListeners = new Set<AuthenticatedCampusSessionListener>()
 const beforeSessionClearListeners = new Set<BeforeCampusSessionClearListener>()
+const beforeLogoutListeners = new Set<BeforeCampusLogoutListener>()
 const activeSessionResetListeners = new Set<ActiveCampusSessionResetListener>()
 
 export function registerAuthenticatedCampusSessionListener(
@@ -25,6 +27,14 @@ export function registerBeforeCampusSessionClearListener(
   beforeSessionClearListeners.add(listener)
 
   return () => beforeSessionClearListeners.delete(listener)
+}
+
+export function registerBeforeCampusLogoutListener(
+  listener: BeforeCampusLogoutListener,
+): () => void {
+  beforeLogoutListeners.add(listener)
+
+  return () => beforeLogoutListeners.delete(listener)
 }
 
 export function registerActiveCampusSessionResetListener(
@@ -51,6 +61,10 @@ export async function notifyAuthenticatedCampusSession(
 
 export async function notifyBeforeCampusSessionClear(campus: CampusProfile): Promise<void> {
   await notifyListeners(beforeSessionClearListeners, campus)
+}
+
+export async function notifyBeforeCampusLogout(campus: CampusProfile): Promise<void> {
+  await notifyListeners(beforeLogoutListeners, campus)
 }
 
 export async function notifyActiveCampusSessionReset(): Promise<void> {

@@ -13,6 +13,7 @@ import { AuthApiService, AuthServiceError } from "@/services/auth/AuthApiService
 import {
   notifyActiveCampusSessionReset,
   notifyAuthenticatedCampusSession,
+  notifyBeforeCampusLogout,
   notifyBeforeCampusSessionClear,
 } from "@/services/auth/AuthSessionLifecycle"
 import { clearCampusSessionData } from "@/services/auth/CampusSessionDataCleaner"
@@ -238,7 +239,7 @@ export const useAuthStore = defineStore("auth", () => {
 
     if (campusId) {
       try {
-        if (campus) await notifyBeforeCampusSessionClear(campus)
+        if (campus) await notifyBeforeCampusLogout(campus)
         await tokenStorage.remove(campusId)
         await clearCampusSessionData(campusId)
       } catch (error) {

@@ -13,6 +13,7 @@ import type {
   PushNotificationListenerHandle,
   PushNotificationRegistrationError,
 } from "@/services/pushNotifications/PushNotificationGateway"
+import type { PushNotificationPreferenceRepository } from "@/services/pushNotifications/PushNotificationPreferenceRepository"
 import {
   resetPushNotificationDependencies,
   setPushNotificationDependenciesForTests,
@@ -126,9 +127,24 @@ class MemoryPushInstallationRepository implements PushInstallationRepository {
   }
 }
 
+class MemoryPushNotificationPreferenceRepository implements PushNotificationPreferenceRepository {
+  enabled = true
+  writes: boolean[] = []
+
+  async isEnabled(): Promise<boolean> {
+    return this.enabled
+  }
+
+  async setEnabled(_campusId: string, enabled: boolean): Promise<void> {
+    this.enabled = enabled
+    this.writes.push(enabled)
+  }
+}
+
 describe("push notifications store", () => {
   let gateway: MockPushNotificationGateway
   let repository: MemoryPushInstallationRepository
+  let preferenceRepository: MemoryPushNotificationPreferenceRepository
   let register: ReturnType<typeof vi.fn>
   let remove: ReturnType<typeof vi.fn>
   let router: Router
@@ -137,15 +153,21 @@ describe("push notifications store", () => {
     setActivePinia(createPinia())
     gateway = new MockPushNotificationGateway()
     repository = new MemoryPushInstallationRepository()
+    preferenceRepository = new MemoryPushNotificationPreferenceRepository()
     register = vi.fn().mockResolvedValue({})
     remove = vi.fn().mockResolvedValue(undefined)
     router = {
       push: vi.fn().mockResolvedValue(undefined),
     } as unknown as Router
-    setPushNotificationDependenciesForTests(gateway, repository, () => ({
-      register,
-      remove,
-    }))
+    setPushNotificationDependenciesForTests(
+      gateway,
+      repository,
+      () => ({
+        register,
+        remove,
+      }),
+      preferenceRepository,
+    )
   })
 
   afterEach(() => {
@@ -157,11 +179,8 @@ describe("push notifications store", () => {
     await store.initialize(router)
     await store.activateSession(campus, 7)
 
-    expect(gateway.registerCalls).toBe(0)
-    expect(store.status).toBe("prompt")
-
-    await store.enable()
     expect(gateway.registerCalls).toBe(1)
+    expect(store.status).toBe("registering")
 
     await gateway.emitToken("fcm-token")
 
@@ -182,7 +201,6 @@ describe("push notifications store", () => {
     const store = usePushNotificationsStore()
     await store.initialize(router)
     await store.activateSession(campus, 7)
-    await store.enable()
     await gateway.emitToken("apns-device-token")
 
     expect(register).toHaveBeenCalledWith(
@@ -196,7 +214,6 @@ describe("push notifications store", () => {
     const store = usePushNotificationsStore()
     await store.initialize(router)
     await store.activateSession(campus, 7)
-    await store.enable()
     await gateway.emitToken("fcm-token")
 
     await gateway.emitAction({
@@ -215,7 +232,6 @@ describe("push notifications store", () => {
     const store = usePushNotificationsStore()
     await store.initialize(router)
     await store.activateSession(campus, 7)
-    await store.enable()
     await gateway.emitToken("fcm-token")
 
     await gateway.emitAction({
@@ -227,11 +243,101 @@ describe("push notifications store", () => {
     expect(router.push).not.toHaveBeenCalled()
   })
 
+  it("keeps the registered installation active when logout only detaches the session", async () => {
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+    await gateway.emitToken("fcm-token")
+
+    await store.detachSession(campus)
+
+    expect(remove).not.toHaveBeenCalled()
+    expect(gateway.unregisterCalls).toBe(0)
+    expect(repository.cleared).toBe(false)
+    expect(repository.state).toMatchObject({
+      installationId: "11111111-1111-4111-8111-111111111111",
+      userId: 7,
+      registeredAt: expect.any(String),
+    })
+    expect(store.activeCampusId).toBeNull()
+  })
+
+  it("waits for an in-flight registration before detaching on logout", async () => {
+    let finishRegistration: (() => void) | null = null
+    register.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishRegistration = resolve
+        }),
+    )
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+
+    const tokenRegistration = gateway.emitToken("fcm-token")
+    await Promise.resolve()
+    const detach = store.detachSession(campus)
+
+    expect(store.activeCampusId).toBe(campus.id)
+    expect(remove).not.toHaveBeenCalled()
+
+    finishRegistration?.()
+    await tokenRegistration
+    await detach
+
+    expect(remove).not.toHaveBeenCalled()
+    expect(repository.state).toMatchObject({
+      userId: 7,
+      registeredAt: expect.any(String),
+    })
+    expect(store.activeCampusId).toBeNull()
+  })
+
+  it("keeps a tapped message pending while logged out and opens it after the same user signs in", async () => {
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+    await gateway.emitToken("fcm-token")
+    await store.detachSession(campus)
+
+    await gateway.emitAction({
+      type: "message",
+      messageId: "42",
+      installationId: "11111111-1111-4111-8111-111111111111",
+    })
+
+    expect(router.push).not.toHaveBeenCalled()
+
+    await store.activateSession(campus, 7)
+
+    expect(router.push).toHaveBeenCalledWith({
+      name: "message-detail",
+      params: { messageId: 42 },
+    })
+  })
+
+  it("does not open a logged-out notification after a different user signs in", async () => {
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+    await gateway.emitToken("fcm-token")
+    await store.detachSession(campus)
+
+    await gateway.emitAction({
+      type: "message",
+      messageId: "42",
+      installationId: "11111111-1111-4111-8111-111111111111",
+    })
+
+    await store.activateSession(campus, 8)
+
+    expect(router.push).not.toHaveBeenCalled()
+  })
+
   it("removes the backend installation before clearing local registration", async () => {
     const store = usePushNotificationsStore()
     await store.initialize(router)
     await store.activateSession(campus, 7)
-    await store.enable()
     await gateway.emitToken("fcm-token")
 
     await store.deactivateSession(campus)
@@ -252,7 +358,6 @@ describe("push notifications store", () => {
     const store = usePushNotificationsStore()
     await store.initialize(router)
     await store.activateSession(campus, 7)
-    await store.enable()
 
     const tokenRegistration = gateway.emitToken("fcm-token")
     await Promise.resolve()
@@ -276,5 +381,83 @@ describe("push notifications store", () => {
 
     expect(gateway.registerCalls).toBe(0)
     expect(store.status).toBe("denied")
+  })
+
+  it("requests permission and registers automatically on first authenticated session", async () => {
+    gateway.permission = "prompt"
+    const requestPermissions = vi
+      .spyOn(gateway, "requestPermissions")
+      .mockImplementation(async () => {
+        gateway.permission = "granted"
+        return "granted"
+      })
+    const store = usePushNotificationsStore()
+
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+
+    expect(requestPermissions).toHaveBeenCalledTimes(1)
+    expect(gateway.registerCalls).toBe(1)
+    expect(store.permission).toBe("granted")
+  })
+
+  it("keeps push disabled after an explicit user opt-out", async () => {
+    preferenceRepository.enabled = false
+    gateway.permission = "prompt"
+    const requestPermissions = vi.spyOn(gateway, "requestPermissions")
+    const store = usePushNotificationsStore()
+
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+
+    expect(requestPermissions).not.toHaveBeenCalled()
+    expect(gateway.registerCalls).toBe(0)
+    expect(store.preferenceEnabled).toBe(false)
+    expect(store.status).toBe("disabled")
+  })
+
+  it("removes the active installation and persists the opt-out when push is disabled", async () => {
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+    await gateway.emitToken("fcm-token")
+
+    await store.disable()
+
+    expect(preferenceRepository.enabled).toBe(false)
+    expect(preferenceRepository.writes.at(-1)).toBe(false)
+    expect(remove).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
+    expect(gateway.unregisterCalls).toBe(1)
+    expect(repository.cleared).toBe(true)
+    expect(store.status).toBe("disabled")
+  })
+
+  it("does not re-register after logout when the user disabled push", async () => {
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+    await gateway.emitToken("fcm-token")
+    await store.disable()
+    await store.deactivateSession(campus)
+
+    const registerCallsBeforeRelogin = gateway.registerCalls
+    await store.activateSession(campus, 7)
+
+    expect(gateway.registerCalls).toBe(registerCallsBeforeRelogin)
+    expect(store.status).toBe("disabled")
+  })
+
+  it("re-enables a previously disabled preference and registers the device again", async () => {
+    preferenceRepository.enabled = false
+    const store = usePushNotificationsStore()
+    await store.initialize(router)
+    await store.activateSession(campus, 7)
+
+    await store.enable()
+
+    expect(preferenceRepository.enabled).toBe(true)
+    expect(preferenceRepository.writes.at(-1)).toBe(true)
+    expect(gateway.registerCalls).toBe(1)
+    expect(store.preferenceEnabled).toBe(true)
   })
 })
