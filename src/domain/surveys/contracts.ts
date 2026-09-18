@@ -250,8 +250,8 @@ function normalizeSurveySummary(value: unknown): SurveySummary {
 
   return {
     id: positiveInteger(value.iid ?? value["@id"], "survey id"),
-    title: plainText(value.title) || "Survey",
-    subtitle: plainText(value.subtitle),
+    title: text(value.title) || "Survey",
+    subtitle: text(value.subtitle),
     code: text(value.code),
     language: text(value.language),
     availableFrom: nullableText(value.availableFrom),
@@ -297,7 +297,10 @@ function normalizeOption(value: unknown): SurveyOption {
 
   return {
     id: positiveInteger(value.iid, "survey option id"),
-    label: plainText(value.label ?? value.text) || "Option",
+    // The API exposes `text` as the raw option HTML and `label` as a stripped
+    // convenience value. Prefer the raw field so translate_html language blocks
+    // survive until the presentation locale is known.
+    label: text(value.text) || text(value.label) || "Option",
     value: numeric(value.value) ?? 0,
     isOther: boolean(value.isOther),
   }
@@ -310,8 +313,8 @@ function normalizeQuestion(value: unknown): SurveyQuestion {
 
   return {
     id: positiveInteger(value.iid, "survey question id"),
-    text: plainText(value.question) || "Question",
-    comment: plainText(value.comment),
+    text: text(value.question) || "Question",
+    comment: text(value.comment),
     type: text(value.type),
     typeLabel: text(value.typeLabel) || text(value.type) || "Question",
     required: boolean(value.isRequired),
@@ -406,11 +409,11 @@ export function normalizeSurveyDetail(value: unknown): SurveyDetail {
 
   return {
     id: positiveInteger(value.surveyId ?? survey.iid, "survey id"),
-    title: plainText(survey.title) || "Survey",
-    subtitle: plainText(survey.subtitle),
+    title: text(survey.title) || "Survey",
+    subtitle: text(survey.subtitle),
     code: text(survey.code),
-    intro: plainText(survey.intro),
-    thanks: plainText(survey.thanks),
+    intro: text(survey.intro),
+    thanks: text(survey.thanks),
     anonymous: boolean(survey.anonymous),
     oneQuestionPerPage: boolean(survey.oneQuestionPerPage),
     displayQuestionNumber: boolean(survey.displayQuestionNumber),

@@ -14,6 +14,7 @@ import { CourseRouteContextError, parseCourseRouteContext } from "@/domain/cours
 import { useAnnouncementsStore } from "@/stores/announcements"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -29,6 +30,7 @@ const router = useRouter()
 const announcementsStore = useAnnouncementsStore()
 const authStore = useAuthStore()
 const campusStore = useCampusStore()
+const localeStore = useLocaleStore()
 
 const {
   detailStatus,
@@ -188,6 +190,8 @@ onBeforeUnmount(() => announcementsStore.clearDetail())
       <AnnouncementContent
         :html="selectedAnnouncement.contentHtml"
         :campus-base-url="campusStore.selectedCampus?.baseUrl ?? 'https://invalid.local'"
+        :locale="localeStore.contentLocale"
+        :fallback-locales="localeStore.contentFallbackLocales"
       />
 
       <p v-if="!selectedAnnouncement.contentHtml.trim()" class="text-sm text-slate-600">

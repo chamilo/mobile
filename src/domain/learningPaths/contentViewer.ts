@@ -1,3 +1,5 @@
+import { filterTranslatedHtmlDocument } from "@/domain/content/translatedHtml"
+
 export type LearningPathViewerKind =
   | "image"
   | "video"
@@ -213,7 +215,15 @@ export async function inspectLearningPathContent(
   }
 }
 
-export function prepareResponsiveHtmlDocument(html: string): string {
+export function prepareResponsiveHtmlDocument(
+  html: string,
+  locale: string | null | undefined = null,
+  fallbackLocales: Array<string | null | undefined> = [],
+): string {
+  const localizedHtml =
+    locale || fallbackLocales.length > 0
+      ? filterTranslatedHtmlDocument(html, locale, fallbackLocales)
+      : html
   const additions = `
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style data-chamilo-mobile-document>
@@ -242,13 +252,13 @@ export function prepareResponsiveHtmlDocument(html: string): string {
   }
 </style>`
 
-  if (/<head(?:\s[^>]*)?>/i.test(html)) {
-    return html.replace(/<head(\s[^>]*)?>/i, (match) => `${match}${additions}`)
+  if (/<head(?:\s[^>]*)?>/i.test(localizedHtml)) {
+    return localizedHtml.replace(/<head(\s[^>]*)?>/i, (match) => `${match}${additions}`)
   }
 
-  if (/<html(?:\s[^>]*)?>/i.test(html)) {
-    return html.replace(/<html(\s[^>]*)?>/i, (match) => `${match}<head>${additions}</head>`)
+  if (/<html(?:\s[^>]*)?>/i.test(localizedHtml)) {
+    return localizedHtml.replace(/<html(\s[^>]*)?>/i, (match) => `${match}<head>${additions}</head>`)
   }
 
-  return `<!doctype html><html><head>${additions}</head><body>${html}</body></html>`
+  return `<!doctype html><html><head>${additions}</head><body>${localizedHtml}</body></html>`
 }

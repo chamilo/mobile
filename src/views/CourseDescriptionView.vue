@@ -8,6 +8,7 @@ import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import { sanitizeAnnouncementHtml } from "@/domain/announcements/sanitizeAnnouncementHtml"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildCourseRoute,
   parseCourseRouteContext,
@@ -15,6 +16,7 @@ import {
 } from "@/domain/courses/routeContext"
 import { useCampusStore } from "@/stores/campus"
 import { useCourseDescriptionStore } from "@/stores/courseDescription"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -26,6 +28,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const campusStore = useCampusStore()
+const localeStore = useLocaleStore()
 const store = useCourseDescriptionStore()
 const { status, snapshot, items, errorCode } = storeToRefs(store)
 
@@ -53,10 +56,20 @@ function typeLabel(type: number): string {
   return typeLabels.value.get(type) ?? t("courseDescription.unknownType")
 }
 
+function localizedPlainText(content: string): string {
+  return translatedPlainText(
+    content,
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
+  )
+}
+
 function sanitizedContent(content: string): string {
   return sanitizeAnnouncementHtml(
     content,
     campusStore.selectedCampus?.baseUrl ?? "https://invalid.local",
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
   )
 }
 
@@ -120,7 +133,7 @@ onMounted(load)
               {{ typeLabel(item.descriptionType) }}
             </p>
             <h2 class="mt-1 break-words text-lg font-semibold text-slate-900">
-              {{ item.title }}
+              {{ localizedPlainText(item.title) }}
             </h2>
           </div>
 
@@ -132,7 +145,7 @@ onMounted(load)
           </span>
         </div>
 
-        <!-- Content is sanitized by sanitizeAnnouncementHtml before rendering. -->
+        <!-- Content is localized and sanitized before rendering. -->
         <!-- eslint-disable vue/no-v-html -->
         <div
           v-if="item.content"

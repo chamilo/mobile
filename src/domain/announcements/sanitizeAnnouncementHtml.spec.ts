@@ -35,4 +35,22 @@ describe("sanitizeAnnouncementHtml", () => {
     expect(sanitized).toContain('src="https://campus.example.org/courses/image.png"')
     expect(sanitized).not.toContain("tracker.example.org")
   })
+
+
+  it("filters translated HTML before sanitizing the selected language", () => {
+    const sanitized = sanitizeAnnouncementHtml(
+      [
+        '<div class="mce-translatehtml" lang="en"><p>English content</p></div>',
+        '<div class="mce-translatehtml" lang="es"><p>Contenido español</p></div>',
+      ].join(""),
+      "https://campus.example.org",
+      "es",
+      ["en_US"],
+    )
+
+    expect(sanitized).toContain("Contenido español")
+    expect(sanitized).not.toContain("English content")
+    expect(sanitized).not.toContain("mce-translatehtml")
+  })
+
 })

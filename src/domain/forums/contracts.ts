@@ -103,32 +103,6 @@ function idFromIri(value: unknown): number | null {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null
 }
 
-function decodeBasicEntities(value: string): string {
-  return value
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-}
-
-function plainText(value: unknown): string {
-  const html = asText(value)
-  if (!html) return ""
-
-  return decodeBasicEntities(
-    html
-      .replace(/<\s*br\s*\/?>/gi, "\n")
-      .replace(/<\/\s*(p|div|li|h[1-6])\s*>/gi, "\n")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n[ \t]+/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim(),
-  )
-}
-
 function availabilityStatus(value: unknown): ForumAvailabilityStatus {
   const status = asText(value)
 
@@ -222,7 +196,7 @@ function normalizeCategory(item: unknown): ForumCategorySummary {
   return {
     id: asPositiveInteger(item.iid ?? item["@id"], "forum category id"),
     title: asText(item.title) || "Forum category",
-    description: plainText(item.catComment),
+    description: asText(item.catComment),
     locked: asBoolean(item.locked),
     visible: item.forumCategoryVisible === undefined || asBoolean(item.forumCategoryVisible),
     position: asNumber(item.position) ?? 0,
@@ -243,7 +217,7 @@ function normalizeForum(
   return {
     id: asPositiveInteger(item.iid ?? item["@id"], "forum id"),
     title: asText(item.title) || "Forum",
-    description: plainText(item.forumComment),
+    description: asText(item.forumComment),
     categoryId,
     categoryTitle: category?.title ?? null,
     threadCount: asCount(item.forumThreads),
@@ -369,7 +343,7 @@ function normalizePost(item: unknown): ForumPostSummary {
   return {
     id: asPositiveInteger(item.iid, "forum post id"),
     title: asText(item.title),
-    text: plainText(item.postText),
+    text: asText(item.postText),
     createdAt: asNullableText(item.postDateIso ?? item.createdAtIso ?? item.postDate),
     relativeTime: asNullableText(item.postRelativeTime),
     parentId: idFromIri(item.postParentId),

@@ -7,6 +7,7 @@ import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import type { AssignmentAvailabilityStatus, AssignmentSummary } from "@/domain/assignments/types"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildAssignmentDetailRoute,
   buildCourseRoute,
@@ -14,6 +15,7 @@ import {
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
 import { useAssignmentsStore } from "@/stores/assignments"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -24,6 +26,7 @@ const props = defineProps<{
 }>()
 
 const { t, d } = useI18n()
+const localeStore = useLocaleStore()
 const store = useAssignmentsStore()
 
 const context = computed(() => {
@@ -36,6 +39,14 @@ const context = computed(() => {
 })
 
 const errorDescription = computed(() => t(`assignments.errors.${store.list.errorCode ?? "server"}`))
+
+function localizedContent(value: string): string {
+  return translatedPlainText(
+    value,
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
+  )
+}
 
 function formatDate(value: string | null): string {
   if (!value) return ""
@@ -123,7 +134,7 @@ onMounted(load)
                 v-if="assignment.description"
                 class="mt-2 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-slate-600"
               >
-                {{ assignment.description }}
+                {{ localizedContent(assignment.description) }}
               </p>
             </div>
             <i class="pi pi-chevron-right mt-1 text-slate-400" aria-hidden="true" />

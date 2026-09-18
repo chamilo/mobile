@@ -6,6 +6,7 @@ import CourseUnavailableState from "@/components/courseHome/CourseUnavailableSta
 import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildCourseRoute,
   buildForumThreadsRoute,
@@ -18,6 +19,7 @@ import type {
   ForumSummary,
 } from "@/domain/forums/types"
 import { useForumsStore } from "@/stores/forums"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -28,6 +30,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const localeStore = useLocaleStore()
 const store = useForumsStore()
 
 const context = computed(() => {
@@ -40,6 +43,14 @@ const context = computed(() => {
 })
 
 const errorDescription = computed(() => t(`forums.errors.${store.list.errorCode ?? "server"}`))
+
+function localizedContent(value: string): string {
+  return translatedPlainText(
+    value,
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
+  )
+}
 
 function availabilityLabel(status: ForumAvailabilityStatus): string {
   return t(`forums.availability.${status}`)
@@ -107,7 +118,7 @@ onMounted(load)
               {{ group.category.title }}
             </h2>
             <p v-if="group.category.description" class="mt-1 text-sm text-slate-600">
-              {{ group.category.description }}
+              {{ localizedContent(group.category.description) }}
             </p>
           </div>
 
@@ -126,7 +137,7 @@ onMounted(load)
                   v-if="forum.description"
                   class="mt-2 line-clamp-3 text-sm leading-6 text-slate-600"
                 >
-                  {{ forum.description }}
+                  {{ localizedContent(forum.description) }}
                 </p>
               </div>
               <i class="pi pi-chevron-right mt-1 text-slate-400" aria-hidden="true" />
@@ -193,7 +204,7 @@ onMounted(load)
                   v-if="forum.description"
                   class="mt-2 line-clamp-3 text-sm leading-6 text-slate-600"
                 >
-                  {{ forum.description }}
+                  {{ localizedContent(forum.description) }}
                 </p>
               </div>
               <i class="pi pi-chevron-right mt-1 text-slate-400" aria-hidden="true" />

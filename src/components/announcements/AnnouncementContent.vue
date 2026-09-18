@@ -6,9 +6,18 @@ import { sanitizeAnnouncementHtml } from "@/domain/announcements/sanitizeAnnounc
 const props = defineProps<{
   html: string
   campusBaseUrl: string
+  locale: string
+  fallbackLocales: string[]
 }>()
 
-const sanitizedHtml = computed(() => sanitizeAnnouncementHtml(props.html, props.campusBaseUrl))
+const sanitizedHtml = computed(() =>
+  sanitizeAnnouncementHtml(
+    props.html,
+    props.campusBaseUrl,
+    props.locale,
+    props.fallbackLocales,
+  ),
+)
 </script>
 
 <template>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildForumCategoriesRequest,
   buildForumsRequest,
@@ -153,12 +154,12 @@ describe("forum contracts", () => {
     expect(result.categories[0]?.category).toMatchObject({
       id: 3,
       title: "General",
-      description: "General discussion",
+      description: "<p>General discussion</p>",
     })
     expect(result.categories[0]?.forums[0]).toMatchObject({
       id: 8,
       title: "Questions",
-      description: "Ask the class",
+      description: "<p>Ask the class</p>",
       threadCount: 1,
       postCount: 2,
       categoryTitle: "General",
@@ -215,7 +216,7 @@ describe("forum contracts", () => {
     })
   })
 
-  it("normalizes read-only posts without rendering backend HTML", () => {
+  it("preserves read-only post HTML for localized presentation", () => {
     const result = normalizeForumThreadDetail(
       {
         forum: {
@@ -270,12 +271,92 @@ describe("forum contracts", () => {
     })
     expect(result.posts[0]).toMatchObject({
       id: 30,
-      text: "Hello class",
+      text: "<p>Hello <strong>class</strong></p>",
       posterFullName: "Aldo Calabaza",
     })
     expect(result.posts[0]?.attachments[0]).toMatchObject({
       id: 4,
       filename: "notes.pdf",
     })
+  })
+
+  it("preserves translatable forum HTML until the presentation locale is known", () => {
+    const html = (english: string, spanish: string) =>
+      [
+        `<div class="mce-translatehtml" lang="en"><p>${english}</p></div>`,
+        `<div class="mce-translatehtml" lang="es"><p>${spanish}</p></div>`,
+      ].join("")
+
+    const collection = normalizeForumCollection(
+      {
+        "hydra:member": [
+          {
+            iid: 3,
+            title: "General",
+            catComment: html("English category", "Categoría española"),
+            locked: 0,
+            forumCategoryVisible: true,
+            position: 1,
+          },
+        ],
+      },
+      {
+        "hydra:member": [
+          {
+            iid: 8,
+            title: "Questions",
+            forumComment: html("English forum", "Foro español"),
+            forumCategory: "/api/forum_categories/3",
+            forumThreads: [],
+            forumPosts: [],
+            locked: 0,
+            forumVisible: true,
+            availabilityStatus: "open",
+            forumOfGroup: 0,
+            moderated: false,
+            allowNewThreads: true,
+            subscribed: false,
+            canSubscribe: true,
+          },
+        ],
+      },
+    )
+
+    const detail = normalizeForumThreadDetail(
+      {
+        forum: {
+          iid: 8,
+          title: "Questions",
+          locked: 0,
+          availabilityStatus: "open",
+        },
+        thread: {
+          iid: 12,
+          title: "Welcome",
+          locked: 0,
+          threadSticky: false,
+        },
+        canReply: true,
+        posts: [
+          {
+            iid: 30,
+            title: "First post",
+            postText: html("English post", "Publicación española"),
+            visible: true,
+            attachments: [],
+          },
+        ],
+      },
+      8,
+      12,
+    )
+
+    expect(translatedPlainText(collection.categories[0]!.category.description, "es")).toBe(
+      "Categoría española",
+    )
+    expect(translatedPlainText(collection.categories[0]!.forums[0]!.description, "es")).toBe(
+      "Foro español",
+    )
+    expect(translatedPlainText(detail.posts[0]!.text, "es")).toBe("Publicación española")
   })
 })

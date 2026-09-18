@@ -75,32 +75,6 @@ function collectionItems(value: unknown, label: string): unknown[] {
   throw new AssignmentContractError(`The ${label} response has no collection members.`)
 }
 
-function decodeBasicEntities(value: string): string {
-  return value
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-}
-
-function plainText(value: unknown): string {
-  const html = text(value)
-  if (!html) return ""
-
-  return decodeBasicEntities(
-    html
-      .replace(/<\s*br\s*\/?>/gi, "\n")
-      .replace(/<\/\s*(p|div|li|h[1-6])\s*>/gi, "\n")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n[ \t]+/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim(),
-  )
-}
-
 function isoDate(value: unknown): string | null {
   const raw = text(value)
   if (!raw) return null
@@ -158,7 +132,7 @@ function normalizeAssignment(value: unknown): AssignmentSummary {
   return {
     id: positiveInteger(value.iid ?? value["@id"], "assignment id"),
     title: text(value.title) || "Assignment",
-    description: plainText(value.description),
+    description: text(value.description),
     publishedAt: isoDate(value.sentDate),
     dueAt,
     endsAt,
@@ -191,7 +165,7 @@ function normalizeComment(value: unknown): AssignmentComment {
 
   return {
     id: positiveInteger(value.iid ?? value["@id"], "assignment comment id"),
-    text: plainText(value.comment),
+    text: text(value.comment),
     sentAt: isoDate(value.sentAt),
     authorName: text(user.fullName) || "Course member",
     fileName: nullableText(value.file),
@@ -229,7 +203,7 @@ function normalizeSubmission(
   return {
     id: positiveInteger(value.iid ?? value["@id"], "assignment submission id"),
     title: text(value.title) || "Submission",
-    description: plainText(value.description),
+    description: text(value.description),
     sentAt: isoDate(value.sentDate),
     score: numeric(value.qualification),
     maximumScore,

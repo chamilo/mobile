@@ -8,6 +8,7 @@ import AnnouncementContent from "@/components/announcements/AnnouncementContent.
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import { useCampusStore } from "@/stores/campus"
+import { useLocaleStore } from "@/stores/locale"
 import { useMessagesStore } from "@/stores/messages"
 
 const props = defineProps<{
@@ -17,6 +18,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const router = useRouter()
 const campusStore = useCampusStore()
+const localeStore = useLocaleStore()
 const messagesStore = useMessagesStore()
 const { detailStatus, mutationStatus, selectedMessage, errorCode } = storeToRefs(messagesStore)
 const numericMessageId = computed(() => Number.parseInt(props.messageId, 10))
@@ -146,6 +148,8 @@ onUnmounted(messagesStore.clearDetail)
         <AnnouncementContent
           :html="selectedMessage.content ?? ''"
           :campus-base-url="campusBaseUrl"
+          :locale="localeStore.contentLocale"
+          :fallback-locales="localeStore.contentFallbackLocales"
         />
 
         <p v-if="selectedMessage.attachmentCount > 0" class="mt-5 text-sm text-slate-600">

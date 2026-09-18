@@ -1,3 +1,5 @@
+import { filterTranslatedHtml } from "@/domain/content/translatedHtml"
+
 const ALLOWED_TAGS = new Set([
   "A",
   "B",
@@ -126,13 +128,19 @@ function unwrapElement(element: Element): void {
   parent.removeChild(element)
 }
 
-export function sanitizeAnnouncementHtml(html: string, campusBaseUrl: string): string {
+export function sanitizeAnnouncementHtml(
+  html: string,
+  campusBaseUrl: string,
+  locale: string | null | undefined = null,
+  fallbackLocales: Array<string | null | undefined> = [],
+): string {
   if (!html.trim()) {
     return ""
   }
 
+  const localizedHtml = filterTranslatedHtml(html, locale, fallbackLocales)
   const parser = new DOMParser()
-  const document = parser.parseFromString(html, "text/html")
+  const document = parser.parseFromString(localizedHtml, "text/html")
   const elements = Array.from(document.body.querySelectorAll("*"))
 
   elements.forEach((element) => {

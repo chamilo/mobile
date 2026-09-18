@@ -51,6 +51,7 @@ import type {
   LearningPathScormCommitPayload,
 } from "@/domain/learningPaths/types"
 import { useLearningPathRuntimeStore } from "@/stores/learningPathRuntime"
+import { useLocaleStore } from "@/stores/locale"
 
 const SYNC_INTERVAL_MS = 30_000
 const SCORM_PROGRESS_REFRESH_DELAY_MS = 1_200
@@ -68,6 +69,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const router = useRouter()
 const store = useLearningPathRuntimeStore()
+const localeStore = useLocaleStore()
 const scormPlayer = ref<InstanceType<typeof LearningPathScormPlayer> | null>(null)
 const playerSection = ref<HTMLElement | null>(null)
 const pendingItemId = ref<number | null>(null)
@@ -655,6 +657,8 @@ onBeforeUnmount(() => {
           :blob="store.contentBlob"
           :item="currentItem"
           :content-url="store.runtime.contentUrl ?? ''"
+          :locale="localeStore.contentLocale"
+          :fallback-locales="localeStore.contentFallbackLocales"
           @download="store.downloadCurrentContent"
         />
 

@@ -63,7 +63,7 @@ function reveal(element: HTMLElement): void {
   element.style.display = element.tagName.toLowerCase() === "span" ? "inline" : "block"
 }
 
-function applyLanguageGroup(root: HTMLElement, selector: string, candidates: string[]): void {
+function applyLanguageGroup(root: ParentNode, selector: string, candidates: string[]): void {
   const elements = Array.from(root.querySelectorAll<HTMLElement>(selector))
   if (elements.length === 0) return
 
@@ -79,6 +79,11 @@ function applyLanguageGroup(root: HTMLElement, selector: string, candidates: str
       else element.remove()
     }
   }
+}
+
+function filterTranslatedRoot(root: ParentNode, candidates: string[]): void {
+  applyLanguageGroup(root, ".mce-translatehtml", candidates)
+  applyLanguageGroup(root, "span[lang]:not(.mce-translatehtml)", candidates)
 }
 
 /**
@@ -98,10 +103,32 @@ export function filterTranslatedHtml(
   const container = document.createElement("div")
   container.innerHTML = html
 
-  applyLanguageGroup(container, ".mce-translatehtml", candidates)
-  applyLanguageGroup(container, "span[lang]:not(.mce-translatehtml)", candidates)
+  filterTranslatedRoot(container, candidates)
 
   return container.innerHTML
+}
+
+/**
+ * Filters Chamilo translate_html blocks in a complete HTML document while
+ * preserving its head/body structure for iframe srcdoc rendering.
+ */
+export function filterTranslatedHtmlDocument(
+  html: string,
+  locale: string | null | undefined,
+  fallbackLocales: Array<string | null | undefined> = [],
+): string {
+  if (!html) return html
+
+  const candidates = buildFallbackCandidates(locale, fallbackLocales)
+  if (candidates.length === 0) return html
+
+  const parser = new DOMParser()
+  const document = parser.parseFromString(html, "text/html")
+  filterTranslatedRoot(document, candidates)
+
+  const doctype = document.doctype ? `<!doctype ${document.doctype.name}>` : "<!doctype html>"
+
+  return `${doctype}${document.documentElement.outerHTML}`
 }
 
 const BLOCK_TEXT_SELECTOR = [
