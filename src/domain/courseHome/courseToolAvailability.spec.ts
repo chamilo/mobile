@@ -55,9 +55,9 @@ describe("course tool availability contract", () => {
     ).toEqual(["announcements"])
   })
 
-  it("keeps returned hidden tools available to teachers", () => {
+  it("does not expose an explicitly hidden tool to teachers in the mobile runtime", () => {
     expect(
       normalizeAvailableCourseTools([{ visibility: false, tool: { title: "forum" } }], "teacher"),
-    ).toEqual(["forums"])
+    ).toEqual([])
   })
 })
