@@ -667,6 +667,11 @@ export default {
     progressQueuedOffline:
       "Progress was saved on this device and will sync when the campus is reachable.",
     openingItem: "Opening item and updating progress...",
+    openingNamedItem: "Opening {title}...",
+    itemPosition: "Item {current} of {total}",
+    savedShort: "Saved",
+    savingShort: "Saving...",
+    savedOfflineShort: "Saved offline",
     contentLoading: "Loading lesson content...",
     scormStarting: "Starting SCORM content...",
     scormLocalFixture:
@@ -678,7 +683,7 @@ export default {
     unsupportedItem:
       "This item requires a player that is not enabled yet. It was not marked as completed.",
     viewerUnsupported:
-      "This file type cannot be displayed inside the player. You can open it with another application or download it.",
+      "This file type cannot be displayed safely inside the lesson yet. You can download the original file.",
     openExternal: "Open with another application",
     downloadContent: "Download",
     tocHidden: "The learning path configuration hides its table of contents.",
@@ -719,7 +724,8 @@ export default {
         "This real SCORM package cannot be played by the local web development fixture host. Test it in the Android app.",
       scorm_install_failed:
         "The SCORM package could not be prepared or its launch file was not found.",
-      package_too_large: "This SCORM package exceeds the size limit of the current playback environment.",
+      package_too_large:
+        "This SCORM package exceeds the size limit of the current playback environment.",
       conflict: "This learning path action is no longer available for the current attempt.",
       server: "The campus returned an unexpected learning path error.",
     },

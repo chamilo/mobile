@@ -23,16 +23,24 @@ import {
 import { useAssignmentsStore } from "@/stores/assignments"
 import { useAuthStore } from "@/stores/auth"
 
-const props = defineProps<{
-  courseId: string
-  assignmentId: string
-  assignmentTitle: string | null
-  learningPathId?: string | null
-  learningPathTitle?: string | null
-  sessionId: string | null
-  membershipId: string | null
-  sessionCourseId: string | null
-  source: string | null
+const props = withDefaults(
+  defineProps<{
+    courseId: string
+    assignmentId: string
+    assignmentTitle: string | null
+    learningPathId?: string | null
+    learningPathTitle?: string | null
+    sessionId: string | null
+    membershipId: string | null
+    sessionCourseId: string | null
+    source: string | null
+    embedded?: boolean
+  }>(),
+  { embedded: false, learningPathId: null, learningPathTitle: null },
+)
+
+const emit = defineEmits<{
+  submitted: []
 }>()
 
 const { t, d } = useI18n()
@@ -464,6 +472,10 @@ async function submitCurrent(): Promise<void> {
   }
 
   await load()
+
+  if (props.embedded) {
+    emit("submitted")
+  }
 }
 
 onMounted(() => {
@@ -479,6 +491,7 @@ onMounted(() => {
 
   <div v-else-if="context && parsedAssignmentId !== null" class="space-y-5">
     <RouterLink
+      v-if="!embedded"
       :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
@@ -864,7 +877,10 @@ onMounted(() => {
               {{ submission.description }}
             </p>
 
-            <div v-if="submission.hasFile" class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div
+              v-if="submission.hasFile"
+              class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3"
+            >
               <div class="flex items-start gap-2">
                 <i class="pi pi-paperclip mt-0.5 text-slate-500" aria-hidden="true" />
                 <div class="min-w-0 flex-1">
@@ -946,10 +962,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div
-                v-if="submission.correctionDownloadUrl"
-                class="mt-3 grid grid-cols-2 gap-2"
-              >
+              <div v-if="submission.correctionDownloadUrl" class="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 disabled:opacity-50"

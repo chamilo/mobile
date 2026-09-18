@@ -13,6 +13,7 @@ const props = defineProps<{
   currentItemId: number
   busy: boolean
   accordion: boolean
+  pendingItemId?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -90,6 +91,10 @@ function toggleSection(item: LearningPathRuntimeItem): void {
 }
 
 function statusIcon(item: LearningPathRuntimeItem): string {
+  if (item.id === props.pendingItemId) {
+    return "pi pi-spinner pi-spin"
+  }
+
   if (!item.available) {
     return "pi pi-lock"
   }
@@ -116,7 +121,10 @@ function statusLabel(item: LearningPathRuntimeItem): string {
     return t("learningPaths.status.playerPending")
   }
 
-  const normalizedStatus = item.status.trim().toLowerCase().replace(/[\s-]+/g, "_")
+  const normalizedStatus = item.status
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
   const key = `learningPaths.status.${normalizedStatus}`
 
   return t(key)
@@ -140,7 +148,7 @@ function activate(item: LearningPathRuntimeItem): void {
       v-for="item in visibleItems"
       :key="item.id"
       type="button"
-      class="flex min-h-touch w-full items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left shadow-sm transition"
+      class="flex min-h-touch w-full items-center gap-2.5 rounded-xl border bg-white px-2.5 py-2 text-left shadow-sm transition"
       :class="[
         item.id === currentItemId
           ? 'ring-chamilo-200 border-chamilo-500 ring-1'
@@ -150,18 +158,19 @@ function activate(item: LearningPathRuntimeItem): void {
           : 'hover:border-chamilo-300',
       ]"
       :disabled="busy || !item.available || (!item.isSection && !isSupportedLearningPathItem(item))"
-      :style="{ paddingLeft: `${12 + Math.min(item.level, 5) * 14}px` }"
+      :style="{ paddingLeft: `${10 + Math.min(item.level, 5) * 10}px` }"
       :aria-current="item.id === currentItemId ? 'step' : undefined"
+      :aria-busy="item.id === pendingItemId ? 'true' : undefined"
       :aria-expanded="item.isSection ? expandedSections.has(item.id) : undefined"
       @click="activate(item)"
     >
       <i :class="statusIcon(item)" class="shrink-0 text-chamilo-700" aria-hidden="true" />
 
       <span class="min-w-0 flex-1">
-        <span class="block break-words font-medium text-slate-900">
+        <span class="block break-words text-sm font-medium leading-5 text-slate-900">
           {{ item.title }}
         </span>
-        <span class="mt-0.5 block text-xs text-slate-500">
+        <span class="mt-0.5 block text-[0.7rem] leading-4 text-slate-500">
           {{ statusLabel(item) }}
         </span>
       </span>

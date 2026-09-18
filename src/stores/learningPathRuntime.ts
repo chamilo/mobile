@@ -658,11 +658,7 @@ export const useLearningPathRuntimeStore = defineStore("learningPathRuntime", ()
     learningPathId: number,
     currentRuntime: LearningPathRuntime,
   ): Promise<void> {
-    const refreshed = await api.getRuntime(
-      context,
-      learningPathId,
-      currentRuntime.currentItemId,
-    )
+    const refreshed = await api.getRuntime(context, learningPathId, currentRuntime.currentItemId)
 
     if (runtime.value !== currentRuntime) return
 

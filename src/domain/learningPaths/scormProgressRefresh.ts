@@ -6,14 +6,15 @@ import type {
 export function shouldRefreshScormProgress(payload: LearningPathScormCommitPayload): boolean {
   if (payload.terminated) return true
 
-  return payload.changedKeys.some((key) =>
-    key === "cmi.suspend_data" ||
-    key === "cmi.progress_measure" ||
-    key === "cmi.completion_status" ||
-    key === "cmi.success_status" ||
-    key === "cmi.core.lesson_status" ||
-    key.startsWith("cmi.score.") ||
-    key.startsWith("cmi.core.score."),
+  return payload.changedKeys.some(
+    (key) =>
+      key === "cmi.suspend_data" ||
+      key === "cmi.progress_measure" ||
+      key === "cmi.completion_status" ||
+      key === "cmi.success_status" ||
+      key === "cmi.core.lesson_status" ||
+      key.startsWith("cmi.score.") ||
+      key.startsWith("cmi.core.score."),
   )
 }
 
@@ -21,10 +22,7 @@ export function mergeScormRuntimeProgress(
   target: LearningPathRuntime,
   refreshed: LearningPathRuntime,
 ): boolean {
-  if (
-    refreshed.lpId !== target.lpId ||
-    refreshed.currentItemId !== target.currentItemId
-  ) {
+  if (refreshed.lpId !== target.lpId || refreshed.currentItemId !== target.currentItemId) {
     return false
   }
 

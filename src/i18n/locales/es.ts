@@ -330,23 +330,72 @@ export default {
     restartConfirm: "¿Iniciar un nuevo intento de la lección?",
     syncing: "Guardando progreso...",
     progressSaved: "El progreso se guarda automáticamente.",
-    progressQueuedOffline: "El progreso se guardó en este dispositivo y se sincronizará cuando el campus esté disponible.",
+    progressQueuedOffline:
+      "El progreso se guardó en este dispositivo y se sincronizará cuando el campus esté disponible.",
     openingItem: "Abriendo el elemento y actualizando el progreso...",
+    openingNamedItem: "Abriendo {title}...",
+    itemPosition: "Elemento {current} de {total}",
+    savedShort: "Guardado",
+    savingShort: "Guardando...",
+    savedOfflineShort: "Guardado sin conexión",
     contentLoading: "Cargando contenido de la lección...",
     scormStarting: "Iniciando contenido SCORM...",
-    scormLocalFixture: "El modo de prueba SCORM local está activo. Los datos de ejecución se envían al campus seleccionado.",
+    scormLocalFixture:
+      "El modo de prueba SCORM local está activo. Los datos de ejecución se envían al campus seleccionado.",
     scormSaving: "Guardando progreso SCORM...",
     cstudioOpenInMobile: "Abrir en Chamilo Mobile",
-    cstudioResourceUnavailable: "Este recurso de Chamilo incrustado no puede abrirse de forma segura en Mobile.",
+    cstudioResourceUnavailable:
+      "Este recurso de Chamilo incrustado no puede abrirse de forma segura en Mobile.",
     preparing: "Preparando contenido...",
-    unsupportedItem: "Este elemento requiere un reproductor que todavía no está habilitado. No se marcó como completado.",
-    viewerUnsupported: "Este tipo de archivo no puede mostrarse dentro del reproductor. Puedes abrirlo con otra aplicación o descargarlo.",
+    unsupportedItem:
+      "Este elemento requiere un reproductor que todavía no está habilitado. No se marcó como completado.",
+    viewerUnsupported:
+      "Este tipo de archivo todavía no puede mostrarse de forma segura dentro de la lección. Puedes descargar el archivo original.",
     openExternal: "Abrir con otra aplicación",
     downloadContent: "Descargar",
     tocHidden: "La configuración de la lección oculta su tabla de contenidos.",
     unavailable: "No disponible",
-    status: { locked: "Bloqueado por prerrequisito", playerPending: "Reproductor aún no disponible", not_attempted: "No intentado", incomplete: "En progreso", completed: "Completado", passed: "Aprobado", succeeded: "Completado", browsed: "Completado", failed: "Fallido" },
-    errors: { campus_required: "Selecciona un campus antes de abrir esta lección.", session_required: "Inicia sesión nuevamente antes de abrir esta lección.", session_expired: "Tu sesión expiró. Inicia sesión nuevamente.", access_denied: "No tienes permiso para actualizar esta lección en el contexto actual del curso.", not_found: "La lección o el contenido solicitado ya no existe.", network: "No se pudo contactar con el campus. Revisa tu conexión y vuelve a intentarlo.", timeout: "El campus tardó demasiado en devolver la lección.", invalid_response: "El campus devolvió una respuesta de lección no válida.", unsupported: "Este elemento de la lección no es compatible con el reproductor actual.", scorm_platform_unsupported: "La reproducción SCORM está disponible en la aplicación Android y en desarrollo web local.", scorm_plugin_unavailable: "Esta APK no contiene el runtime SCORM de Android. Instala la APK de prueba SCORM más reciente.", scorm_metadata_missing: "El campus no devolvió los metadatos del paquete SCORM necesarios para el reproductor móvil.", scorm_runtime_disabled: "Chamilo no pudo crear un intento SCORM activo para este elemento de la lección.", scorm_fixture_mismatch: "El paquete SCORM descargado no coincide con los fixtures locales de prueba SCORM 1.2 o 2004.", scorm_web_package_unsupported: "Este paquete SCORM real no puede reproducirse en el navegador de desarrollo local. Pruébalo en la aplicación Android.", scorm_install_failed: "No se pudo preparar el paquete SCORM o no se encontró su archivo de inicio.", package_too_large: "Este paquete SCORM supera el límite de tamaño del entorno de reproducción actual.", conflict: "Esta acción de la lección ya no está disponible para el intento actual.", server: "El campus devolvió un error inesperado de la lección." },
+    status: {
+      locked: "Bloqueado por prerrequisito",
+      playerPending: "Reproductor aún no disponible",
+      not_attempted: "No intentado",
+      incomplete: "En progreso",
+      completed: "Completado",
+      passed: "Aprobado",
+      succeeded: "Completado",
+      browsed: "Completado",
+      failed: "Fallido",
+    },
+    errors: {
+      campus_required: "Selecciona un campus antes de abrir esta lección.",
+      session_required: "Inicia sesión nuevamente antes de abrir esta lección.",
+      session_expired: "Tu sesión expiró. Inicia sesión nuevamente.",
+      access_denied:
+        "No tienes permiso para actualizar esta lección en el contexto actual del curso.",
+      not_found: "La lección o el contenido solicitado ya no existe.",
+      network: "No se pudo contactar con el campus. Revisa tu conexión y vuelve a intentarlo.",
+      timeout: "El campus tardó demasiado en devolver la lección.",
+      invalid_response: "El campus devolvió una respuesta de lección no válida.",
+      unsupported: "Este elemento de la lección no es compatible con el reproductor actual.",
+      scorm_platform_unsupported:
+        "La reproducción SCORM está disponible en la aplicación Android y en desarrollo web local.",
+      scorm_plugin_unavailable:
+        "Esta APK no contiene el runtime SCORM de Android. Instala la APK de prueba SCORM más reciente.",
+      scorm_metadata_missing:
+        "El campus no devolvió los metadatos del paquete SCORM necesarios para el reproductor móvil.",
+      scorm_runtime_disabled:
+        "Chamilo no pudo crear un intento SCORM activo para este elemento de la lección.",
+      scorm_fixture_mismatch:
+        "El paquete SCORM descargado no coincide con los fixtures locales de prueba SCORM 1.2 o 2004.",
+      scorm_web_package_unsupported:
+        "Este paquete SCORM real no puede reproducirse en el navegador de desarrollo local. Pruébalo en la aplicación Android.",
+      scorm_install_failed:
+        "No se pudo preparar el paquete SCORM o no se encontró su archivo de inicio.",
+      package_too_large:
+        "Este paquete SCORM supera el límite de tamaño del entorno de reproducción actual.",
+      conflict: "Esta acción de la lección ya no está disponible para el intento actual.",
+      server: "El campus devolvió un error inesperado de la lección.",
+    },
   },
   exercises: {
     backToCourse: "Volver al curso",

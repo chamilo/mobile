@@ -59,18 +59,26 @@ import { useConnectivityStore } from "@/stores/connectivity"
 import { useExercisesStore } from "@/stores/exercises"
 import { useLocaleStore } from "@/stores/locale"
 
-const props = defineProps<{
-  courseId: string
-  exerciseId: string
-  sessionId: string | null
-  membershipId: string | null
-  sessionCourseId: string | null
-  source: string | null
-  origin: string | null
-  learningPathId: string | null
-  learningPathItemId: string | null
-  learningPathItemViewId: string | null
-  learningPathTitle: string | null
+const props = withDefaults(
+  defineProps<{
+    courseId: string
+    exerciseId: string
+    sessionId: string | null
+    membershipId: string | null
+    sessionCourseId: string | null
+    source: string | null
+    origin: string | null
+    learningPathId: string | null
+    learningPathItemId: string | null
+    learningPathItemViewId: string | null
+    learningPathTitle: string | null
+    embedded?: boolean
+  }>(),
+  { embedded: false },
+)
+
+const emit = defineEmits<{
+  finished: [attemptId: number]
 }>()
 
 const { t } = useI18n()
@@ -132,14 +140,10 @@ const runtimePages = computed(() =>
     : [],
 )
 const usesRuntimePages = computed(() =>
-  store.runtime
-    ? usesExerciseRuntimePages(store.runtime.settings, runtimePages.value)
-    : false,
+  store.runtime ? usesExerciseRuntimePages(store.runtime.settings, runtimePages.value) : false,
 )
 const currentRuntimePage = computed(() =>
-  usesRuntimePages.value
-    ? (runtimePages.value[currentRuntimePageIndex.value] ?? null)
-    : null,
+  usesRuntimePages.value ? (runtimePages.value[currentRuntimePageIndex.value] ?? null) : null,
 )
 const answerableQuestionMap = computed(
   () => new Map(store.answerableQuestions.map((item) => [item.id, item])),
@@ -193,8 +197,7 @@ const requiresConfirmation = computed(
   () => !isImmediateFeedbackRuntime.value && store.runtime?.settings.confirmSavedAnswers === true,
 )
 const reviewEnabled = computed(
-  () =>
-    !isImmediateFeedbackRuntime.value && Number(store.runtime?.settings.reviewAnswers ?? 0) > 0,
+  () => !isImmediateFeedbackRuntime.value && Number(store.runtime?.settings.reviewAnswers ?? 0) > 0,
 )
 const hasFinalReview = computed(
   () => !isImmediateFeedbackRuntime.value && (reviewEnabled.value || store.requiresAllAnswers),
@@ -202,7 +205,8 @@ const hasFinalReview = computed(
 const hasActiveFeedback = computed(() => activeFeedback.value !== null)
 const isTeacherPreview = computed(() => store.runtime?.canManage === true && !store.runtime.attempt)
 const currentTimedQuestion = computed(() => {
-  if (!store.runtime?.attempt || isTeacherPreview.value || visibleQuestions.value.length !== 1) return null
+  if (!store.runtime?.attempt || isTeacherPreview.value || visibleQuestions.value.length !== 1)
+    return null
 
   const activeQuestion = question.value
   return activeQuestion &&
@@ -285,11 +289,7 @@ function preventRestrictedClipboard(event: ClipboardEvent): void {
 }
 
 function structuralHtml(value: string): string {
-  return sanitizeExerciseStructuralHtml(
-    value,
-    contentLocale.value,
-    contentFallbackLocales.value,
-  )
+  return sanitizeExerciseStructuralHtml(value, contentLocale.value, contentFallbackLocales.value)
 }
 
 function clearActiveFeedback(): void {
@@ -371,6 +371,12 @@ async function finishAfterFeedback(): Promise<void> {
 
   clearActiveFeedback()
   stopTimer()
+
+  if (props.embedded) {
+    emit("finished", attemptId)
+    return
+  }
+
   await router.push(
     buildExerciseResultRoute(
       context.value,
@@ -477,14 +483,16 @@ function syncRuntimePageIndex(): void {
     return
   }
 
-  const currentQuestionId = store.runtime?.attempt?.currentQuestionId ?? store.currentQuestion?.id ?? 0
+  const currentQuestionId =
+    store.runtime?.attempt?.currentQuestionId ?? store.currentQuestion?.id ?? 0
   const pageIndex = runtimePages.value.findIndex((page) =>
     page.questionIds.includes(Number(currentQuestionId)),
   )
 
-  currentRuntimePageIndex.value = pageIndex >= 0
-    ? pageIndex
-    : Math.min(currentRuntimePageIndex.value, runtimePages.value.length - 1)
+  currentRuntimePageIndex.value =
+    pageIndex >= 0
+      ? pageIndex
+      : Math.min(currentRuntimePageIndex.value, runtimePages.value.length - 1)
 }
 
 function stopTimer(): void {
@@ -534,11 +542,7 @@ function rememberQuestionSeconds(questionId: number, secondsSpent: number): void
   const timedQuestion = currentTimedQuestion.value
   if (timedQuestion?.id !== questionId) return
 
-  questionTimerAnchor = createExerciseQuestionTimerAnchor(
-    questionId,
-    timedQuestion.duration,
-    value,
-  )
+  questionTimerAnchor = createExerciseQuestionTimerAnchor(questionId, timedQuestion.duration, value)
   questionRemainingSeconds.value = exerciseQuestionTimerRemainingSeconds(questionTimerAnchor)
 }
 
@@ -787,6 +791,12 @@ async function finish(): Promise<void> {
   if (attemptId) {
     if (!skipCurrentSave && questionId > 0) clearPendingAnswerFile(questionId)
     stopTimer()
+
+    if (props.embedded) {
+      emit("finished", attemptId)
+      return
+    }
+
     await router.push(
       buildExerciseResultRoute(
         context.value,
@@ -927,6 +937,7 @@ onBeforeUnmount(() => {
     @paste="preventRestrictedClipboard"
   >
     <RouterLink
+      v-if="!embedded"
       :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
@@ -1138,7 +1149,9 @@ onBeforeUnmount(() => {
             <span v-if="questionRemainingSeconds !== null">
               {{ t("exercises.questionTimeLeft") }}: {{ formatDuration(questionRemainingSeconds) }}
             </span>
-            <span v-else-if="remainingSeconds !== null">{{ formatDuration(remainingSeconds) }}</span>
+            <span v-else-if="remainingSeconds !== null">{{
+              formatDuration(remainingSeconds)
+            }}</span>
           </div>
           <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
             <div class="h-full rounded-full bg-chamilo-600" :style="{ width: `${progress}%` }" />
@@ -1173,12 +1186,12 @@ onBeforeUnmount(() => {
           </p>
           <ExerciseStructuralHtml
             v-if="currentRuntimePage.media.title"
-            class="mt-1 text-lg font-semibold text-slate-900 [&_a]:text-chamilo-700 [&_img]:h-auto [&_img]:max-w-full [&_video]:max-w-full [&_audio]:max-w-full"
+            class="mt-1 text-lg font-semibold text-slate-900 [&_a]:text-chamilo-700 [&_audio]:max-w-full [&_img]:h-auto [&_img]:max-w-full [&_video]:max-w-full"
             :html="structuralHtml(currentRuntimePage.media.title)"
           />
           <ExerciseStructuralHtml
             v-if="currentRuntimePage.media.description"
-            class="mt-2 text-sm text-slate-700 [&_a]:text-chamilo-700 [&_img]:h-auto [&_img]:max-w-full [&_video]:max-w-full [&_audio]:max-w-full"
+            class="mt-2 text-sm text-slate-700 [&_a]:text-chamilo-700 [&_audio]:max-w-full [&_img]:h-auto [&_img]:max-w-full [&_video]:max-w-full"
             :html="structuralHtml(currentRuntimePage.media.description)"
           />
         </section>
@@ -1189,7 +1202,12 @@ onBeforeUnmount(() => {
             :key="card.question.id"
             :question="card.question"
             :answer="card.answer"
-            :disabled="store.saving || isQuestionTimeExpired || hasActiveFeedback || !isSupportedExerciseQuestion(card.question)"
+            :disabled="
+              store.saving ||
+              isQuestionTimeExpired ||
+              hasActiveFeedback ||
+              !isSupportedExerciseQuestion(card.question)
+            "
             :show-title="showQuestionTitle"
             :review-enabled="reviewEnabled"
             :teacher-preview="isTeacherPreview"

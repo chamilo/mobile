@@ -1,144 +1,166 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue"
+import { onBeforeUnmount, ref, shallowRef, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
+import {
+  inspectLearningPathContent,
+  prepareResponsiveHtmlDocument,
+  type LearningPathViewerKind,
+} from "@/domain/learningPaths/contentViewer"
 import type { LearningPathRuntimeItem } from "@/domain/learningPaths/types"
 
 const props = defineProps<{
   blob: Blob
   item: LearningPathRuntimeItem
+  contentUrl?: string
 }>()
 
 const emit = defineEmits<{
-  openExternal: []
   download: []
 }>()
 
 const { t } = useI18n()
+const viewerKind = ref<LearningPathViewerKind>("unsupported")
+const preparing = ref(true)
 const objectUrl = ref("")
 const textContent = ref("")
+const htmlContent = ref("")
+const preparedBlob = shallowRef<Blob | null>(null)
+let refreshSequence = 0
 
-function extension(filename: string): string {
-  const match = filename
-    .trim()
-    .toLowerCase()
-    .match(/\.([a-z0-9]+)$/)
+function revokeObjectUrl(): void {
+  if (!objectUrl.value) return
 
-  return match?.[1] ?? ""
+  URL.revokeObjectURL(objectUrl.value)
+  objectUrl.value = ""
 }
 
-const mimeType = computed(() => props.blob.type.trim().toLowerCase())
-const fileExtension = computed(() => extension(props.item.title))
+async function refreshViewer(): Promise<void> {
+  const sequence = ++refreshSequence
+  preparing.value = true
+  revokeObjectUrl()
+  preparedBlob.value = null
+  textContent.value = ""
+  htmlContent.value = ""
 
-const viewerKind = computed<"image" | "video" | "audio" | "text" | "frame" | "unsupported">(() => {
-  if (mimeType.value.startsWith("image/")) {
-    return "image"
+  try {
+    const inspection = await inspectLearningPathContent(
+      props.blob,
+      props.item.title,
+      props.contentUrl ?? "",
+    )
+
+    if (sequence !== refreshSequence) return
+
+    viewerKind.value = inspection.kind
+
+    if (inspection.kind === "html") {
+      htmlContent.value = prepareResponsiveHtmlDocument(inspection.textContent)
+      return
+    }
+
+    if (inspection.kind === "text") {
+      textContent.value = inspection.textContent
+      return
+    }
+
+    if (["image", "video", "audio", "frame"].includes(inspection.kind)) {
+      preparedBlob.value =
+        props.blob.type.trim().toLowerCase().split(";", 1)[0] === inspection.mimeType
+          ? props.blob
+          : new Blob([props.blob], { type: inspection.mimeType })
+      objectUrl.value = URL.createObjectURL(preparedBlob.value)
+    }
+  } catch {
+    if (sequence === refreshSequence) {
+      viewerKind.value = "unsupported"
+    }
+  } finally {
+    if (sequence === refreshSequence) {
+      preparing.value = false
+    }
   }
-
-  if (mimeType.value.startsWith("video/")) {
-    return "video"
-  }
-
-  if (mimeType.value.startsWith("audio/")) {
-    return "audio"
-  }
-
-  if (mimeType.value === "text/plain" || ["txt", "md", "csv"].includes(fileExtension.value)) {
-    return "text"
-  }
-
-  if (
-    mimeType.value === "application/pdf" ||
-    mimeType.value === "text/html" ||
-    mimeType.value === "application/xhtml+xml" ||
-    ["pdf", "html", "htm"].includes(fileExtension.value)
-  ) {
-    return "frame"
-  }
-
-  return "unsupported"
-})
-
-async function refreshObjectUrl(): Promise<void> {
-  if (objectUrl.value) {
-    URL.revokeObjectURL(objectUrl.value)
-  }
-
-  objectUrl.value = URL.createObjectURL(props.blob)
-  textContent.value = viewerKind.value === "text" ? await props.blob.text() : ""
 }
 
 watch(
-  () => [props.blob, props.item.id] as const,
+  () => [props.blob, props.item.id, props.contentUrl ?? ""] as const,
   () => {
-    void refreshObjectUrl()
+    void refreshViewer()
   },
   { immediate: true },
 )
 
 onBeforeUnmount(() => {
-  if (objectUrl.value) {
-    URL.revokeObjectURL(objectUrl.value)
-  }
+  refreshSequence += 1
+  revokeObjectUrl()
 })
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div
+      v-if="preparing"
+      class="flex min-h-32 items-center justify-center gap-3 p-4 text-sm text-slate-600"
+      role="status"
+      aria-live="polite"
+    >
+      <i class="pi pi-spinner pi-spin text-chamilo-700" aria-hidden="true" />
+      <span>{{ t("learningPaths.preparing") }}</span>
+    </div>
+
     <img
-      v-if="viewerKind === 'image'"
+      v-else-if="viewerKind === 'image'"
       :src="objectUrl"
       :alt="item.title"
-      class="mx-auto max-h-[70dvh] w-auto max-w-full object-contain"
+      class="mx-auto max-h-[72dvh] w-auto max-w-full object-contain"
     />
 
     <video
       v-else-if="viewerKind === 'video'"
       :src="objectUrl"
-      class="max-h-[70dvh] w-full bg-black"
+      class="max-h-[72dvh] w-full bg-black"
       controls
       playsinline
     />
 
-    <audio v-else-if="viewerKind === 'audio'" :src="objectUrl" class="w-full p-4" controls />
+    <audio v-else-if="viewerKind === 'audio'" :src="objectUrl" class="w-full p-3" controls />
 
     <pre
       v-else-if="viewerKind === 'text'"
-      class="max-h-[70dvh] overflow-auto whitespace-pre-wrap break-words p-4 text-sm text-slate-800"
+      class="max-h-[72dvh] overflow-auto whitespace-pre-wrap break-words p-3 text-sm leading-6 text-slate-800"
       >{{ textContent }}</pre
     >
+
+    <iframe
+      v-else-if="viewerKind === 'html'"
+      :srcdoc="htmlContent"
+      :title="item.title"
+      class="h-[72dvh] min-h-[360px] w-full bg-white"
+      sandbox="allow-same-origin"
+      referrerpolicy="no-referrer"
+    />
 
     <iframe
       v-else-if="viewerKind === 'frame'"
       :src="objectUrl"
       :title="item.title"
-      class="h-[65dvh] min-h-[420px] w-full bg-white"
+      class="h-[72dvh] min-h-[360px] w-full bg-white"
       sandbox="allow-same-origin"
       referrerpolicy="no-referrer"
     />
 
-    <div v-else class="space-y-3 p-4">
-      <p class="text-sm text-slate-700">
+    <div v-else class="space-y-3 p-3">
+      <p class="text-sm leading-6 text-slate-700">
         {{ t("learningPaths.viewerUnsupported") }}
       </p>
-      <div class="grid gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
-          @click="emit('openExternal')"
-        >
-          <i class="pi pi-external-link" aria-hidden="true" />
-          {{ t("learningPaths.openExternal") }}
-        </button>
-        <button
-          type="button"
-          class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-800"
-          @click="emit('download')"
-        >
-          <i class="pi pi-download" aria-hidden="true" />
-          {{ t("learningPaths.downloadContent") }}
-        </button>
-      </div>
+      <button
+        type="button"
+        class="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 font-semibold text-slate-800"
+        @click="emit('download')"
+      >
+        <i class="pi pi-download" aria-hidden="true" />
+        {{ t("learningPaths.downloadContent") }}
+      </button>
     </div>
   </div>
 </template>
