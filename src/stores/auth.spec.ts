@@ -7,7 +7,10 @@ import type {
   CampusRepositorySnapshot,
 } from "@/services/campus/CampusProfileRepository"
 import { AuthServiceError } from "@/services/auth/AuthApiService"
-import { registerBeforeCampusSessionClearListener } from "@/services/auth/AuthSessionLifecycle"
+import {
+  registerBeforeCampusLogoutListener,
+  registerBeforeCampusSessionClearListener,
+} from "@/services/auth/AuthSessionLifecycle"
 import type { StoredToken, TokenStorage } from "@/services/auth/TokenStorage"
 import type { OfflineProfileRecord } from "@/domain/offline/types"
 import type { OfflineProfileRepository } from "@/services/offline/OfflineProfileRepository"
@@ -170,7 +173,7 @@ describe("auth store", () => {
     expect(await tokenStorage.load(campusId)).toBeNull()
   })
 
-  it("runs authenticated cleanup before removing the campus token", async () => {
+  it("runs logout listeners before removing the campus token", async () => {
     const campusId = addCampus()
     const token = createToken(Math.floor(Date.now() / 1_000) + 3_600)
     setAuthDependenciesForTests(tokenStorage, () => ({
@@ -179,9 +182,9 @@ describe("auth store", () => {
     }))
     const authStore = useAuthStore()
     await authStore.signIn({ username: "student", password: "secret" })
-    let tokenAvailableDuringCleanup = false
-    const unregister = registerBeforeCampusSessionClearListener(async (campus) => {
-      tokenAvailableDuringCleanup = Boolean(await tokenStorage.load(campus.id))
+    let tokenAvailableDuringLogout = false
+    const unregister = registerBeforeCampusLogoutListener(async (campus) => {
+      tokenAvailableDuringLogout = Boolean(await tokenStorage.load(campus.id))
     })
 
     try {
@@ -190,7 +193,31 @@ describe("auth store", () => {
       unregister()
     }
 
-    expect(tokenAvailableDuringCleanup).toBe(true)
+    expect(tokenAvailableDuringLogout).toBe(true)
+    expect(await tokenStorage.load(campusId)).toBeNull()
+  })
+
+  it("keeps full session-clear listeners for explicit campus cleanup", async () => {
+    const campusId = addCampus()
+    const token = createToken(Math.floor(Date.now() / 1_000) + 3_600)
+    setAuthDependenciesForTests(tokenStorage, () => ({
+      createToken: async () => token,
+      getCurrentUser: async () => profile,
+    }))
+    const authStore = useAuthStore()
+    await authStore.signIn({ username: "student", password: "secret" })
+    let clearListenerCalled = false
+    const unregister = registerBeforeCampusSessionClearListener(() => {
+      clearListenerCalled = true
+    })
+
+    try {
+      await authStore.clearCampusSession(campusId)
+    } finally {
+      unregister()
+    }
+
+    expect(clearListenerCalled).toBe(true)
     expect(await tokenStorage.load(campusId)).toBeNull()
   })
 

@@ -137,6 +137,41 @@ export default {
       cancel: "Usar contraseña",
     },
   },
+  notifications: {
+    title: "Notificaciones push",
+    description:
+      "Recibe novedades de este campus en este dispositivo. Puedes desactivar las notificaciones aquí cuando quieras.",
+    enable: "Activar notificaciones",
+    disable: "Desactivar notificaciones",
+    disabling: "Desactivando notificaciones...",
+    retry: "Reintentar configuración de notificaciones",
+    status: {
+      idle: "La configuración de notificaciones aún no ha comenzado.",
+      checking: "Comprobando el permiso de notificaciones...",
+      prompt: "Las notificaciones están listas para activarse.",
+      denied: "Las notificaciones están bloqueadas. Actívalas desde los ajustes del dispositivo.",
+      registering: "Registrando este dispositivo en el campus...",
+      registered: "Las notificaciones están activadas para esta cuenta y campus.",
+      disabling: "Desactivando las notificaciones en este dispositivo...",
+      disabled: "Las notificaciones están desactivadas para este campus en este dispositivo.",
+      error: "No se pudo completar la configuración de notificaciones.",
+      unsupported: "Las notificaciones push no están disponibles en esta plataforma.",
+    },
+    errors: {
+      session_required: "Inicia sesión de nuevo antes de activar las notificaciones.",
+      session_expired:
+        "Tu sesión ha caducado. Inicia sesión de nuevo para activar las notificaciones.",
+      access_denied: "Esta cuenta no puede registrar notificaciones en el campus seleccionado.",
+      network: "No se pudo contactar con el campus al registrar las notificaciones.",
+      timeout: "El campus tardó demasiado en registrar las notificaciones.",
+      invalid_response: "El campus devolvió una respuesta de notificaciones no válida.",
+      storage_failed: "No se pudo guardar el identificador de instalación del dispositivo.",
+      registration_failed: "Este dispositivo no pudo registrarse para recibir notificaciones.",
+      preference_failed:
+        "No se pudo guardar de forma segura tu preferencia de notificaciones en este dispositivo.",
+      server: "El campus devolvió un error inesperado de notificaciones.",
+    },
+  },
   profile: {
     accountTitle: "Datos de la cuenta",
     email: "Correo electrónico",

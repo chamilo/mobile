@@ -29,6 +29,9 @@ const {
   errorCode: pushErrorCode,
   busy: pushBusy,
   canEnable: canEnablePush,
+  canRetry: canRetryPush,
+  canDisable: canDisablePush,
+  preferenceEnabled: pushPreferenceEnabled,
 } = storeToRefs(pushNotificationsStore)
 const busy = ref(false)
 const biometricBusy = ref(false)
@@ -41,6 +44,10 @@ const biometricState = ref<BiometricUnlockState>({
 })
 
 const pushStatusMessage = computed(() => {
+  if (pushStatus.value === "disabled") {
+    return t("notifications.status.disabled")
+  }
+
   if (pushErrorCode.value) {
     return t(`notifications.errors.${pushErrorCode.value}`)
   }
@@ -270,16 +277,38 @@ onMounted(() => {
         </div>
       </div>
 
-      <button
-        v-if="canEnablePush"
-        type="button"
-        class="mt-4 flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white disabled:opacity-60"
-        :disabled="pushBusy"
-        @click="pushNotificationsStore.enable"
-      >
-        <i :class="pushBusy ? 'pi pi-spin pi-spinner' : 'pi pi-bell'" aria-hidden="true" />
-        {{ pushErrorCode ? t("notifications.retry") : t("notifications.enable") }}
-      </button>
+      <div class="mt-4 grid gap-2">
+        <button
+          v-if="canEnablePush || canRetryPush"
+          type="button"
+          class="flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white disabled:opacity-60"
+          :disabled="pushBusy"
+          @click="pushNotificationsStore.enable"
+        >
+          <i :class="pushBusy ? 'pi pi-spin pi-spinner' : 'pi pi-bell'" aria-hidden="true" />
+          {{ canRetryPush ? t("notifications.retry") : t("notifications.enable") }}
+        </button>
+
+        <button
+          v-if="canDisablePush && pushPreferenceEnabled"
+          type="button"
+          class="flex min-h-touch w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-800 disabled:opacity-60"
+          :disabled="pushBusy"
+          @click="pushNotificationsStore.disable"
+        >
+          <i
+            :class="
+              pushBusy && pushStatus === 'disabling' ? 'pi pi-spin pi-spinner' : 'pi pi-bell-slash'
+            "
+            aria-hidden="true"
+          />
+          {{
+            pushBusy && pushStatus === "disabling"
+              ? t("notifications.disabling")
+              : t("notifications.disable")
+          }}
+        </button>
+      </div>
     </section>
 
     <RouterLink

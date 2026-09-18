@@ -13,6 +13,7 @@ import { registerCampusSessionDataCleaner } from "@/services/auth/CampusSessionD
 import {
   registerActiveCampusSessionResetListener,
   registerAuthenticatedCampusSessionListener,
+  registerBeforeCampusLogoutListener,
   registerBeforeCampusSessionClearListener,
 } from "@/services/auth/AuthSessionLifecycle"
 import { browserCampusCacheRepository } from "@/services/cache/BrowserCampusCacheRepository"
@@ -119,6 +120,7 @@ void pushNotificationsStore.initialize(router)
 registerAuthenticatedCampusSessionListener((campus, userId) =>
   pushNotificationsStore.activateSession(campus, userId),
 )
+registerBeforeCampusLogoutListener((campus) => pushNotificationsStore.detachSession(campus))
 registerBeforeCampusSessionClearListener((campus) =>
   pushNotificationsStore.deactivateSession(campus),
 )

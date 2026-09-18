@@ -137,6 +137,41 @@ export default {
       cancel: "Utiliser le mot de passe",
     },
   },
+  notifications: {
+    title: "Notifications push",
+    description:
+      "Recevez les nouveautés de ce campus sur cet appareil. Vous pouvez désactiver les notifications ici à tout moment.",
+    enable: "Activer les notifications",
+    disable: "Désactiver les notifications",
+    disabling: "Désactivation des notifications...",
+    retry: "Réessayer la configuration des notifications",
+    status: {
+      idle: "La configuration des notifications n'a pas encore commencé.",
+      checking: "Vérification de l'autorisation des notifications...",
+      prompt: "Les notifications sont prêtes à être activées.",
+      denied: "Les notifications sont bloquées. Activez-les dans les réglages de l'appareil.",
+      registering: "Enregistrement de cet appareil auprès du campus...",
+      registered: "Les notifications sont activées pour ce compte et ce campus.",
+      disabling: "Désactivation des notifications sur cet appareil...",
+      disabled: "Les notifications sont désactivées pour ce campus sur cet appareil.",
+      error: "La configuration des notifications n'a pas pu être terminée.",
+      unsupported: "Les notifications push ne sont pas disponibles sur cette plateforme.",
+    },
+    errors: {
+      session_required: "Reconnectez-vous avant d'activer les notifications.",
+      session_expired: "Votre session a expiré. Reconnectez-vous pour activer les notifications.",
+      access_denied:
+        "Ce compte ne peut pas enregistrer les notifications sur le campus sélectionné.",
+      network: "Le campus est inaccessible pendant l'enregistrement des notifications.",
+      timeout: "Le campus a mis trop de temps à enregistrer les notifications.",
+      invalid_response: "Le campus a renvoyé une réponse de notification invalide.",
+      storage_failed: "L'identifiant d'installation de l'appareil n'a pas pu être enregistré.",
+      registration_failed: "Cet appareil n'a pas pu s'enregistrer pour recevoir les notifications.",
+      preference_failed:
+        "Votre préférence de notification n'a pas pu être enregistrée de manière sécurisée sur cet appareil.",
+      server: "Le campus a renvoyé une erreur de notification inattendue.",
+    },
+  },
   profile: {
     accountTitle: "Détails du compte",
     email: "E-mail",

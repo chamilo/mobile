@@ -16,6 +16,11 @@ import {
   type MobilePushPlatform,
 } from "@/services/pushNotifications/MobilePushInstallationApiService"
 import { nativePushNotificationGateway } from "@/services/pushNotifications/NativePushNotificationGateway"
+import {
+  nativePushNotificationPreferenceRepository,
+  type PushNotificationPreferenceRepository,
+  PushNotificationPreferenceStorageError,
+} from "@/services/pushNotifications/PushNotificationPreferenceRepository"
 import type {
   PushNotificationGateway,
   PushNotificationAction,
@@ -30,6 +35,8 @@ export type PushNotificationStatus =
   | "denied"
   | "registering"
   | "registered"
+  | "disabling"
+  | "disabled"
   | "error"
   | "unsupported"
 
@@ -42,14 +49,11 @@ export type PushNotificationErrorCode =
   | "invalid_response"
   | "storage_failed"
   | "registration_failed"
+  | "preference_failed"
   | "server"
 
 export interface PushInstallationApi {
-  register(
-    installationId: string,
-    token: string,
-    platform: MobilePushPlatform,
-  ): Promise<unknown>
+  register(installationId: string, token: string, platform: MobilePushPlatform): Promise<unknown>
   remove(installationId: string): Promise<void>
 }
 
@@ -67,6 +71,8 @@ interface PendingMessageAction {
 
 let gateway: PushNotificationGateway = nativePushNotificationGateway
 let repository: PushInstallationRepository = browserPushInstallationRepository
+let preferenceRepository: PushNotificationPreferenceRepository =
+  nativePushNotificationPreferenceRepository
 let apiFactory: PushInstallationApiFactory = (campus) =>
   new MobilePushInstallationApiService(createAuthenticatedHttpClient(campus))
 
@@ -74,15 +80,18 @@ export function setPushNotificationDependenciesForTests(
   testGateway: PushNotificationGateway,
   testRepository: PushInstallationRepository,
   testApiFactory: PushInstallationApiFactory,
+  testPreferenceRepository: PushNotificationPreferenceRepository = preferenceRepository,
 ): void {
   gateway = testGateway
   repository = testRepository
   apiFactory = testApiFactory
+  preferenceRepository = testPreferenceRepository
 }
 
 export function resetPushNotificationDependencies(): void {
   gateway = nativePushNotificationGateway
   repository = browserPushInstallationRepository
+  preferenceRepository = nativePushNotificationPreferenceRepository
   apiFactory = (campus) =>
     new MobilePushInstallationApiService(createAuthenticatedHttpClient(campus))
 }
@@ -94,6 +103,10 @@ function mapError(error: unknown): PushNotificationErrorCode {
 
   if (error instanceof MobilePushInstallationResponseError) {
     return "invalid_response"
+  }
+
+  if (error instanceof PushNotificationPreferenceStorageError) {
+    return "preference_failed"
   }
 
   if (error instanceof HttpClientError) {
@@ -130,6 +143,7 @@ export const usePushNotificationsStore = defineStore("pushNotifications", () => 
   const permission = ref<PushPermissionState | null>(null)
   const errorCode = ref<PushNotificationErrorCode | null>(null)
   const activeCampusId = ref<string | null>(null)
+  const preferenceEnabled = ref(true)
   const listenerHandles: PushNotificationListenerHandle[] = []
 
   let activeSession: ActivePushSession | null = null
@@ -138,9 +152,17 @@ export const usePushNotificationsStore = defineStore("pushNotifications", () => 
   let pendingRegistration: Promise<void> | null = null
   let pendingMessageAction: PendingMessageAction | null = null
 
-  const busy = computed(() => status.value === "checking" || status.value === "registering")
-  const canEnable = computed(
-    () => available.value && (status.value === "prompt" || status.value === "error"),
+  const busy = computed(
+    () =>
+      status.value === "checking" || status.value === "registering" || status.value === "disabling",
+  )
+  const canEnable = computed(() => available.value && !preferenceEnabled.value && !busy.value)
+  const canRetry = computed(
+    () => available.value && preferenceEnabled.value && status.value === "error" && !busy.value,
+  )
+  const canDisable = computed(
+    () =>
+      available.value && preferenceEnabled.value && status.value !== "unsupported" && !busy.value,
   )
 
   async function registerToken(token: string): Promise<void> {
@@ -317,23 +339,14 @@ export const usePushNotificationsStore = defineStore("pushNotifications", () => 
     errorCode.value = null
 
     try {
-      permission.value = await gateway.checkPermissions()
-      status.value = permission.value === "denied" ? "denied" : "prompt"
-    } catch (error) {
-      status.value = "error"
-      errorCode.value = mapError(error)
-    }
-  }
+      preferenceEnabled.value = await preferenceRepository.isEnabled(campus.id)
 
-  async function enable(): Promise<void> {
-    if (!activeSession || !available.value) {
-      return
-    }
+      if (!preferenceEnabled.value) {
+        permission.value = null
+        status.value = "disabled"
+        return
+      }
 
-    status.value = "checking"
-    errorCode.value = null
-
-    try {
       let nextPermission = await gateway.checkPermissions()
 
       if (nextPermission === "prompt" || nextPermission === "prompt-with-rationale") {
@@ -351,6 +364,94 @@ export const usePushNotificationsStore = defineStore("pushNotifications", () => 
     } catch (error) {
       status.value = "error"
       errorCode.value = mapError(error)
+    }
+  }
+
+  async function enable(): Promise<void> {
+    if (!activeSession || !available.value) {
+      return
+    }
+
+    status.value = "checking"
+    errorCode.value = null
+
+    try {
+      await preferenceRepository.setEnabled(activeSession.campus.id, true)
+      preferenceEnabled.value = true
+
+      let nextPermission = await gateway.checkPermissions()
+
+      if (nextPermission === "prompt" || nextPermission === "prompt-with-rationale") {
+        nextPermission = await gateway.requestPermissions()
+      }
+
+      permission.value = nextPermission
+
+      if (nextPermission !== "granted") {
+        status.value = "denied"
+        return
+      }
+
+      await registerWithGrantedPermission()
+    } catch (error) {
+      status.value = "error"
+      errorCode.value = mapError(error)
+    }
+  }
+
+  async function disable(): Promise<void> {
+    const session = activeSession
+
+    if (!session || !available.value || busy.value) {
+      return
+    }
+
+    status.value = "disabling"
+    errorCode.value = null
+
+    try {
+      await preferenceRepository.setEnabled(session.campus.id, false)
+      preferenceEnabled.value = false
+      await pendingRegistration
+
+      const installation = repository.load(session.campus.id)
+      if (installation) {
+        await apiFactory(session.campus).remove(installation.installationId)
+      }
+
+      await gateway.unregister()
+
+      if (installation) {
+        repository.clearRegistration(session.campus.id)
+      }
+
+      permission.value = await gateway.checkPermissions().catch(() => permission.value)
+      status.value = "disabled"
+    } catch (error) {
+      await preferenceRepository.setEnabled(session.campus.id, true).catch(() => undefined)
+      preferenceEnabled.value = true
+      status.value = "error"
+      errorCode.value = mapError(error)
+    }
+  }
+
+  async function detachSession(campus: CampusProfile): Promise<void> {
+    const detachesCurrentSession = activeSession?.campus.id === campus.id
+
+    if (!detachesCurrentSession) {
+      return
+    }
+
+    try {
+      // Logout removes the authenticated session, but Push remains active until
+      // the user explicitly disables notifications for this campus.
+      await pendingRegistration
+    } finally {
+      activeSession = null
+      activeCampusId.value = null
+      permission.value = null
+      errorCode.value = null
+      status.value = available.value ? "idle" : "unsupported"
     }
   }
 
@@ -410,11 +511,16 @@ export const usePushNotificationsStore = defineStore("pushNotifications", () => 
     permission,
     errorCode,
     activeCampusId,
+    preferenceEnabled,
     busy,
     canEnable,
+    canRetry,
+    canDisable,
     initialize,
     activateSession,
     enable,
+    disable,
+    detachSession,
     deactivateSession,
     suspendActiveSession,
     dispose,
