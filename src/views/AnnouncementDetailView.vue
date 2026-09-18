@@ -174,10 +174,7 @@ onBeforeUnmount(() => announcementsStore.clearDetail())
 
     <article v-else-if="selectedAnnouncement" class="space-y-6 rounded-2xl bg-white p-5 shadow-sm">
       <header>
-        <p class="text-xs font-semibold uppercase tracking-wide text-chamilo-700">
-          {{ t("announcements.readOnly") }}
-        </p>
-        <h1 class="mt-2 text-2xl font-semibold leading-8 text-slate-900">
+        <h1 class="text-2xl font-semibold leading-8 text-slate-900">
           {{ selectedAnnouncement.title }}
         </h1>
         <div class="mt-3 space-y-1 text-sm text-slate-600">

@@ -47,7 +47,7 @@ function submit(): void {
 </script>
 
 <template>
-  <form class="space-y-4" novalidate @submit.prevent="submit">
+  <form class="space-y-3" novalidate @submit.prevent="submit">
     <div>
       <label for="username" class="text-sm font-medium text-slate-800">
         {{ t("auth.form.username") }}
@@ -61,7 +61,7 @@ function submit(): void {
         autocapitalize="none"
         spellcheck="false"
         :disabled="props.busy"
-        class="focus:ring-chamilo-200 mt-2 min-h-touch w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-chamilo-600 focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+        class="focus:ring-chamilo-200 mt-1.5 min-h-touch w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 outline-none transition focus:border-chamilo-600 focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 sm:text-sm"
       />
     </div>
 
@@ -76,7 +76,7 @@ function submit(): void {
         type="password"
         autocomplete="current-password"
         :disabled="props.busy"
-        class="focus:ring-chamilo-200 mt-2 min-h-touch w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-chamilo-600 focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+        class="focus:ring-chamilo-200 mt-1.5 min-h-touch w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 outline-none transition focus:border-chamilo-600 focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 sm:text-sm"
       />
     </div>
 
@@ -87,7 +87,7 @@ function submit(): void {
         v-model="rememberMe"
         name="rememberMe"
         type="checkbox"
-        class="size-5 rounded border-slate-300 text-chamilo-700 focus:ring-2 focus:ring-chamilo-200"
+        class="focus:ring-chamilo-200 size-5 rounded border-slate-300 text-chamilo-700 focus:ring-2"
         :disabled="props.busy"
       />
       <span>{{ t("auth.form.rememberMe") }}</span>

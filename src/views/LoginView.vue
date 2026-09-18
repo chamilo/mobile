@@ -45,11 +45,11 @@ async function signIn(credentials: AuthCredentials, rememberMe: boolean): Promis
 </script>
 
 <template>
-  <div class="space-y-5">
-    <section class="rounded-2xl bg-white p-5 shadow-sm">
+  <div class="space-y-3">
+    <section class="rounded-2xl bg-white p-4 shadow-sm">
       <div class="flex items-start gap-3">
         <div
-          class="text-chamilo-800 flex size-12 shrink-0 items-center justify-center rounded-2xl bg-chamilo-100 text-xl"
+          class="text-chamilo-800 flex size-10 shrink-0 items-center justify-center rounded-xl bg-chamilo-100 text-lg"
         >
           <i class="pi pi-building" aria-hidden="true" />
         </div>
@@ -64,26 +64,26 @@ async function signIn(credentials: AuthCredentials, rememberMe: boolean): Promis
 
       <RouterLink
         :to="{ name: 'campuses' }"
-        class="mt-4 inline-flex min-h-touch items-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-chamilo-700"
+        class="mt-2 inline-flex min-h-touch items-center gap-2 rounded-xl px-2 py-1 text-sm font-medium text-chamilo-700"
       >
         <i class="pi pi-arrow-left" aria-hidden="true" />
         {{ t("auth.chooseAnotherCampus") }}
       </RouterLink>
     </section>
 
-    <section class="rounded-2xl bg-white p-5 shadow-sm" aria-labelledby="login-title">
+    <section class="rounded-2xl bg-white p-4 shadow-sm" aria-labelledby="login-title">
       <p class="text-sm font-medium text-chamilo-700">{{ t("auth.eyebrow") }}</p>
       <h2 id="login-title" class="mt-1 text-2xl font-semibold text-slate-900">
         {{ t("auth.title") }}
       </h2>
-      <p class="mt-2 text-sm leading-6 text-slate-600">{{ t("auth.description") }}</p>
+      <p class="mt-1 text-sm leading-5 text-slate-600">{{ t("auth.description") }}</p>
 
-      <div class="mt-5">
+      <div class="mt-4">
         <LoginForm :busy="busy" :error-message="errorMessage" @submit="signIn" />
       </div>
     </section>
 
-    <p class="px-2 text-center text-xs leading-5 text-slate-500">
+    <p class="px-2 text-center text-xs leading-4 text-slate-500">
       {{ t("auth.passwordNotice") }}
     </p>
   </div>

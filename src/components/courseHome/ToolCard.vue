@@ -23,15 +23,7 @@ const { t } = useI18n()
     </span>
 
     <span class="min-w-0 flex-1">
-      <span class="flex flex-wrap items-center gap-2">
-        <span class="font-semibold text-slate-900">{{ t(capability.titleKey) }}</span>
-        <span
-          v-if="capability.readOnly"
-          class="rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-600"
-        >
-          {{ t("courseHome.readOnly") }}
-        </span>
-      </span>
+      <span class="font-semibold text-slate-900">{{ t(capability.titleKey) }}</span>
       <span class="sr-only">{{ t(capability.descriptionKey) }}</span>
     </span>
 

@@ -25,7 +25,7 @@ const capability = {
 }
 
 describe("ToolCard", () => {
-  it("renders a verified read-only capability", () => {
+  it("renders the capability without a read-only badge", () => {
     const wrapper = mount(ToolCard, {
       props: { capability },
       global: {
@@ -35,7 +35,7 @@ describe("ToolCard", () => {
     })
 
     expect(wrapper.text()).toContain("Announcements")
-    expect(wrapper.text()).toContain("Read only")
+    expect(wrapper.text()).not.toContain("Read only")
     expect(wrapper.findComponent(RouterLinkStub).props("to")).toEqual(capability.route)
   })
 })
