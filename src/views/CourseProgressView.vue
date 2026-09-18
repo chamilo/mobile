@@ -92,7 +92,9 @@ onMounted(load)
         >
           <div class="flex items-start justify-between gap-3">
             <div>
-              <h2 class="text-base font-semibold text-slate-900">{{ thematic.title }}</h2>
+              <h2 class="text-base font-semibold text-slate-900">
+                {{ plainContent(thematic.title) }}
+              </h2>
               <p v-if="thematic.content" class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
                 {{ plainContent(thematic.content) }}
               </p>

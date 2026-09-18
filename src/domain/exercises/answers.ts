@@ -105,7 +105,11 @@ export function isExerciseAnswerProvided(
     return points.length >= Math.max(1, question.hotspot?.maxClicks ?? 1)
   }
   if (isExerciseFileAnswerType(question.type)) return (state.uploadedFiles?.length ?? 0) > 0
-  if (DROPDOWN_TYPES.includes(question.type)) return state.dropdown !== null
+  if (DROPDOWN_TYPES.includes(question.type)) {
+    return Array.isArray(state.dropdown)
+      ? state.dropdown.length > 0
+      : Number(state.dropdown ?? 0) > 0
+  }
   if (question.type === 16) return state.calculated.trim().length > 0
   if (question.type === 5) return state.text.trim().length > 0
 
@@ -121,7 +125,7 @@ export function createExerciseAnswerState(question: ExerciseQuestion): ExerciseA
     blanks: {},
     matching: {},
     order: question.draggable?.items.map((item) => item.id) ?? [],
-    dropdown: null,
+    dropdown: [],
     calculated: "",
     calculatedAnswerId:
       question.calculated?.answerId ?? question.calculated?.variations[0]?.id ?? null,
@@ -165,7 +169,15 @@ export function buildExerciseAnswerPayload(
     }
   }
   if (isExerciseFileAnswerType(question.type)) return {}
-  if (DROPDOWN_TYPES.includes(question.type)) return { dropdown: state.dropdown }
+  if (DROPDOWN_TYPES.includes(question.type)) {
+    const choices = Array.isArray(state.dropdown)
+      ? state.dropdown
+      : Number(state.dropdown ?? 0) > 0
+        ? [Number(state.dropdown)]
+        : []
+
+    return { choices }
+  }
   if (question.type === 16) {
     return { calculated: state.calculated, answerId: state.calculatedAnswerId }
   }
@@ -256,7 +268,9 @@ export function applySavedExerciseAnswer(
     return
   }
   if (DROPDOWN_TYPES.includes(question.type)) {
-    state.dropdown = Number(rows[0]?.answer || 0) || null
+    state.dropdown = [
+      ...new Set(rows.map((row) => Number(row.answer || 0)).filter((id) => id > 0)),
+    ]
     return
   }
   if (question.type === 16) {

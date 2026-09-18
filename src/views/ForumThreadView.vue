@@ -7,6 +7,7 @@ import CourseUnavailableState from "@/components/courseHome/CourseUnavailableSta
 import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildForumThreadsRoute,
   buildLearningPathDetailRoute,
@@ -46,7 +47,7 @@ const props = withDefaults(
 const { t } = useI18n()
 const store = useForumsStore()
 const localeStore = useLocaleStore()
-const { interfaceLocale } = storeToRefs(localeStore)
+const { contentFallbackLocales, contentLocale, interfaceLocale } = storeToRefs(localeStore)
 const showComposer = ref(false)
 const replyTitle = ref("")
 const replyText = ref("")
@@ -102,6 +103,10 @@ const errorDescription = computed(() => t(`forums.errors.${store.thread.errorCod
 const writeErrorDescription = computed(() =>
   t(`forums.errors.${store.write.errorCode ?? "server"}`),
 )
+
+function localizedContent(value: string): string {
+  return translatedPlainText(value, contentLocale.value, contentFallbackLocales.value)
+}
 
 function localizedRoleLabel(label: string): string {
   const normalized = label.trim().toLowerCase()
@@ -425,7 +430,7 @@ onMounted(load)
           </h2>
 
           <p class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
-            {{ post.text || t("forums.thread.emptyPost") }}
+            {{ localizedContent(post.text) || t("forums.thread.emptyPost") }}
           </p>
 
           <div v-if="post.attachments.length" class="mt-4 border-t border-slate-100 pt-3">

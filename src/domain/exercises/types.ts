@@ -227,7 +227,7 @@ export interface ExerciseAnswerState {
   blanks: Record<number, string>
   matching: Record<number, number>
   order: number[]
-  dropdown: number | null
+  dropdown: number | number[] | null
   calculated: string
   calculatedAnswerId: number | null
   text: string

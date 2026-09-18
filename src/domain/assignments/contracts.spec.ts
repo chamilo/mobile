@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest"
 
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildAssignmentCommentsRequest,
   buildAssignmentRequest,
   buildAssignmentsRequest,
   buildAssignmentSubmissionsRequest,
   normalizeAssignmentCollection,
+  normalizeAssignmentComments,
   normalizeAssignmentDetail,
   resolveAssignmentAvailability,
 } from "@/domain/assignments/contracts"
@@ -92,7 +94,7 @@ describe("assignment contracts", () => {
     expect(result.items[0]).toMatchObject({
       id: 8,
       title: "Final report",
-      description: "Upload the final report.",
+      description: "<p>Upload the final report.</p>",
       maximumScore: 20,
       gradebookWeight: 30,
       textSubmissionAllowed: true,
@@ -196,7 +198,7 @@ describe("assignment contracts", () => {
     expect(result.submissions[0]).toMatchObject({
       id: 12,
       title: "report.pdf",
-      description: "My final report",
+      description: "<p>My final report</p>",
       score: 17,
       maximumScore: 20,
       hasFile: true,
@@ -207,5 +209,69 @@ describe("assignment contracts", () => {
       text: "Good progress",
       authorName: "Teacher One",
     })
+  })
+
+  it("preserves translatable assignment HTML until the presentation locale is known", () => {
+    const html = (english: string, spanish: string) =>
+      [
+        `<div class="mce-translatehtml" lang="en"><p>${english}</p></div>`,
+        `<div class="mce-translatehtml" lang="es"><p>${spanish}</p></div>`,
+      ].join("")
+
+    const collection = normalizeAssignmentCollection({
+      "hydra:member": [
+        {
+          iid: 8,
+          title: "Final report",
+          description: html("English instructions", "Instrucciones españolas"),
+          allowTextAssignment: 1,
+          assignment: {},
+        },
+      ],
+    })
+
+    const detail = normalizeAssignmentDetail(
+      {
+        iid: 8,
+        title: "Final report",
+        description: html("English instructions", "Instrucciones españolas"),
+        allowTextAssignment: 1,
+        assignment: {},
+      },
+      {
+        "hydra:member": [
+          {
+            iid: 12,
+            title: "Submission",
+            description: html("English submission", "Entrega española"),
+          },
+        ],
+      },
+      new Map([
+        [
+          12,
+          normalizeAssignmentComments({
+            "hydra:member": [
+              {
+                iid: 3,
+                comment: html("English feedback", "Retroalimentación española"),
+                sentAt: null,
+                user: { fullName: "Teacher One" },
+                file: null,
+                downloadUrl: null,
+              },
+            ],
+          }),
+        ],
+      ]),
+    )
+
+    expect(translatedPlainText(collection.items[0]!.description, "es")).toBe(
+      "Instrucciones españolas",
+    )
+    expect(translatedPlainText(detail.submissions[0]!.description, "es")).toBe("Entrega española")
+    expect(translatedPlainText(detail.submissions[0]!.comments[0]!.text, "es")).toBe(
+      "Retroalimentación española",
+    )
   })
 })

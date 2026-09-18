@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   CourseDescriptionContractError,
   normalizeCourseDescriptionResponse,
@@ -59,5 +60,19 @@ describe("normalizeCourseDescriptionResponse", () => {
     expect(() => normalizeCourseDescriptionResponse({ ...response, totalItems: 2 })).toThrow(
       CourseDescriptionContractError,
     )
+  })
+
+  it("preserves an HTML title so the active content locale can be selected later", () => {
+    const localizedResponse = structuredClone(response)
+    localizedResponse.items[0]!.title = [
+      '<span class="mce-translatehtml" lang="en">Objectives</span>',
+      '<span class="mce-translatehtml" lang="es">Objetivos</span>',
+    ].join("")
+    localizedResponse.settings.saveTitlesAsHtml = true
+
+    const result = normalizeCourseDescriptionResponse(localizedResponse)
+
+    expect(result.items[0]!.title).toContain('class="mce-translatehtml"')
+    expect(translatedPlainText(result.items[0]!.title, "es")).toBe("Objetivos")
   })
 })

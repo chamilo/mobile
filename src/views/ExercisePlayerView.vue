@@ -98,6 +98,7 @@ const pendingAnswerFiles = ref<Record<number, File | null>>({})
 const currentRuntimePageIndex = ref(0)
 const activeFeedback = ref<ExerciseAnswerFeedbackState | null>(null)
 const feedbackActionError = ref("")
+const readingCompletion = ref<Record<number, boolean>>({})
 let timer: ReturnType<typeof setInterval> | null = null
 let questionTimer: ReturnType<typeof setInterval> | null = null
 let questionTimerAnchor: ExerciseQuestionTimerAnchor | null = null
@@ -204,6 +205,15 @@ const hasFinalReview = computed(
 )
 const hasActiveFeedback = computed(() => activeFeedback.value !== null)
 const isTeacherPreview = computed(() => store.runtime?.canManage === true && !store.runtime.attempt)
+const isVisibleReadingInProgress = computed(() =>
+  visibleQuestions.value.some(
+    (item) =>
+      item.type === 21 &&
+      Boolean(item.reading) &&
+      !store.savedQuestionIds.includes(item.id) &&
+      readingCompletion.value[item.id] !== true,
+  ),
+)
 const currentTimedQuestion = computed(() => {
   if (!store.runtime?.attempt || isTeacherPreview.value || visibleQuestions.value.length !== 1)
     return null
@@ -459,6 +469,15 @@ function updateAnswer(questionId: number, value: ExerciseAnswerState): void {
   store.answers[questionId] = value
 }
 
+function handleReadingState(value: { questionId: number; complete: boolean }): void {
+  if (readingCompletion.value[value.questionId] === value.complete) return
+
+  readingCompletion.value = {
+    ...readingCompletion.value,
+    [value.questionId]: value.complete,
+  }
+}
+
 function selectAnswerFile(questionId: number, file: File | null): void {
   pendingAnswerFiles.value = {
     ...pendingAnswerFiles.value,
@@ -689,6 +708,7 @@ function syncStoreQuestionIndexForPage(pageIndex: number): void {
 }
 
 async function goRuntimePage(index: number): Promise<void> {
+  if (isVisibleReadingInProgress.value) return
   if (!usesRuntimePages.value || index < 0 || index >= runtimePages.value.length) return
 
   if (!isTeacherPreview.value) {
@@ -704,6 +724,7 @@ async function goRuntimePage(index: number): Promise<void> {
 }
 
 async function go(index: number): Promise<void> {
+  if (isVisibleReadingInProgress.value) return
   if (!context.value) return
   if (usesRuntimePages.value && !isReviewQuestionMode.value) {
     await goRuntimePage(index)
@@ -736,6 +757,7 @@ async function go(index: number): Promise<void> {
 }
 
 async function save(): Promise<void> {
+  if (isVisibleReadingInProgress.value) return
   if (!context.value) return
 
   if (usesRuntimePages.value && !isReviewQuestionMode.value) {
@@ -809,6 +831,8 @@ async function finish(): Promise<void> {
 }
 
 async function requestFinish(): Promise<void> {
+  if (isVisibleReadingInProgress.value) return
+
   if (isTeacherPreview.value) {
     previewFinished.value = true
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -852,6 +876,7 @@ async function requestFinish(): Promise<void> {
 function restartPreview(): void {
   previewFinished.value = false
   currentRuntimePageIndex.value = 0
+  readingCompletion.value = {}
   store.currentQuestionIndex = 0
   store.answers = Object.fromEntries(
     store.answerableQuestions.map((item) => [item.id, createExerciseAnswerState(item)]),
@@ -870,6 +895,7 @@ function openReviewQuestion(index: number): void {
 }
 
 async function returnToReview(): Promise<void> {
+  if (isVisibleReadingInProgress.value) return
   if (!context.value) return
   const questionId = question.value?.id ?? 0
   const secondsSpent = questionSecondsSpent(questionId)
@@ -894,6 +920,12 @@ async function returnToReview(): Promise<void> {
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
+watch(
+  [() => numericExerciseId.value, () => store.runtime?.attempt?.attemptId ?? null],
+  () => {
+    readingCompletion.value = {}
+  },
+)
 watch(
   () => store.runtime?.attempt?.remainingSeconds,
   () => startTimer(),
@@ -1212,8 +1244,14 @@ onBeforeUnmount(() => {
             :review-enabled="reviewEnabled"
             :teacher-preview="isTeacherPreview"
             :pending-file="pendingFileFor(card.question.id)"
+            :reading-auto-start="store.runtime?.settings.oneQuestionPerPage === true"
+            :reading-previously-completed="
+              store.savedQuestionIds.includes(card.question.id) ||
+              readingCompletion[card.question.id] === true
+            "
             @update-answer="updateAnswer(card.question.id, $event)"
             @select-file="selectAnswerFile(card.question.id, $event)"
+            @reading-state="handleReadingState"
           />
         </div>
 
@@ -1254,7 +1292,12 @@ onBeforeUnmount(() => {
             v-if="previousNavigationAllowed"
             type="button"
             class="min-h-touch rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-700 disabled:opacity-40"
-            :disabled="navigationIndex === 0 || store.saving || isQuestionTimeExpired"
+            :disabled="
+              navigationIndex === 0 ||
+              store.saving ||
+              isQuestionTimeExpired ||
+              isVisibleReadingInProgress
+            "
             @click="go(navigationIndex - 1)"
           >
             <i class="pi pi-arrow-left mr-2" aria-hidden="true" />
@@ -1264,7 +1307,7 @@ onBeforeUnmount(() => {
             v-if="navigationIndex < navigationTotal - 1"
             type="button"
             class="min-h-touch rounded-xl bg-chamilo-700 px-4 font-semibold text-white disabled:opacity-50"
-            :disabled="store.saving || isQuestionTimeExpired"
+            :disabled="store.saving || isQuestionTimeExpired || isVisibleReadingInProgress"
             @click="go(navigationIndex + 1)"
           >
             {{ t("actions.next") }}
@@ -1274,7 +1317,7 @@ onBeforeUnmount(() => {
             v-else-if="!isTeacherPreview && visibleQuestionCards.length > 0"
             type="button"
             class="min-h-touch rounded-xl border border-chamilo-700 bg-white px-4 font-semibold text-chamilo-700 disabled:opacity-50"
-            :disabled="store.saving || isQuestionTimeExpired"
+            :disabled="store.saving || isQuestionTimeExpired || isVisibleReadingInProgress"
             @click="save"
           >
             {{ store.saving ? t("exercises.saving") : t("exercises.saveAnswer") }}
@@ -1311,6 +1354,7 @@ onBeforeUnmount(() => {
             :disabled="
               (!isTeacherPreview && !store.canFinish) ||
               (requiresConfirmation && !confirmedSavedAnswers) ||
+              isVisibleReadingInProgress ||
               store.saving ||
               store.finishing
             "

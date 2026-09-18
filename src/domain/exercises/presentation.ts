@@ -84,7 +84,7 @@ export function localizeExerciseQuestionContent(
     reading: question.reading
       ? {
           ...question.reading,
-          text: translatedPlainText(question.reading.text, locale, fallbackLocales),
+          text: filterTranslatedHtml(question.reading.text, locale, fallbackLocales),
         }
       : null,
   }

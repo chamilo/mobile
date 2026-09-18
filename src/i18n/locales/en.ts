@@ -823,6 +823,8 @@ export default {
     openAnswer: "Open answer",
     readingPassage: "Reading passage",
     readingSpeed: "{speed} words per minute",
+    readingStart: "Start",
+    selectedAnswers: "{count} selected",
     annotation: {
       loadingImage: "Loading annotation image...",
       imageError: "The annotation image could not be loaded from this campus.",

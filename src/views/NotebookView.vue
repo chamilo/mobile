@@ -6,12 +6,14 @@ import CourseUnavailableState from "@/components/courseHome/CourseUnavailableSta
 import EmptyState from "@/components/states/EmptyState.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildCourseRoute,
   buildNotebookFormRoute,
   parseCourseRouteContext,
   CourseRouteContextError,
 } from "@/domain/courses/routeContext"
+import { useLocaleStore } from "@/stores/locale"
 import { useNotebookStore } from "@/stores/notebook"
 
 const props = defineProps<{
@@ -22,6 +24,7 @@ const props = defineProps<{
   source: string | null
 }>()
 const { t } = useI18n()
+const localeStore = useLocaleStore()
 const store = useNotebookStore()
 const { listStatus, mutationStatus, items, canWrite, errorCode } = storeToRefs(store)
 const context = computed(() => {
@@ -33,6 +36,15 @@ const context = computed(() => {
   }
 })
 const errorDescription = computed(() => t(`notebook.errors.${errorCode.value ?? "server"}`))
+
+function localizedContent(value: string): string {
+  return translatedPlainText(
+    value,
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
+  )
+}
+
 async function load(): Promise<void> {
   if (context.value) await store.loadList(context.value)
 }
@@ -89,7 +101,7 @@ onMounted(load)
         >
           <h2 class="text-base font-semibold text-slate-900">{{ note.title }}</h2>
           <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-            {{ note.content }}
+            {{ localizedContent(note.content) }}
           </p>
           <div
             v-if="note.canEdit || note.canDelete"

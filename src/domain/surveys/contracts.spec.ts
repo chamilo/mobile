@@ -8,6 +8,7 @@ import {
   normalizeSurveyCollection,
   normalizeSurveyDetail,
 } from "@/domain/surveys/contracts"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 
 const directContext = {
   courseId: 16,
@@ -139,8 +140,8 @@ describe("survey contracts", () => {
 
     expect(result.items[0]).toMatchObject({
       id: 8,
-      title: "Course feedback",
-      subtitle: "Tell us what you think",
+      title: '<div class="tiny-content"><p>Course feedback</p></div>',
+      subtitle: "<p>Tell us what you think</p>",
       invitationLpItemId: 27,
       openMode: "answer",
       unavailableReason: null,
@@ -249,8 +250,8 @@ describe("survey contracts", () => {
 
     expect(detail).toMatchObject({
       id: 8,
-      title: "Course feedback",
-      intro: "Please answer honestly.",
+      title: '<div class="tiny-content"><p>Course feedback</p></div>',
+      intro: "<p>Please answer honestly.</p>",
       isAnswered: true,
       invitationCode: "invite-8",
       csrfToken: "csrf-8",
@@ -269,5 +270,82 @@ describe("survey contracts", () => {
     expect(formatRecordedAnswers(detail.pages[0]!.questions[1]!, detail.answers)).toEqual([
       "Very useful",
     ])
+  })
+
+  it("preserves translatable survey HTML until the presentation locale is known", () => {
+    const html = (english: string, spanish: string) =>
+      [
+        `<div class="mce-translatehtml" lang="en"><p>${english}</p></div>`,
+        `<div class="mce-translatehtml" lang="es"><p>${spanish}</p></div>`,
+      ].join("")
+
+    const detail = normalizeSurveyDetail({
+      surveyId: 9,
+      invitationCode: "",
+      csrfToken: "csrf-9",
+      preview: true,
+      canSubmit: false,
+      isAnswered: false,
+      isFinished: false,
+      message: "",
+      survey: {
+        iid: 9,
+        title: html("English survey", "Encuesta española"),
+        subtitle: html("English subtitle", "Subtítulo español"),
+        intro: html("English introduction", "Introducción española"),
+        thanks: html("English thanks", "Gracias en español"),
+        anonymous: false,
+        oneQuestionPerPage: false,
+        displayQuestionNumber: true,
+        surveyType: 0,
+      },
+      questions: [
+        {
+          iid: 40,
+          question: html("English question", "Pregunta española"),
+          comment: html("English comment", "Comentario español"),
+          type: "yesno",
+          typeLabel: "Yes / No",
+          isRequired: true,
+          isSupported: true,
+          maxValue: 0,
+          parentQuestionId: 0,
+          parentOptionId: 0,
+          options: [
+            {
+              iid: 50,
+              text: html("Yes", "Sí"),
+              // SurveyAnswerProvider also exposes a convenience label built with
+              // strip_tags(). That value contains every language concatenated and
+              // must not win over the raw translatable HTML.
+              label: "Yes Sí",
+              value: 1,
+              isOther: false,
+            },
+          ],
+        },
+      ],
+      pages: [[40]],
+      answers: {},
+      profileFields: [],
+      settings: {
+        backwardsEnabled: true,
+        allowAnsweredQuestionEdit: false,
+      },
+    })
+
+    expect(detail.title).toContain('class="mce-translatehtml"')
+    expect(detail.intro).toContain("English introduction")
+    expect(detail.pages[0]?.questions[0]?.text).toContain("English question")
+    expect(detail.pages[0]?.questions[0]?.options[0]?.label).toContain('class="mce-translatehtml"')
+    expect(detail.pages[0]?.questions[0]?.options[0]?.label).toContain("Yes")
+    expect(detail.pages[0]?.questions[0]?.options[0]?.label).not.toBe("Yes Sí")
+
+    expect(translatedPlainText(detail.title, "es")).toBe("Encuesta española")
+    expect(translatedPlainText(detail.intro, "es")).toBe("Introducción española")
+    expect(translatedPlainText(detail.pages[0]!.questions[0]!.text, "es")).toBe(
+      "Pregunta española",
+    )
+    expect(translatedPlainText(detail.pages[0]!.questions[0]!.options[0]!.label, "es")).toBe("Sí")
   })
 })

@@ -14,6 +14,7 @@ import type {
   AssignmentSubmissionKind,
   AssignmentSubmissionManagementReason,
 } from "@/domain/assignments/types"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import {
   buildAssignmentsRoute,
   buildLearningPathDetailRoute,
@@ -22,6 +23,7 @@ import {
 } from "@/domain/courses/routeContext"
 import { useAssignmentsStore } from "@/stores/assignments"
 import { useAuthStore } from "@/stores/auth"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = withDefaults(
   defineProps<{
@@ -46,6 +48,7 @@ const emit = defineEmits<{
 const { t, d } = useI18n()
 const store = useAssignmentsStore()
 const authStore = useAuthStore()
+const localeStore = useLocaleStore()
 const { profile } = storeToRefs(authStore)
 const submissionTitle = ref("")
 const submissionText = ref("")
@@ -164,6 +167,14 @@ const fileValidationMessage = computed(() => {
 
   return null
 })
+
+function localizedContent(value: string | null | undefined): string {
+  return translatedPlainText(
+    value ?? "",
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
+  )
+}
 
 const canSubmitFile = computed(
   () =>
@@ -360,7 +371,7 @@ function startSubmissionEdit(submission: AssignmentSubmission): void {
   managementSuccess.value = null
   editingSubmissionId.value = submission.id
   editSubmissionTitle.value = submission.title
-  editSubmissionDescription.value = submission.description
+  editSubmissionDescription.value = localizedContent(submission.description)
 }
 
 function cancelSubmissionEdit(): void {
@@ -532,7 +543,7 @@ onMounted(() => {
           v-if="store.detail.data.assignment.description"
           class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700"
         >
-          {{ store.detail.data.assignment.description }}
+          {{ localizedContent(store.detail.data.assignment.description) }}
         </p>
 
         <div class="mt-4 flex flex-wrap gap-2 text-xs">
@@ -874,7 +885,7 @@ onMounted(() => {
               v-if="submission.description"
               class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700"
             >
-              {{ submission.description }}
+              {{ localizedContent(submission.description) }}
             </p>
 
             <div
@@ -1128,7 +1139,7 @@ onMounted(() => {
                     v-if="comment.text"
                     class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700"
                   >
-                    {{ comment.text }}
+                    {{ localizedContent(comment.text) }}
                   </p>
                   <div
                     v-if="comment.fileName"

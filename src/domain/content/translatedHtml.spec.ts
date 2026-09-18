@@ -2,7 +2,11 @@
 
 import { describe, expect, it } from "vitest"
 
-import { filterTranslatedHtml, translatedPlainText } from "@/domain/content/translatedHtml"
+import {
+  filterTranslatedHtml,
+  filterTranslatedHtmlDocument,
+  translatedPlainText,
+} from "@/domain/content/translatedHtml"
 
 describe("translated HTML", () => {
   it("keeps only the viewer language when a matching translate_html block exists", () => {
@@ -56,5 +60,33 @@ describe("translated HTML", () => {
 
     expect(filterTranslatedHtml(html, "es")).toContain("Hola")
     expect(translatedPlainText(html, "es")).toBe("Hola")
+  })
+
+  it("supports editor-created block elements as translated HTML groups", () => {
+    const html = [
+      '<div class="mce-translatehtml" lang="en"><p>English block</p></div>',
+      '<div class="mce-translatehtml" lang="es"><p>Bloque español</p></div>',
+    ].join("")
+
+    const filtered = filterTranslatedHtml(html, "es")
+
+    expect(filtered).toContain("Bloque español")
+    expect(filtered).not.toContain("English block")
+  })
+
+  it("filters a complete HTML document without losing its head/body structure", () => {
+    const html = [
+      "<!doctype html><html><head><title>Lesson</title></head><body>",
+      '<div class="mce-translatehtml" lang="en"><p>English lesson</p></div>',
+      '<div class="mce-translatehtml" lang="es"><p>Lección en español</p></div>',
+      "</body></html>",
+    ].join("")
+
+    const filtered = filterTranslatedHtmlDocument(html, "es")
+
+    expect(filtered).toContain("<head>")
+    expect(filtered).toContain("<body>")
+    expect(filtered).toContain("Lección en español")
+    expect(filtered).not.toContain("English lesson")
   })
 })

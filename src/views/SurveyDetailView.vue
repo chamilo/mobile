@@ -14,9 +14,11 @@ import {
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import { isSurveyQuestionVisible } from "@/domain/surveys/answers"
 import { formatRecordedAnswers } from "@/domain/surveys/contracts"
-import type { SurveyOpenMode, SurveyQuestion } from "@/domain/surveys/types"
+import type { SurveyOpenMode, SurveyPage, SurveyQuestion } from "@/domain/surveys/types"
+import { useLocaleStore } from "@/stores/locale"
 import { useSurveysStore } from "@/stores/surveys"
 
 const props = withDefaults(
@@ -43,6 +45,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const localeStore = useLocaleStore()
 const store = useSurveysStore()
 
 const context = computed(() => {
@@ -113,11 +116,39 @@ const editable = computed(
 const pendingSubmission = computed(() => store.detail.submitStatus === "queued")
 const submitBusy = computed(() => store.detail.submitStatus === "saving")
 const errorDescription = computed(() => t(`surveys.errors.${store.detail.errorCode ?? "server"}`))
+
+function localizedContent(value: string | null | undefined): string {
+  return translatedPlainText(
+    value ?? "",
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
+  )
+}
+
+function localizedQuestion(question: SurveyQuestion): SurveyQuestion {
+  return {
+    ...question,
+    text: localizedContent(question.text),
+    comment: localizedContent(question.comment),
+    typeLabel: localizedContent(question.typeLabel),
+    options: question.options.map((option) => ({
+      ...option,
+      label: localizedContent(option.label),
+    })),
+  }
+}
+
+const localizedPages = computed<SurveyPage[]>(() =>
+  (store.detail.data?.pages ?? []).map((page) => ({
+    ...page,
+    questions: page.questions.map(localizedQuestion),
+  })),
+)
 const visibleQuestionCount = computed(
   () =>
-    store.detail.data?.pages
+    localizedPages.value
       .flatMap((page) => page.questions)
-      .filter((question) => isVisible(question)).length ?? 0,
+      .filter((question) => isVisible(question)).length,
 )
 
 function formatDate(value: string | null): string {
@@ -144,6 +175,10 @@ function otherValue(questionId: number): string {
   return store.detail.draft?.otherAnswers[String(questionId)] ?? ""
 }
 
+function questionError(questionId: number): string {
+  return editable.value ? (store.detail.validationQuestionErrors[String(questionId)] ?? "") : ""
+}
+
 function profileValue(key: string): string | string[] {
   return store.detail.draft?.profileValues[key] ?? ""
 }
@@ -153,7 +188,7 @@ function isVisible(question: SurveyQuestion): boolean {
 }
 
 function questionNumber(question: SurveyQuestion): number {
-  const questions = store.detail.data?.pages.flatMap((page) => page.questions) ?? []
+  const questions = localizedPages.value.flatMap((page) => page.questions)
   return questions.filter(isVisible).findIndex((candidate) => candidate.id === question.id) + 1
 }
 
@@ -237,16 +272,20 @@ onMounted(load)
           }}
         </p>
         <h1 class="mt-1 break-words text-xl font-semibold text-slate-900">
-          {{ store.detail.data.title || props.surveyTitle || t("surveys.detail.title") }}
+          {{
+            localizedContent(store.detail.data.title) ||
+            localizedContent(props.surveyTitle) ||
+            t("surveys.detail.title")
+          }}
         </h1>
         <p v-if="store.detail.data.subtitle" class="mt-2 text-sm text-slate-600">
-          {{ store.detail.data.subtitle }}
+          {{ localizedContent(store.detail.data.subtitle) }}
         </p>
         <p
           v-if="store.detail.data.intro"
           class="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700"
         >
-          {{ store.detail.data.intro }}
+          {{ localizedContent(store.detail.data.intro) }}
         </p>
 
         <div class="mt-4 flex flex-wrap gap-2 text-xs">
@@ -329,7 +368,7 @@ onMounted(load)
         v-if="store.detail.data.message"
         class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
       >
-        {{ store.detail.data.message }}
+        {{ localizedContent(store.detail.data.message) }}
       </p>
 
       <section
@@ -351,16 +390,16 @@ onMounted(load)
         />
       </section>
 
-      <div v-if="store.detail.data.pages.length" class="space-y-6">
-        <section v-for="page in store.detail.data.pages" :key="page.number" class="space-y-3">
+      <div v-if="localizedPages.length" class="space-y-6">
+        <section v-for="page in localizedPages" :key="page.number" class="space-y-3">
           <h2
-            v-if="store.detail.data.pages.length > 1"
+            v-if="localizedPages.length > 1"
             class="text-sm font-semibold uppercase tracking-wide text-slate-500"
           >
             {{
               t("surveys.detail.page", {
                 current: page.number,
-                total: store.detail.data.pages.length,
+                total: localizedPages.length,
               })
             }}
           </h2>
@@ -397,12 +436,12 @@ onMounted(load)
             </p>
 
             <SurveyQuestionInput
-              v-if="editable && question.supported"
+              v-if="question.supported"
               :question="question"
               :model-value="answerValue(question.id)"
               :other-value="otherValue(question.id)"
-              :disabled="submitBusy"
-              :error="store.detail.validationQuestionErrors[String(question.id)] ?? ''"
+              :disabled="!editable || submitBusy"
+              :error="questionError(question.id)"
               name-prefix="surveyAnswers"
               @update:model-value="updateAnswer(question.id, $event)"
               @update:other-value="updateOtherAnswer(question.id, $event)"
@@ -425,11 +464,11 @@ onMounted(load)
               <p v-else class="mt-3 text-sm text-slate-500">
                 {{ t("surveys.detail.noRecordedAnswer") }}
               </p>
-            </template>
 
-            <p v-if="!question.supported" class="mt-3 text-sm font-medium text-amber-800">
-              {{ t("surveys.detail.unsupportedQuestion") }}
-            </p>
+              <p class="mt-3 text-sm font-medium text-amber-800">
+                {{ t("surveys.detail.unsupportedQuestion") }}
+              </p>
+            </template>
           </article>
         </section>
       </div>
@@ -465,7 +504,7 @@ onMounted(load)
       <section v-if="store.detail.data.thanks" class="rounded-2xl bg-white p-4 shadow-sm">
         <h2 class="font-semibold text-slate-900">{{ t("surveys.detail.thanksTitle") }}</h2>
         <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-          {{ store.detail.data.thanks }}
+          {{ localizedContent(store.detail.data.thanks) }}
         </p>
       </section>
     </template>

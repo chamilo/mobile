@@ -13,6 +13,8 @@ const props = defineProps<{
   blob: Blob
   item: LearningPathRuntimeItem
   contentUrl?: string
+  locale: string
+  fallbackLocales: string[]
 }>()
 
 const emit = defineEmits<{
@@ -55,7 +57,11 @@ async function refreshViewer(): Promise<void> {
     viewerKind.value = inspection.kind
 
     if (inspection.kind === "html") {
-      htmlContent.value = prepareResponsiveHtmlDocument(inspection.textContent)
+      htmlContent.value = prepareResponsiveHtmlDocument(
+        inspection.textContent,
+        props.locale,
+        props.fallbackLocales,
+      )
       return
     }
 
@@ -83,7 +89,13 @@ async function refreshViewer(): Promise<void> {
 }
 
 watch(
-  () => [props.blob, props.item.id, props.contentUrl ?? ""] as const,
+  () => [
+    props.blob,
+    props.item.id,
+    props.contentUrl ?? "",
+    props.locale,
+    JSON.stringify(props.fallbackLocales),
+  ] as const,
   () => {
     void refreshViewer()
   },

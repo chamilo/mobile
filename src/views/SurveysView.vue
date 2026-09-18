@@ -12,7 +12,9 @@ import {
   CourseRouteContextError,
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
+import { translatedPlainText } from "@/domain/content/translatedHtml"
 import type { SurveyAvailabilityStatus, SurveySummary } from "@/domain/surveys/types"
+import { useLocaleStore } from "@/stores/locale"
 import { useSurveysStore } from "@/stores/surveys"
 
 const props = defineProps<{
@@ -24,6 +26,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const localeStore = useLocaleStore()
 const store = useSurveysStore()
 
 const context = computed(() => {
@@ -47,6 +50,14 @@ function formatDate(value: string | null): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date)
+}
+
+function localizedContent(value: string): string {
+  return translatedPlainText(
+    value,
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
+  )
 }
 
 function availabilityLabel(status: SurveyAvailabilityStatus): string {
@@ -75,7 +86,7 @@ function detailRoute(survey: SurveySummary) {
     context.value,
     survey.id,
     survey.openMode,
-    survey.title,
+    localizedContent(survey.title),
     survey.invitationLpItemId,
     survey.invitationCode,
   )
@@ -142,13 +153,13 @@ onMounted(load)
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <h2 class="break-words font-semibold text-slate-900">
-                  {{ survey.title }}
+                  {{ localizedContent(survey.title) }}
                 </h2>
                 <p
                   v-if="survey.subtitle"
                   class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600"
                 >
-                  {{ survey.subtitle }}
+                  {{ localizedContent(survey.subtitle) }}
                 </p>
               </div>
               <i class="pi pi-chevron-right mt-1 text-slate-400" aria-hidden="true" />
@@ -207,13 +218,13 @@ onMounted(load)
 
           <article v-else class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 class="break-words font-semibold text-slate-900">
-              {{ survey.title }}
+              {{ localizedContent(survey.title) }}
             </h2>
             <p
               v-if="survey.subtitle"
               class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600"
             >
-              {{ survey.subtitle }}
+              {{ localizedContent(survey.subtitle) }}
             </p>
             <div class="mt-3 flex flex-wrap gap-2 text-xs">
               <span

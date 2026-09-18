@@ -32,7 +32,7 @@ function questionFixture(): ExerciseQuestion {
     calculated: null,
     reading: {
       speed: 175,
-      text: '<span class="mce-translatehtml" lang="en">Reading text</span><span class="mce-translatehtml" lang="es">Texto de lectura</span>',
+      text: '<span class="mce-translatehtml" lang="en"><strong>Reading text</strong></span><span class="mce-translatehtml" lang="es"><strong>Texto de lectura</strong></span>',
     },
     onlyoffice: null,
     annotation: null,
@@ -47,7 +47,8 @@ describe("exercise presentation", () => {
 
     expect(localized.title).toBe("Pregunta")
     expect(localized.choices).toEqual([{ id: 10, answer: "Sí", position: 1 }])
-    expect(localized.reading?.text).toBe("Texto de lectura")
+    expect(localized.reading?.text).toContain("<strong>Texto de lectura</strong>")
+    expect(localized.reading?.text).not.toContain("Reading text")
   })
 
   it("preserves translated HTML for unique-answer image choices", () => {

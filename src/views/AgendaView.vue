@@ -17,6 +17,7 @@ import {
 } from "@/domain/courses/routeContext"
 import { useCampusStore } from "@/stores/campus"
 import { useAgendaStore } from "@/stores/agenda"
+import { useLocaleStore } from "@/stores/locale"
 
 const props = defineProps<{
   courseId: string
@@ -28,6 +29,7 @@ const props = defineProps<{
 
 const { t, locale } = useI18n()
 const campusStore = useCampusStore()
+const localeStore = useLocaleStore()
 const store = useAgendaStore()
 const { status, snapshot, errorCode, groups } = storeToRefs(store)
 
@@ -64,6 +66,8 @@ function sanitizedContent(content: string): string {
   return sanitizeAnnouncementHtml(
     content,
     campusStore.selectedCampus?.baseUrl ?? "https://invalid.local",
+    localeStore.contentLocale,
+    localeStore.contentFallbackLocales,
   )
 }
 
@@ -148,7 +152,7 @@ onMounted(load)
                 <span v-if="event.room.branchTitle"> · {{ event.room.branchTitle }} </span>
               </p>
 
-              <!-- Content is sanitized by sanitizeAnnouncementHtml before rendering. -->
+              <!-- Content is localized and sanitized before rendering. -->
               <!-- eslint-disable vue/no-v-html -->
               <div
                 v-if="event.content"
