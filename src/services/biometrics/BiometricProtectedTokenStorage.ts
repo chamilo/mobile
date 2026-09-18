@@ -42,7 +42,9 @@ export class BiometricProtectedTokenStorage implements TokenStorage {
   }
 
   async remove(campusId: string): Promise<void> {
+    // Logout removes authentication material only. The biometric preference is
+    // a campus setting and intentionally survives logout so the next remembered
+    // session remains protected unless the user explicitly disables biometrics.
     await this.source.remove(campusId)
-    await this.sessionLock.clear(campusId).catch(() => undefined)
   }
 }

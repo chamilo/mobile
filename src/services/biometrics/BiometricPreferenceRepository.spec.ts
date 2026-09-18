@@ -46,4 +46,16 @@ describe("NativeBiometricPreferenceRepository", () => {
     await expect(repository.isEnabled("campus-a")).resolves.toBe(false)
     await expect(repository.isEnabled("campus-b")).resolves.toBe(true)
   })
+
+  it("enables biometrics by default until the user explicitly disables them", async () => {
+    const plugin = new MemorySecureStoragePlugin()
+    const repository = new NativeBiometricPreferenceRepository(plugin)
+
+    await expect(repository.isEnabled("campus-a")).resolves.toBe(true)
+
+    await repository.setEnabled("campus-a", false)
+
+    expect(plugin.values.get("campus-a/settings/biometric-unlock")).toBe("0")
+    await expect(repository.isEnabled("campus-a")).resolves.toBe(false)
+  })
 })
