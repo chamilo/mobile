@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue"
 import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
-import { useRouter } from "vue-router"
+import { RouterLink, useRouter } from "vue-router"
 
 import CourseUnavailableState from "@/components/courseHome/CourseUnavailableState.vue"
 import EmptyState from "@/components/states/EmptyState.vue"
@@ -23,20 +23,28 @@ import { formatRelativeTime } from "@/domain/i18n/relativeTime"
 import { useForumsStore } from "@/stores/forums"
 import { useLocaleStore } from "@/stores/locale"
 
-const props = defineProps<{
-  courseId: string
-  forumId: string
-  forumTitle: string | null
-  sessionId: string | null
-  membershipId: string | null
-  sessionCourseId: string | null
-  source: string | null
-  origin: string | null
-  learningPathEntry: string | null
-  learningPathId: string | null
-  learningPathItemId: string | null
-  learningPathTitle: string | null
-  groupId: string | null
+const props = withDefaults(
+  defineProps<{
+    courseId: string
+    forumId: string
+    forumTitle: string | null
+    sessionId: string | null
+    membershipId: string | null
+    sessionCourseId: string | null
+    source: string | null
+    origin: string | null
+    learningPathEntry: string | null
+    learningPathId: string | null
+    learningPathItemId: string | null
+    learningPathTitle: string | null
+    groupId: string | null
+    embedded?: boolean
+  }>(),
+  { embedded: false },
+)
+
+const emit = defineEmits<{
+  openThread: [threadId: number, threadTitle: string]
 }>()
 
 const { t } = useI18n()
@@ -182,7 +190,14 @@ async function submitThread(): Promise<void> {
     learningPathContext.value,
   )
 
+  const createdThreadTitle = title.value.trim()
   resetComposer()
+
+  if (props.embedded) {
+    emit("openThread", result.threadId, createdThreadTitle)
+    return
+  }
+
   await router.push(route)
 }
 
@@ -194,6 +209,7 @@ onMounted(load)
 
   <div v-else-if="context && parsedForumId !== null" class="space-y-5">
     <RouterLink
+      v-if="!embedded"
       :to="backRoute ?? buildForumsRoute(context)"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
@@ -312,20 +328,25 @@ onMounted(load)
 
     <template v-else-if="store.threads.data">
       <div v-if="store.threads.data.items.length" class="space-y-3">
-        <RouterLink
+        <component
+          :is="embedded ? 'button' : RouterLink"
           v-for="thread in store.threads.data.items"
           :key="thread.id"
           :to="
-            buildForumThreadRoute(
-              context,
-              parsedForumId,
-              thread.id,
-              store.threads.data?.forumTitle || props.forumTitle || undefined,
-              thread.title,
-              learningPathContext,
-            )
+            embedded
+              ? undefined
+              : buildForumThreadRoute(
+                  context,
+                  parsedForumId,
+                  thread.id,
+                  store.threads.data?.forumTitle || props.forumTitle || undefined,
+                  thread.title,
+                  learningPathContext,
+                )
           "
-          class="hover:border-chamilo-300 block min-h-touch rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
+          :type="embedded ? 'button' : undefined"
+          class="hover:border-chamilo-300 block min-h-touch w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
+          @click="embedded && emit('openThread', thread.id, thread.title)"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
@@ -347,7 +368,9 @@ onMounted(load)
 
               <p v-if="thread.posterFullName" class="mt-2 text-sm text-slate-600">
                 {{ t("forums.threads.startedBy", { name: thread.posterFullName }) }}
-                <span v-if="thread.posterRoleLabel"> · {{ localizedRoleLabel(thread.posterRoleLabel) }} </span>
+                <span v-if="thread.posterRoleLabel">
+                  · {{ localizedRoleLabel(thread.posterRoleLabel) }}
+                </span>
               </p>
               <p v-if="thread.createdAt || thread.relativeTime" class="mt-1 text-xs text-slate-500">
                 {{ localizedRelativeTime(thread.createdAt, thread.relativeTime) }}
@@ -383,7 +406,7 @@ onMounted(load)
               })
             }}
           </p>
-        </RouterLink>
+        </component>
       </div>
 
       <EmptyState

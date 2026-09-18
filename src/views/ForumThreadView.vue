@@ -21,23 +21,27 @@ import { formatRelativeTime } from "@/domain/i18n/relativeTime"
 import { useForumsStore } from "@/stores/forums"
 import { useLocaleStore } from "@/stores/locale"
 
-const props = defineProps<{
-  courseId: string
-  forumId: string
-  threadId: string
-  forumTitle: string | null
-  threadTitle: string | null
-  sessionId: string | null
-  membershipId: string | null
-  sessionCourseId: string | null
-  source: string | null
-  origin: string | null
-  learningPathEntry: string | null
-  learningPathId: string | null
-  learningPathItemId: string | null
-  learningPathTitle: string | null
-  groupId: string | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    courseId: string
+    forumId: string
+    threadId: string
+    forumTitle: string | null
+    threadTitle: string | null
+    sessionId: string | null
+    membershipId: string | null
+    sessionCourseId: string | null
+    source: string | null
+    origin: string | null
+    learningPathEntry: string | null
+    learningPathId: string | null
+    learningPathItemId: string | null
+    learningPathTitle: string | null
+    groupId: string | null
+    embedded?: boolean
+  }>(),
+  { embedded: false },
+)
 
 const { t } = useI18n()
 const store = useForumsStore()
@@ -221,6 +225,7 @@ onMounted(load)
 
   <div v-else-if="context && parsedForumId !== null && parsedThreadId !== null" class="space-y-5">
     <RouterLink
+      v-if="!embedded"
       :to="
         backRoute ??
         buildForumThreadsRoute(
@@ -233,7 +238,11 @@ onMounted(load)
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ learningPathContext?.entry === "thread" ? t("learningPaths.backToList") : t("forums.backToThreads") }}
+      {{
+        learningPathContext?.entry === "thread"
+          ? t("learningPaths.backToList")
+          : t("forums.backToThreads")
+      }}
     </RouterLink>
 
     <section class="rounded-2xl bg-white p-4 shadow-sm">
@@ -249,7 +258,10 @@ onMounted(load)
           · {{ localizedRoleLabel(store.thread.data.posterRoleLabel) }}
         </span>
       </p>
-      <p v-if="store.thread.data?.createdAt || store.thread.data?.relativeTime" class="mt-1 text-xs text-slate-500">
+      <p
+        v-if="store.thread.data?.createdAt || store.thread.data?.relativeTime"
+        class="mt-1 text-xs text-slate-500"
+      >
         {{ localizedRelativeTime(store.thread.data.createdAt, store.thread.data.relativeTime) }}
       </p>
 
@@ -381,9 +393,15 @@ onMounted(load)
                 {{ post.posterFullName || t("forums.unknownAuthor") }}
               </p>
               <p class="mt-0.5 text-xs text-slate-500">
-                <span v-if="post.posterRoleLabel">{{ localizedRoleLabel(post.posterRoleLabel) }}</span>
-                <span v-if="post.posterRoleLabel && (post.createdAt || post.relativeTime)"> · </span>
-                <span v-if="post.createdAt || post.relativeTime">{{ localizedRelativeTime(post.createdAt, post.relativeTime) }}</span>
+                <span v-if="post.posterRoleLabel">{{
+                  localizedRoleLabel(post.posterRoleLabel)
+                }}</span>
+                <span v-if="post.posterRoleLabel && (post.createdAt || post.relativeTime)">
+                  ·
+                </span>
+                <span v-if="post.createdAt || post.relativeTime">{{
+                  localizedRelativeTime(post.createdAt, post.relativeTime)
+                }}</span>
               </p>
             </div>
 

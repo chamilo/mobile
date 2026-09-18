@@ -330,7 +330,8 @@ export default {
     emptyTitle: "Aucun parcours",
     emptyDescription: "Aucun parcours visible n'est disponible dans ce contexte de cours.",
     progress: "Progression du parcours",
-    completedItems: "{completed} élément sur {total} terminé | {completed} éléments sur {total} terminés",
+    completedItems:
+      "{completed} élément sur {total} terminé | {completed} éléments sur {total} terminés",
     timeSpent: "Temps : {time}",
     attempt: "Tentative {attempt}",
     currentItem: "Élément actuel",
@@ -342,17 +343,27 @@ export default {
     restartConfirm: "Commencer une nouvelle tentative du parcours ?",
     syncing: "Enregistrement de la progression...",
     progressSaved: "La progression est enregistrée automatiquement.",
-    progressQueuedOffline: "La progression a été enregistrée sur cet appareil et sera synchronisée lorsque le campus sera accessible.",
+    progressQueuedOffline:
+      "La progression a été enregistrée sur cet appareil et sera synchronisée lorsque le campus sera accessible.",
     openingItem: "Ouverture de l'élément et mise à jour de la progression...",
+    openingNamedItem: "Ouverture de {title}...",
+    itemPosition: "Élément {current} sur {total}",
+    savedShort: "Enregistré",
+    savingShort: "Enregistrement...",
+    savedOfflineShort: "Enregistré hors ligne",
     contentLoading: "Chargement du contenu du parcours...",
     scormStarting: "Démarrage du contenu SCORM...",
-    scormLocalFixture: "Le mode de test SCORM local est actif. Les données d'exécution sont envoyées au campus sélectionné.",
+    scormLocalFixture:
+      "Le mode de test SCORM local est actif. Les données d'exécution sont envoyées au campus sélectionné.",
     scormSaving: "Enregistrement de la progression SCORM...",
     cstudioOpenInMobile: "Ouvrir dans Chamilo Mobile",
-    cstudioResourceUnavailable: "Cette ressource Chamilo intégrée ne peut pas être ouverte de manière sûre dans Mobile.",
+    cstudioResourceUnavailable:
+      "Cette ressource Chamilo intégrée ne peut pas être ouverte de manière sûre dans Mobile.",
     preparing: "Préparation du contenu...",
-    unsupportedItem: "Cet élément nécessite un lecteur qui n'est pas encore activé. Il n'a pas été marqué comme terminé.",
-    viewerUnsupported: "Ce type de fichier ne peut pas être affiché dans le lecteur. Vous pouvez l'ouvrir avec une autre application ou le télécharger.",
+    unsupportedItem:
+      "Cet élément nécessite un lecteur qui n'est pas encore activé. Il n'a pas été marqué comme terminé.",
+    viewerUnsupported:
+      "Ce type de fichier ne peut pas encore être affiché de façon sûre dans le parcours. Vous pouvez télécharger le fichier original.",
     openExternal: "Ouvrir avec une autre application",
     downloadContent: "Télécharger",
     tocHidden: "La configuration du parcours masque sa table des matières.",
@@ -372,20 +383,29 @@ export default {
       campus_required: "Sélectionnez un campus avant d'ouvrir ce parcours.",
       session_required: "Reconnectez-vous avant d'ouvrir ce parcours.",
       session_expired: "Votre session a expiré. Reconnectez-vous.",
-      access_denied: "Vous n'êtes pas autorisé à mettre à jour ce parcours dans le contexte actuel.",
+      access_denied:
+        "Vous n'êtes pas autorisé à mettre à jour ce parcours dans le contexte actuel.",
       not_found: "Le parcours ou le contenu demandé n'existe plus.",
       network: "Le campus est inaccessible. Vérifiez votre connexion et réessayez.",
       timeout: "Le campus a mis trop de temps à renvoyer le parcours.",
       invalid_response: "Le campus a renvoyé une réponse de parcours invalide.",
       unsupported: "Cet élément du parcours n'est pas pris en charge par le lecteur actuel.",
-      scorm_platform_unsupported: "La lecture SCORM est disponible dans l'application Android et en développement web local.",
-      scorm_plugin_unavailable: "Cette APK ne contient pas le moteur SCORM Android. Installez la dernière APK de test SCORM.",
-      scorm_metadata_missing: "Le campus n'a pas renvoyé les métadonnées du paquet SCORM requises par le lecteur mobile.",
-      scorm_runtime_disabled: "Chamilo n'a pas pu créer une tentative SCORM active pour cet élément du parcours.",
-      scorm_fixture_mismatch: "Le paquet SCORM téléchargé ne correspond pas aux fixtures de test SCORM 1.2 ou 2004 locales.",
-      scorm_web_package_unsupported: "Ce paquet SCORM réel ne peut pas être lu par le navigateur de développement local. Testez-le dans l'application Android.",
-      scorm_install_failed: "Le paquet SCORM n'a pas pu être préparé ou son fichier de lancement est introuvable.",
-      package_too_large: "Ce paquet SCORM dépasse la limite de taille de l’environnement de lecture actuel.",
+      scorm_platform_unsupported:
+        "La lecture SCORM est disponible dans l'application Android et en développement web local.",
+      scorm_plugin_unavailable:
+        "Cette APK ne contient pas le moteur SCORM Android. Installez la dernière APK de test SCORM.",
+      scorm_metadata_missing:
+        "Le campus n'a pas renvoyé les métadonnées du paquet SCORM requises par le lecteur mobile.",
+      scorm_runtime_disabled:
+        "Chamilo n'a pas pu créer une tentative SCORM active pour cet élément du parcours.",
+      scorm_fixture_mismatch:
+        "Le paquet SCORM téléchargé ne correspond pas aux fixtures de test SCORM 1.2 ou 2004 locales.",
+      scorm_web_package_unsupported:
+        "Ce paquet SCORM réel ne peut pas être lu par le navigateur de développement local. Testez-le dans l'application Android.",
+      scorm_install_failed:
+        "Le paquet SCORM n'a pas pu être préparé ou son fichier de lancement est introuvable.",
+      package_too_large:
+        "Ce paquet SCORM dépasse la limite de taille de l’environnement de lecture actuel.",
       conflict: "Cette action du parcours n'est plus disponible pour la tentative actuelle.",
       server: "Le campus a renvoyé une erreur de parcours inattendue.",
     },

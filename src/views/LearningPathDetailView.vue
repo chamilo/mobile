@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -7,6 +7,12 @@ import CourseUnavailableState from "@/components/courseHome/CourseUnavailableSta
 import LearningPathContentViewer from "@/components/learningPaths/LearningPathContentViewer.vue"
 import LearningPathScormPlayer from "@/components/learningPaths/LearningPathScormPlayer.vue"
 import LearningPathToc from "@/components/learningPaths/LearningPathToc.vue"
+import AssignmentDetailView from "@/views/AssignmentDetailView.vue"
+import ExercisePlayerView from "@/views/ExercisePlayerView.vue"
+import ExerciseResultView from "@/views/ExerciseResultView.vue"
+import ForumThreadView from "@/views/ForumThreadView.vue"
+import ForumThreadsView from "@/views/ForumThreadsView.vue"
+import SurveyDetailView from "@/views/SurveyDetailView.vue"
 import ErrorState from "@/components/states/ErrorState.vue"
 import LoadingState from "@/components/states/LoadingState.vue"
 import {
@@ -63,6 +69,10 @@ const { t } = useI18n()
 const router = useRouter()
 const store = useLearningPathRuntimeStore()
 const scormPlayer = ref<InstanceType<typeof LearningPathScormPlayer> | null>(null)
+const playerSection = ref<HTMLElement | null>(null)
+const pendingItemId = ref<number | null>(null)
+const embeddedExerciseAttemptId = ref<number | null>(null)
+const embeddedForumThread = ref<{ id: number; title: string } | null>(null)
 let syncTimer: ReturnType<typeof setInterval> | null = null
 let scormProgressRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -109,6 +119,22 @@ const previousItem = computed(() =>
 const nextItem = computed(() =>
   store.runtime?.items.find(({ id }) => id === store.runtime?.nextItemId),
 )
+const currentItemPosition = computed(() => {
+  const runtime = store.runtime
+  if (!runtime) return null
+
+  const contentItems = runtime.items.filter((item) => !item.isSection)
+  const index = contentItems.findIndex((item) => item.id === runtime.currentItemId)
+
+  return index >= 0 ? { current: index + 1, total: contentItems.length } : null
+})
+const pendingItem = computed(() =>
+  pendingItemId.value
+    ? (store.runtime?.items.find((item) => item.id === pendingItemId.value) ?? null)
+    : null,
+)
+const displayedItem = computed(() => pendingItem.value ?? store.currentItem)
+const currentItem = computed(() => store.currentItem)
 const quizLaunch = computed(() => {
   const runtime = store.runtime
   const item = store.currentItem
@@ -188,12 +214,37 @@ const threadLaunch = computed(() => {
   )
 })
 
+const embeddedLearningPathTitle = computed(
+  () => store.runtime?.title || props.learningPathTitle || "",
+)
+
+function clearEmbeddedToolState(): void {
+  embeddedExerciseAttemptId.value = null
+  embeddedForumThread.value = null
+}
+
+async function handleEmbeddedExerciseFinished(attemptId: number): Promise<void> {
+  embeddedExerciseAttemptId.value = attemptId
+  await sync(true)
+}
+
+function openEmbeddedForumThread(threadId: number, threadTitle: string): void {
+  embeddedForumThread.value = { id: threadId, title: threadTitle }
+}
+
+function closeEmbeddedForumThread(): void {
+  embeddedForumThread.value = null
+}
+
 function itemTypeLabel(itemType: string): string {
   return itemType.replace(/_/g, " ") || t("learningPaths.item")
 }
 
 function statusLabel(status: string): string {
-  const normalizedStatus = status.trim().toLowerCase().replace(/[\s-]+/g, "_")
+  const normalizedStatus = status
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
   const supportedStatuses = new Set([
     "locked",
     "not_attempted",
@@ -222,15 +273,27 @@ function formatDuration(totalSeconds: number): string {
 
 async function start(): Promise<void> {
   if (context.value && parsedLearningPathId.value) {
+    pendingItemId.value = null
+    clearEmbeddedToolState()
     store.reset()
     await store.start(context.value, parsedLearningPathId.value)
   }
 }
 
 async function selectItem(itemId: number): Promise<void> {
-  if (context.value && parsedLearningPathId.value) {
+  if (!context.value || !parsedLearningPathId.value || store.isBusy || pendingItemId.value) return
+
+  pendingItemId.value = itemId
+  clearEmbeddedToolState()
+
+  await nextTick()
+  playerSection.value?.scrollIntoView({ behavior: "smooth", block: "start" })
+
+  try {
     await scormPlayer.value?.flush("navigation")
     await store.activateItem(context.value, parsedLearningPathId.value, itemId)
+  } finally {
+    pendingItemId.value = null
   }
 }
 
@@ -248,7 +311,6 @@ async function commitScorm(payload: LearningPathScormCommitPayload): Promise<voi
     payload,
   )
 }
-
 
 function scheduleScormProgressRefresh(payload: LearningPathScormCommitPayload): void {
   if (!shouldRefreshScormProgress(payload)) return
@@ -351,12 +413,13 @@ async function restart(): Promise<void> {
     window.confirm(t("learningPaths.restartConfirm"))
   ) {
     await scormPlayer.value?.flush("restart")
+    clearEmbeddedToolState()
     await store.restart(context.value, parsedLearningPathId.value)
   }
 }
 
 function canNavigateTo(item: LearningPathRuntimeItem | undefined): item is LearningPathRuntimeItem {
-  return Boolean(item && isSupportedLearningPathItem(item) && !store.isBusy)
+  return Boolean(item && isSupportedLearningPathItem(item) && !store.isBusy && !pendingItemId.value)
 }
 
 function handleVisibilityChange(): void {
@@ -374,6 +437,11 @@ function handlePageHide(): void {
 watch(routeKey, () => {
   void start()
 })
+
+watch(
+  () => store.currentItem?.id ?? 0,
+  () => clearEmbeddedToolState(),
+)
 
 onMounted(() => {
   void start()
@@ -402,15 +470,7 @@ onBeforeUnmount(() => {
 <template>
   <CourseUnavailableState v-if="!context || !parsedLearningPathId" kind="missing" />
 
-  <div v-else class="space-y-4">
-    <RouterLink
-      :to="buildLearningPathsRoute(context)"
-      class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
-    >
-      <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{ t("learningPaths.backToList") }}
-    </RouterLink>
-
+  <div v-else class="space-y-3">
     <LoadingState
       v-if="store.status === 'loading' || store.status === 'idle'"
       :label="t('learningPaths.detailLoading')"
@@ -425,47 +485,57 @@ onBeforeUnmount(() => {
     />
 
     <template v-else-if="store.runtime">
-      <section class="rounded-2xl bg-white p-4 shadow-sm">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <p class="text-xs font-semibold uppercase tracking-wide text-chamilo-700">
-              {{ t("learningPaths.detailEyebrow") }}
-            </p>
-            <h1 class="mt-1 break-words text-xl font-semibold text-slate-900">
-              {{ store.runtime.title || learningPathTitle }}
-            </h1>
+      <section class="rounded-xl bg-white p-3 shadow-sm">
+        <div class="flex items-center gap-2">
+          <RouterLink
+            :to="buildLearningPathsRoute(context)"
+            class="inline-flex min-h-touch min-w-touch shrink-0 items-center justify-center rounded-xl text-chamilo-700 hover:bg-slate-50"
+            :aria-label="t('learningPaths.backToList')"
+            :title="t('learningPaths.backToList')"
+          >
+            <i class="pi pi-arrow-left" aria-hidden="true" />
+          </RouterLink>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <h1 class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
+                {{ store.runtime.title || learningPathTitle }}
+              </h1>
+              <span class="shrink-0 text-xs font-semibold text-slate-700">
+                {{ store.runtime.progress }}%
+              </span>
+            </div>
+            <div
+              class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100"
+              role="progressbar"
+              :aria-label="t('learningPaths.progress')"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              :aria-valuenow="store.runtime.progress"
+            >
+              <div
+                class="h-full rounded-full bg-chamilo-600 transition-[width]"
+                :style="{ width: `${store.runtime.progress}%` }"
+              />
+            </div>
           </div>
 
           <button
             v-if="store.runtime.canRestart"
             type="button"
-            class="inline-flex min-h-touch shrink-0 items-center gap-2 rounded-xl border border-slate-300 px-3 text-sm font-semibold text-slate-700 disabled:opacity-50"
+            class="inline-flex min-h-touch min-w-touch shrink-0 items-center justify-center rounded-xl border border-slate-300 text-slate-700 disabled:opacity-50"
             :disabled="store.isBusy"
+            :aria-label="t('learningPaths.restart')"
+            :title="t('learningPaths.restart')"
             @click="restart"
           >
             <i class="pi pi-refresh" aria-hidden="true" />
-            {{ t("learningPaths.restart") }}
           </button>
         </div>
 
-        <div class="mt-3 flex items-center gap-3">
-          <div
-            class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100"
-            role="progressbar"
-            :aria-label="t('learningPaths.progress')"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            :aria-valuenow="store.runtime.progress"
-          >
-            <div
-              class="h-full rounded-full bg-chamilo-600 transition-[width]"
-              :style="{ width: `${store.runtime.progress}%` }"
-            />
-          </div>
-          <span class="text-sm font-semibold text-slate-700"> {{ store.runtime.progress }}% </span>
-        </div>
-
-        <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+        <div
+          class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] leading-4 text-slate-500"
+        >
           <span>
             {{
               t("learningPaths.completedItems", {
@@ -480,27 +550,32 @@ onBeforeUnmount(() => {
           <span v-if="store.runtime.currentAttempt > 0">
             {{ t("learningPaths.attempt", { attempt: store.runtime.currentAttempt }) }}
           </span>
+          <span
+            class="inline-flex items-center gap-1 font-medium"
+            :class="store.offlineQueued ? 'text-amber-700' : 'text-emerald-700'"
+            role="status"
+            aria-live="polite"
+          >
+            <i
+              :class="
+                store.actionStatus === 'syncing'
+                  ? 'pi pi-spinner pi-spin'
+                  : store.offlineQueued
+                    ? 'pi pi-cloud-upload'
+                    : 'pi pi-check'
+              "
+              aria-hidden="true"
+            />
+            {{
+              store.offlineQueued
+                ? t("learningPaths.savedOfflineShort")
+                : store.actionStatus === "syncing"
+                  ? t("learningPaths.savingShort")
+                  : t("learningPaths.savedShort")
+            }}
+          </span>
         </div>
       </section>
-
-      <div
-        class="rounded-xl border p-3 text-sm"
-        :class="
-          store.offlineQueued
-            ? 'border-amber-200 bg-amber-50 text-amber-900'
-            : 'border-emerald-200 bg-emerald-50 text-emerald-900'
-        "
-        role="status"
-        aria-live="polite"
-      >
-        {{
-          store.offlineQueued
-            ? t("learningPaths.progressQueuedOffline")
-            : store.actionStatus === "syncing"
-              ? t("learningPaths.syncing")
-              : t("learningPaths.progressSaved")
-        }}
-      </div>
 
       <p
         v-if="store.actionErrorCode"
@@ -511,41 +586,63 @@ onBeforeUnmount(() => {
       </p>
 
       <section
-        v-if="store.currentItem"
-        class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        v-if="displayedItem"
+        ref="playerSection"
+        class="scroll-mt-20 rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
       >
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          {{ t("learningPaths.currentItem") }}
-        </p>
-        <h2 class="mt-1 break-words font-semibold text-slate-900">
-          {{ store.currentItem.title }}
-        </h2>
-        <p class="mt-1 text-xs capitalize text-slate-500">
-          {{ itemTypeLabel(store.currentItem.itemType) }}
-          ·
-          {{ statusLabel(store.currentItem.status) }}
-        </p>
+        <div class="flex items-start gap-2">
+          <div class="min-w-0 flex-1">
+            <p class="text-[0.7rem] font-semibold uppercase tracking-wide text-slate-500">
+              {{ t("learningPaths.currentItem") }}
+            </p>
+            <h2 class="mt-0.5 break-words text-base font-semibold leading-6 text-slate-900">
+              {{ displayedItem.title }}
+            </h2>
+            <p v-if="!pendingItemId" class="mt-0.5 text-xs capitalize text-slate-500">
+              {{ itemTypeLabel(displayedItem.itemType) }}
+              ·
+              {{ statusLabel(displayedItem.status) }}
+            </p>
+          </div>
+          <span
+            v-if="currentItemPosition && !pendingItemId"
+            class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[0.7rem] font-medium text-slate-600"
+          >
+            {{
+              t("learningPaths.itemPosition", {
+                current: currentItemPosition.current,
+                total: currentItemPosition.total,
+              })
+            }}
+          </span>
+        </div>
 
         <div
-          v-if="store.actionStatus === 'opening'"
-          class="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"
+          v-if="pendingItemId || store.actionStatus === 'opening'"
+          class="mt-3 flex min-h-28 items-center justify-center gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-700"
           role="status"
+          aria-live="polite"
         >
-          {{ t("learningPaths.openingItem") }}
+          <i class="pi pi-spinner pi-spin text-lg text-chamilo-700" aria-hidden="true" />
+          <span class="min-w-0 break-words">
+            {{ t("learningPaths.openingNamedItem", { title: displayedItem.title }) }}
+          </span>
         </div>
 
         <LoadingState
           v-else-if="store.contentStatus === 'loading'"
-          class="mt-4"
+          class="mt-3"
           :label="t('learningPaths.contentLoading')"
         />
 
         <LearningPathScormPlayer
-          v-else-if="store.scormEntryUrl && store.contentStatus === 'ready' && store.runtime"
+          v-else-if="
+            currentItem && store.scormEntryUrl && store.contentStatus === 'ready' && store.runtime
+          "
           ref="scormPlayer"
           :entry-url="store.scormEntryUrl"
           :runtime="store.runtime"
-          :item="store.currentItem"
+          :item="currentItem"
           :commit="commitScorm"
           @committed="scheduleScormProgressRefresh"
           @navigate="handleScormNavigation"
@@ -553,123 +650,217 @@ onBeforeUnmount(() => {
         />
 
         <LearningPathContentViewer
-          v-else-if="store.contentBlob && store.contentStatus === 'ready'"
-          class="mt-4"
+          v-else-if="currentItem && store.contentBlob && store.contentStatus === 'ready'"
+          class="mt-3"
           :blob="store.contentBlob"
-          :item="store.currentItem"
-          @open-external="store.openCurrentContent"
+          :item="currentItem"
+          :content-url="store.runtime.contentUrl ?? ''"
           @download="store.downloadCurrentContent"
         />
 
-        <RouterLink
+        <ExerciseResultView
           v-else-if="
+            currentItem &&
+            quizLaunch &&
+            embeddedExerciseAttemptId &&
+            context &&
+            isQuizLearningPathItem(currentItem) &&
+            store.contentStatus === 'ready'
+          "
+          :key="`exercise-result-${currentItem.id}-${embeddedExerciseAttemptId ?? 0}`"
+          class="mt-4"
+          :course-id="courseId"
+          :exercise-id="String(quizLaunch.exerciseId)"
+          :attempt-id="String(embeddedExerciseAttemptId)"
+          :session-id="sessionId"
+          :membership-id="membershipId"
+          :session-course-id="sessionCourseId"
+          :source="source"
+          origin="learnpath"
+          :learning-path-id="String(quizLaunch.context.learningPathId)"
+          :learning-path-item-id="String(quizLaunch.context.learningPathItemId)"
+          :learning-path-item-view-id="
+            quizLaunch.context.learningPathItemViewId > 0
+              ? String(quizLaunch.context.learningPathItemViewId)
+              : null
+          "
+          :learning-path-title="embeddedLearningPathTitle"
+          embedded
+        />
+
+        <ExercisePlayerView
+          v-else-if="
+            currentItem &&
             quizLaunch &&
             context &&
-            isQuizLearningPathItem(store.currentItem) &&
+            isQuizLearningPathItem(currentItem) &&
             store.contentStatus === 'ready'
           "
-          :to="buildExercisePlayerRoute(context, quizLaunch.exerciseId, quizLaunch.context)"
-          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
-        >
-          <i class="pi pi-play" aria-hidden="true" />
-          {{ t("exercises.open") }}
-        </RouterLink>
+          :key="`exercise-${currentItem.id}`"
+          class="mt-4"
+          :course-id="courseId"
+          :exercise-id="String(quizLaunch.exerciseId)"
+          :session-id="sessionId"
+          :membership-id="membershipId"
+          :session-course-id="sessionCourseId"
+          :source="source"
+          origin="learnpath"
+          :learning-path-id="String(quizLaunch.context.learningPathId)"
+          :learning-path-item-id="String(quizLaunch.context.learningPathItemId)"
+          :learning-path-item-view-id="
+            quizLaunch.context.learningPathItemViewId > 0
+              ? String(quizLaunch.context.learningPathItemViewId)
+              : null
+          "
+          :learning-path-title="embeddedLearningPathTitle"
+          embedded
+          @finished="handleEmbeddedExerciseFinished"
+        />
 
-        <RouterLink
+        <SurveyDetailView
           v-else-if="
+            currentItem &&
             surveyLaunch &&
             context &&
-            isSurveyLearningPathItem(store.currentItem) &&
+            isSurveyLearningPathItem(currentItem) &&
             store.contentStatus === 'ready'
           "
-          :to="
-            buildSurveyDetailRoute(
-              context,
-              surveyLaunch.surveyId,
-              'answer',
-              store.currentItem.title,
-              surveyLaunch.learningPathItemId,
-              surveyLaunch.invitationCode,
-              surveyLaunch.learningPathId,
-              surveyLaunch.learningPathTitle,
-            )
-          "
-          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
-        >
-          <i class="pi pi-arrow-right" aria-hidden="true" />
-          {{ t("surveys.open") }}
-        </RouterLink>
+          :key="`survey-${currentItem.id}`"
+          class="mt-4"
+          :course-id="courseId"
+          :survey-id="String(surveyLaunch.surveyId)"
+          :survey-title="currentItem.title"
+          mode="answer"
+          :invitation-lp-item-id="String(surveyLaunch.learningPathItemId)"
+          :invitation-code="surveyLaunch.invitationCode"
+          :learning-path-id="String(surveyLaunch.learningPathId)"
+          :learning-path-title="embeddedLearningPathTitle"
+          :session-id="sessionId"
+          :membership-id="membershipId"
+          :session-course-id="sessionCourseId"
+          :source="source"
+          embedded
+          @completed="sync(true)"
+        />
 
-        <RouterLink
+        <AssignmentDetailView
           v-else-if="
+            currentItem &&
             assignmentLaunch &&
             context &&
-            isAssignmentLearningPathItem(store.currentItem) &&
+            isAssignmentLearningPathItem(currentItem) &&
             store.contentStatus === 'ready'
           "
-          :to="
-            buildAssignmentDetailRoute(
-              context,
-              assignmentLaunch.assignmentId,
-              store.currentItem.title,
-              assignmentLaunch.learningPathId,
-              assignmentLaunch.learningPathTitle,
-            )
-          "
-          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
-        >
-          <i class="pi pi-arrow-right" aria-hidden="true" />
-          {{ t("assignments.open") }}
-        </RouterLink>
+          :key="`assignment-${currentItem.id}`"
+          class="mt-4"
+          :course-id="courseId"
+          :assignment-id="String(assignmentLaunch.assignmentId)"
+          :assignment-title="currentItem.title"
+          :learning-path-id="String(assignmentLaunch.learningPathId)"
+          :learning-path-title="embeddedLearningPathTitle"
+          :session-id="sessionId"
+          :membership-id="membershipId"
+          :session-course-id="sessionCourseId"
+          :source="source"
+          embedded
+          @submitted="sync(true)"
+        />
 
-        <RouterLink
+        <template
           v-else-if="
+            currentItem &&
             forumLaunch &&
             context &&
-            isForumLearningPathItem(store.currentItem) &&
+            isForumLearningPathItem(currentItem) &&
             store.contentStatus === 'ready'
           "
-          :to="
-            buildForumThreadsRoute(
-              context,
-              forumLaunch.forumId,
-              store.currentItem.title,
-              forumLaunch.context,
-            )
-          "
-          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
         >
-          <i class="pi pi-comments" aria-hidden="true" />
-          {{ t("forums.threads.title") }}
-        </RouterLink>
+          <div v-if="embeddedForumThread" class="mt-4">
+            <button
+              type="button"
+              class="mb-3 inline-flex min-h-touch items-center gap-2 rounded-lg px-2 text-sm font-semibold text-chamilo-700"
+              @click="closeEmbeddedForumThread"
+            >
+              <i class="pi pi-arrow-left" aria-hidden="true" />
+              {{ t("forums.backToThreads") }}
+            </button>
+            <ForumThreadView
+              :key="`forum-thread-${embeddedForumThread.id}`"
+              :course-id="courseId"
+              :forum-id="String(forumLaunch.forumId)"
+              :thread-id="String(embeddedForumThread.id)"
+              :forum-title="currentItem.title"
+              :thread-title="embeddedForumThread.title"
+              :session-id="sessionId"
+              :membership-id="membershipId"
+              :session-course-id="sessionCourseId"
+              :source="source"
+              origin="learnpath"
+              learning-path-entry="forum"
+              :learning-path-id="String(forumLaunch.context.learningPathId)"
+              :learning-path-item-id="String(forumLaunch.context.learningPathItemId)"
+              :learning-path-title="embeddedLearningPathTitle"
+              :group-id="
+                forumLaunch.context.groupId > 0 ? String(forumLaunch.context.groupId) : null
+              "
+              embedded
+            />
+          </div>
+          <ForumThreadsView
+            v-else
+            :key="`forum-${currentItem.id}`"
+            class="mt-4"
+            :course-id="courseId"
+            :forum-id="String(forumLaunch.forumId)"
+            :forum-title="currentItem.title"
+            :session-id="sessionId"
+            :membership-id="membershipId"
+            :session-course-id="sessionCourseId"
+            :source="source"
+            origin="learnpath"
+            learning-path-entry="forum"
+            :learning-path-id="String(forumLaunch.context.learningPathId)"
+            :learning-path-item-id="String(forumLaunch.context.learningPathItemId)"
+            :learning-path-title="embeddedLearningPathTitle"
+            :group-id="forumLaunch.context.groupId > 0 ? String(forumLaunch.context.groupId) : null"
+            embedded
+            @open-thread="openEmbeddedForumThread"
+          />
+        </template>
 
-        <RouterLink
+        <ForumThreadView
           v-else-if="
+            currentItem &&
             threadLaunch &&
             context &&
-            isThreadLearningPathItem(store.currentItem) &&
+            isThreadLearningPathItem(currentItem) &&
             store.contentStatus === 'ready'
           "
-          :to="
-            buildForumThreadRoute(
-              context,
-              threadLaunch.forumId,
-              threadLaunch.threadId,
-              undefined,
-              store.currentItem.title,
-              threadLaunch.context,
-            )
-          "
-          class="mt-4 inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-3 font-semibold text-white"
-        >
-          <i class="pi pi-comment" aria-hidden="true" />
-          {{ t("forums.thread.title") }}
-        </RouterLink>
+          :key="`thread-${currentItem.id}`"
+          class="mt-4"
+          :course-id="courseId"
+          :forum-id="String(threadLaunch.forumId)"
+          :thread-id="String(threadLaunch.threadId)"
+          :forum-title="null"
+          :thread-title="currentItem.title"
+          :session-id="sessionId"
+          :membership-id="membershipId"
+          :session-course-id="sessionCourseId"
+          :source="source"
+          origin="learnpath"
+          learning-path-entry="thread"
+          :learning-path-id="String(threadLaunch.context.learningPathId)"
+          :learning-path-item-id="String(threadLaunch.context.learningPathItemId)"
+          :learning-path-title="embeddedLearningPathTitle"
+          :group-id="threadLaunch.context.groupId > 0 ? String(threadLaunch.context.groupId) : null"
+          embedded
+        />
 
         <p
           v-else-if="
+            currentItem &&
             store.contentStatus === 'ready' &&
-            (isForumLearningPathItem(store.currentItem) || isThreadLearningPathItem(store.currentItem))
+            (isForumLearningPathItem(currentItem) || isThreadLearningPathItem(currentItem))
           "
           class="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"
         >
@@ -677,7 +868,7 @@ onBeforeUnmount(() => {
         </p>
 
         <p
-          v-else-if="!isSupportedLearningPathItem(store.currentItem)"
+          v-else-if="currentItem && !isSupportedLearningPathItem(currentItem)"
           class="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"
         >
           {{ t("learningPaths.unsupportedItem") }}
@@ -699,39 +890,56 @@ onBeforeUnmount(() => {
           {{ contentErrorDescription }}
         </p>
 
-        <div v-if="!store.runtime.hideArrowNavigation" class="mt-4 grid grid-cols-2 gap-2">
+        <div
+          v-if="!store.runtime.hideArrowNavigation"
+          class="mt-3 grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-2"
+        >
           <button
             type="button"
-            class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 font-semibold text-slate-800 disabled:opacity-40"
+            class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-slate-300 text-slate-800 disabled:opacity-40"
             :disabled="!canNavigateTo(previousItem)"
+            :aria-label="t('learningPaths.previous')"
+            :title="t('learningPaths.previous')"
             @click="previousItem && selectItem(previousItem.id)"
           >
             <i class="pi pi-arrow-left" aria-hidden="true" />
-            {{ t("learningPaths.previous") }}
           </button>
+
+          <p class="truncate text-center text-xs font-medium text-slate-500" aria-live="polite">
+            <template v-if="currentItemPosition">
+              {{
+                t("learningPaths.itemPosition", {
+                  current: currentItemPosition.current,
+                  total: currentItemPosition.total,
+                })
+              }}
+            </template>
+          </p>
 
           <button
             type="button"
-            class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-3 font-semibold text-white disabled:opacity-40"
+            class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-xl bg-chamilo-700 text-white disabled:opacity-40"
             :disabled="!canNavigateTo(nextItem)"
+            :aria-label="t('learningPaths.next')"
+            :title="t('learningPaths.next')"
             @click="nextItem && selectItem(nextItem.id)"
           >
-            {{ t("learningPaths.next") }}
             <i class="pi pi-arrow-right" aria-hidden="true" />
           </button>
         </div>
       </section>
 
       <section v-if="!store.runtime.hideToc">
-        <h2 class="mb-2 text-lg font-semibold text-slate-900">
+        <h2 class="mb-2 text-base font-semibold text-slate-900">
           {{ t("learningPaths.contents") }}
         </h2>
 
         <LearningPathToc
           :items="store.runtime.items"
           :current-item-id="store.runtime.currentItemId"
-          :busy="store.isBusy"
+          :busy="store.isBusy || Boolean(pendingItemId)"
           :accordion="store.runtime.accordionToc"
+          :pending-item-id="pendingItemId"
           @select="selectItem"
         />
       </section>

@@ -19,20 +19,24 @@ import {
 import { useExercisesStore } from "@/stores/exercises"
 import { useLocaleStore } from "@/stores/locale"
 
-const props = defineProps<{
-  courseId: string
-  exerciseId: string
-  attemptId: string
-  sessionId: string | null
-  membershipId: string | null
-  sessionCourseId: string | null
-  source: string | null
-  origin: string | null
-  learningPathId: string | null
-  learningPathItemId: string | null
-  learningPathItemViewId: string | null
-  learningPathTitle: string | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    courseId: string
+    exerciseId: string
+    attemptId: string
+    sessionId: string | null
+    membershipId: string | null
+    sessionCourseId: string | null
+    source: string | null
+    origin: string | null
+    learningPathId: string | null
+    learningPathItemId: string | null
+    learningPathItemViewId: string | null
+    learningPathTitle: string | null
+    embedded?: boolean
+  }>(),
+  { embedded: false },
+)
 
 const { t } = useI18n()
 const store = useExercisesStore()
@@ -98,10 +102,14 @@ onMounted(load)
 </script>
 
 <template>
-  <CourseUnavailableState v-if="!context || !validIds || invalidLearningPathContext" kind="missing" />
+  <CourseUnavailableState
+    v-if="!context || !validIds || invalidLearningPathContext"
+    kind="missing"
+  />
 
   <div v-else class="space-y-5">
     <RouterLink
+      v-if="!embedded"
       :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >

@@ -19,19 +19,27 @@ import { formatRecordedAnswers } from "@/domain/surveys/contracts"
 import type { SurveyOpenMode, SurveyQuestion } from "@/domain/surveys/types"
 import { useSurveysStore } from "@/stores/surveys"
 
-const props = defineProps<{
-  courseId: string
-  surveyId: string
-  surveyTitle: string | null
-  mode: string | null
-  invitationLpItemId: string | null
-  invitationCode: string | null
-  learningPathId: string | null
-  learningPathTitle: string | null
-  sessionId: string | null
-  membershipId: string | null
-  sessionCourseId: string | null
-  source: string | null
+const props = withDefaults(
+  defineProps<{
+    courseId: string
+    surveyId: string
+    surveyTitle: string | null
+    mode: string | null
+    invitationLpItemId: string | null
+    invitationCode: string | null
+    learningPathId: string | null
+    learningPathTitle: string | null
+    sessionId: string | null
+    membershipId: string | null
+    sessionCourseId: string | null
+    source: string | null
+    embedded?: boolean
+  }>(),
+  { embedded: false },
+)
+
+const emit = defineEmits<{
+  completed: []
 }>()
 
 const { t } = useI18n()
@@ -166,11 +174,15 @@ async function updateProfileValue(key: string, value: string | string[]): Promis
 
 async function submit(): Promise<void> {
   if (!context.value) return
-  await store.submitSurvey(
+  const submitted = await store.submitSurvey(
     context.value,
     parsedInvitationLpItemId.value,
     parsedLearningPathId.value,
   )
+
+  if (props.embedded && submitted) {
+    emit("completed")
+  }
 }
 
 async function load(): Promise<void> {
@@ -194,16 +206,12 @@ onMounted(load)
 
   <div v-else-if="context && parsedSurveyId !== null && parsedMode !== null" class="space-y-5">
     <RouterLink
-      v-if="backRoute"
+      v-if="backRoute && !embedded"
       :to="backRoute"
       class="inline-flex min-h-touch items-center gap-2 rounded-xl px-2 text-sm font-semibold text-chamilo-700"
     >
       <i class="pi pi-arrow-left" aria-hidden="true" />
-      {{
-        parsedLearningPathId > 0
-          ? t("surveys.backToLearningPath")
-          : t("surveys.backToSurveys")
-      }}
+      {{ parsedLearningPathId > 0 ? t("surveys.backToLearningPath") : t("surveys.backToSurveys") }}
     </RouterLink>
 
     <LoadingState
