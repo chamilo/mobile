@@ -18,18 +18,13 @@ export class NativeBiometricPreferenceRepository implements BiometricPreferenceR
     const key = buildCampusNamespace(campusId, "settings", BIOMETRIC_UNLOCK_KEY)
     const result = await this.plugin.get({ key })
 
-    return result.value === "1"
+    return result.value !== "0"
   }
 
   async setEnabled(campusId: string, enabled: boolean): Promise<void> {
     const key = buildCampusNamespace(campusId, "settings", BIOMETRIC_UNLOCK_KEY)
 
-    if (!enabled) {
-      await this.plugin.remove({ key })
-      return
-    }
-
-    await this.plugin.set({ key, value: "1" })
+    await this.plugin.set({ key, value: enabled ? "1" : "0" })
   }
 }
 

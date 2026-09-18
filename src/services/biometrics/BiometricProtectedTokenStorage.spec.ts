@@ -93,14 +93,15 @@ describe("BiometricProtectedTokenStorage", () => {
     expect(lock.clearCalls).toBe(1)
   })
 
-  it("clears biometric preference during logout token removal", async () => {
+  it("preserves biometric preference during logout token removal", async () => {
     const { rememberMe, lock, storage } = createStorage()
     rememberMe.setRememberMe("campus-a", true)
     await storage.save("campus-a", token)
+    lock.clearCalls = 0
 
     await storage.remove("campus-a")
 
-    expect(lock.clearCalls).toBe(1)
+    expect(lock.clearCalls).toBe(0)
     await expect(storage.load("campus-a")).resolves.toBeNull()
   })
 })
