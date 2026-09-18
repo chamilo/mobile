@@ -92,6 +92,8 @@ export function buildCourseToolAvailabilityRequest(
 }
 
 export function normalizeAvailableCourseTools(value: unknown, role: CourseRole): CourseToolKey[] {
+  // Keep the role argument in the public contract; visibility is enforced for every mobile runtime role.
+  void role
   const tools = new Set<CourseToolKey>()
 
   for (const item of collectionItems(value)) {
@@ -99,7 +101,7 @@ export function normalizeAvailableCourseTools(value: unknown, role: CourseRole):
       continue
     }
 
-    if (role !== "teacher" && item.visibility === false) {
+    if (item.visibility === false) {
       continue
     }
 
