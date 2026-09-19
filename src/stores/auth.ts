@@ -19,7 +19,7 @@ import {
 import { clearCampusSessionData } from "@/services/auth/CampusSessionDataCleaner"
 import { createTokenStorage } from "@/services/auth/createTokenStorage"
 import type { TokenStorage } from "@/services/auth/TokenStorage"
-import { TokenStorageError } from "@/services/auth/TokenStorage"
+import { StoredTokenExpiredError, TokenStorageError } from "@/services/auth/TokenStorage"
 import { createHttpClient } from "@/services/http/createHttpClient"
 import {
   clearOfflineSessionUser,
@@ -56,6 +56,7 @@ export function resetAuthDependencies(): void {
 }
 
 function mapAuthError(error: unknown): AuthErrorCode {
+  if (error instanceof StoredTokenExpiredError) return "session_expired"
   if (error instanceof AuthServiceError) return error.code
   if (error instanceof JwtParseError) return "invalid_response"
   if (error instanceof TokenStorageError) {
@@ -97,6 +98,20 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function cacheProfile(campusId: string, currentUser: CurrentUserProfile): Promise<void> {
     await profileRepository.save(campusId, currentUser).catch(() => undefined)
+  }
+
+  async function applyCurrentProfileLocale(locale: string): Promise<boolean> {
+    if (!profile.value || !currentCampusId.value) return false
+
+    const nextProfile: CurrentUserProfile = {
+      ...profile.value,
+      locale,
+    }
+
+    profile.value = nextProfile
+    await cacheProfile(currentCampusId.value, nextProfile)
+
+    return true
   }
 
   async function signIn(credentials: AuthCredentials): Promise<boolean> {
@@ -290,6 +305,7 @@ export const useAuthStore = defineStore("auth", () => {
     errorCode,
     isAuthenticated,
     isOfflineSession,
+    applyCurrentProfileLocale,
     signIn,
     ensureSession,
     signOut,

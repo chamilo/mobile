@@ -56,6 +56,17 @@ describe("RememberMeTokenStorage", () => {
     expect(await afterRestart.load("campus-1")).toBeNull()
   })
 
+  it("exposes persistent expiration metadata for pre-unlock session checks", async () => {
+    const persistent = new MemoryTokenStorage()
+    const storage = new RememberMeTokenStorage(persistent)
+    await persistent.save("campus-1", token)
+
+    await expect(storage.loadPersistentExpiration("campus-1")).resolves.toEqual({
+      exists: true,
+      expiresAt: token.expiresAt,
+    })
+  })
+
   it("restores a remembered token after a new storage instance is created", async () => {
     const persistent = new MemoryTokenStorage()
     const storage = new RememberMeTokenStorage(persistent)

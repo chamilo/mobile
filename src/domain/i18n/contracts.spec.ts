@@ -36,15 +36,36 @@ describe("locale API contracts", () => {
         "hydra:member": [
           {
             isocode: "es",
+            originalName: "Español",
+            englishName: "Spanish",
             available: true,
-            subLanguages: [{ isocode: "es_123", available: true, subLanguages: [] }],
+            subLanguages: [
+              {
+                isocode: "es_123",
+                originalName: "Español local",
+                englishName: "Local Spanish",
+                available: true,
+                subLanguages: [],
+              },
+            ],
           },
-          { isocode: "en_US", available: true, subLanguages: [] },
+          {
+            isocode: "en_US",
+            originalName: "English",
+            englishName: "English",
+            available: true,
+            subLanguages: [],
+          },
         ],
       }),
     ).toEqual({
       availableLocales: ["en_US", "es", "es_123"],
       parentByLocale: { es_123: "es" },
+      displayNameByLocale: {
+        en_US: "English",
+        es: "Español",
+        es_123: "Español local",
+      },
     })
   })
 })

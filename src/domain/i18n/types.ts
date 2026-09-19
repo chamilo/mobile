@@ -24,6 +24,7 @@ export interface CourseLocaleConfiguration {
 export interface LanguageCatalog {
   availableLocales: string[]
   parentByLocale: Record<string, string>
+  displayNameByLocale?: Record<string, string>
 }
 
 export interface LocaleResolutionInput {

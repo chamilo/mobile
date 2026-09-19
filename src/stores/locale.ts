@@ -51,7 +51,7 @@ function defaultPlatform(): PlatformLocaleConfiguration {
 }
 
 function emptyCatalog(): LanguageCatalog {
-  return { availableLocales: [], parentByLocale: {} }
+  return { availableLocales: [], parentByLocale: {}, displayNameByLocale: {} }
 }
 
 export const useLocaleStore = defineStore("locale", () => {

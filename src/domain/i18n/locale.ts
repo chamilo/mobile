@@ -66,6 +66,33 @@ function normalizedAvailableLocales(catalog: LanguageCatalog): string[] {
     .filter((locale, index, values) => values.indexOf(locale) === index)
 }
 
+export function getLanguageDisplayName(
+  value: string | null | undefined,
+  catalog: LanguageCatalog,
+): string {
+  const normalized = normalizeChamiloLocale(value)
+  if (!normalized) return ""
+
+  const configuredName = catalog.displayNameByLocale?.[normalized]?.trim()
+  if (configuredName) return configuredName
+
+  const language = baseLocale(normalized)
+  if (!language) return normalized
+
+  try {
+    const displayNames = new Intl.DisplayNames([language], { type: "language" })
+    const displayName = displayNames.of(language)?.trim()
+
+    if (displayName) {
+      return `${displayName.charAt(0).toLocaleUpperCase(language)}${displayName.slice(1)}`
+    }
+  } catch {
+    // Fall back to the normalized Chamilo locale when Intl cannot resolve the code.
+  }
+
+  return normalized
+}
+
 export function findBestAvailableLocale(
   value: string | null | undefined,
   catalog: LanguageCatalog,

@@ -12,6 +12,7 @@ import {
   registerBeforeCampusSessionClearListener,
 } from "@/services/auth/AuthSessionLifecycle"
 import type { StoredToken, TokenStorage } from "@/services/auth/TokenStorage"
+import { StoredTokenExpiredError } from "@/services/auth/TokenStorage"
 import type { OfflineProfileRecord } from "@/domain/offline/types"
 import type { OfflineProfileRepository } from "@/services/offline/OfflineProfileRepository"
 import { resetAuthDependencies, setAuthDependenciesForTests, useAuthStore } from "@/stores/auth"
@@ -140,6 +141,27 @@ describe("auth store", () => {
     expect((await tokenStorage.load(campusId))?.token).toBe(token)
   })
 
+  it("updates only the in-memory and cached profile locale after the server accepts it", async () => {
+    const campusId = addCampus()
+    const token = createToken(Math.floor(Date.now() / 1_000) + 3_600)
+    const profiles = new MemoryOfflineProfileRepository()
+    setAuthDependenciesForTests(
+      tokenStorage,
+      () => ({
+        createToken: async () => token,
+        getCurrentUser: async () => profile,
+      }),
+      profiles,
+    )
+    const authStore = useAuthStore()
+    await authStore.signIn({ username: "student", password: "secret" })
+
+    await expect(authStore.applyCurrentProfileLocale("fr_FR")).resolves.toBe(true)
+
+    expect(authStore.profile).toEqual({ ...profile, locale: "fr_FR" })
+    expect((await profiles.load(campusId))?.profile.locale).toBe("fr_FR")
+  })
+
   it("maps invalid credentials without saving a password or token", async () => {
     const campusId = addCampus()
     setAuthDependenciesForTests(tokenStorage, () => ({
@@ -247,6 +269,33 @@ describe("auth store", () => {
     expect(authStore.isAuthenticated).toBe(true)
     expect(authStore.isOfflineSession).toBe(true)
     expect(authStore.profile).toEqual(profile)
+  })
+
+  it("maps a pre-unlock expired remembered session without calling the API", async () => {
+    const campusId = addCampus()
+    let apiCalls = 0
+    const expiredStorage: TokenStorage = {
+      load: async () => {
+        throw new StoredTokenExpiredError()
+      },
+      save: async () => undefined,
+      remove: async () => {
+        tokenStorage.tokens.delete(campusId)
+      },
+    }
+    setAuthDependenciesForTests(expiredStorage, () => ({
+      createToken: async () => "unused",
+      getCurrentUser: async () => {
+        apiCalls += 1
+        return profile
+      },
+    }))
+    const authStore = useAuthStore()
+
+    await expect(authStore.ensureSession()).resolves.toBe(false)
+
+    expect(authStore.errorCode).toBe("session_expired")
+    expect(apiCalls).toBe(0)
   })
 
   it("rejects and removes an expired stored token", async () => {

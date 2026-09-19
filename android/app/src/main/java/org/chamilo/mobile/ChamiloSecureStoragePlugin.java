@@ -36,6 +36,53 @@ public class ChamiloSecureStoragePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getExpiration(PluginCall call) {
+        String key = validKey(call);
+
+        if (key == null) {
+            return;
+        }
+
+        try {
+            String value = vault().read(key);
+            JSObject result = new JSObject();
+
+            if (value == null) {
+                result.put("exists", false);
+                result.put("expiresAt", JSONObject.NULL);
+                call.resolve(result);
+                return;
+            }
+
+            JSONObject storedToken = new JSONObject(value);
+            String token = storedToken.optString("token", "");
+
+            if (token.isEmpty() || !storedToken.has("expiresAt")) {
+                call.reject("Secure storage value is invalid.");
+                return;
+            }
+
+            Object expiresAt = storedToken.opt("expiresAt");
+            result.put("exists", true);
+
+            if (expiresAt == null || JSONObject.NULL.equals(expiresAt)) {
+                result.put("expiresAt", JSONObject.NULL);
+            } else if (expiresAt instanceof Number) {
+                result.put("expiresAt", ((Number) expiresAt).doubleValue());
+            } else {
+                call.reject("Secure storage value is invalid.");
+                return;
+            }
+
+            call.resolve(result);
+        } catch (IOException | GeneralSecurityException error) {
+            call.reject("Secure storage read failed.");
+        } catch (Exception error) {
+            call.reject("Secure storage value is invalid.");
+        }
+    }
+
+    @PluginMethod
     public void set(PluginCall call) {
         String key = validKey(call);
         String value = call.getString("value");

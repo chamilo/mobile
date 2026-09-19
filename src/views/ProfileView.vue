@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
+import { getLanguageDisplayName, normalizeChamiloLocale } from "@/domain/i18n/locale"
+import { createAuthenticatedHttpClient } from "@/services/auth/createAuthenticatedHttpClient"
 import {
   getBiometricUnlockStateForCampus,
   setBiometricUnlockForCampus,
   type BiometricUnlockState,
   type BiometricUnlockToggleResult,
 } from "@/services/auth/createTokenStorage"
+import {
+  UserProfileApiService,
+  UserProfileUpdateError,
+  type UserProfileUpdateErrorCode,
+} from "@/services/profile/UserProfileApiService"
 import { useAuthStore } from "@/stores/auth"
 import { useCampusStore } from "@/stores/campus"
+import { useLocaleStore } from "@/stores/locale"
 import { useOfflineSyncStore } from "@/stores/offlineSync"
 import { usePushNotificationsStore } from "@/stores/pushNotifications"
 
@@ -19,10 +27,12 @@ const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const campusStore = useCampusStore()
+const localeStore = useLocaleStore()
 const pushNotificationsStore = usePushNotificationsStore()
 const offlineSyncStore = useOfflineSyncStore()
 const { profile } = storeToRefs(authStore)
 const { selectedCampus } = storeToRefs(campusStore)
+const { languageCatalog } = storeToRefs(localeStore)
 const {
   available: pushAvailable,
   status: pushStatus,
@@ -34,6 +44,10 @@ const {
   preferenceEnabled: pushPreferenceEnabled,
 } = storeToRefs(pushNotificationsStore)
 const busy = ref(false)
+const localeBusy = ref(false)
+const localeErrorCode = ref<UserProfileUpdateErrorCode | null>(null)
+const localeSaved = ref(false)
+const selectedProfileLocale = ref("")
 const biometricBusy = ref(false)
 const biometricResult = ref<BiometricUnlockToggleResult | null>(null)
 const biometricState = ref<BiometricUnlockState>({
@@ -104,6 +118,73 @@ const initials = computed(() => {
   return name.slice(0, 2).toUpperCase()
 })
 
+const languageOptions = computed(() => {
+  const values = [...languageCatalog.value.availableLocales]
+  const currentLocale = normalizeChamiloLocale(profile.value?.locale)
+
+  if (currentLocale && !values.some((value) => normalizeChamiloLocale(value) === currentLocale)) {
+    values.push(currentLocale)
+  }
+
+  return values
+    .map((value) => normalizeChamiloLocale(value))
+    .filter(Boolean)
+    .filter((value, index, all) => all.indexOf(value) === index)
+    .map((value) => ({
+      value,
+      label: getLanguageDisplayName(value, languageCatalog.value),
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label))
+})
+
+const localeStatusMessage = computed(() => {
+  if (localeErrorCode.value) return t(`profile.localeErrors.${localeErrorCode.value}`)
+  if (localeSaved.value) return t("profile.localeUpdated")
+  if (authStore.isOfflineSession) return t("profile.localeOffline")
+
+  return null
+})
+
+watch(
+  () => profile.value?.locale ?? "",
+  (locale) => {
+    selectedProfileLocale.value = normalizeChamiloLocale(locale)
+  },
+  { immediate: true },
+)
+
+async function updateProfileLocale(): Promise<void> {
+  const campus = selectedCampus.value
+  const currentProfile = profile.value
+  const nextLocale = normalizeChamiloLocale(selectedProfileLocale.value)
+  const currentLocale = normalizeChamiloLocale(currentProfile?.locale)
+
+  localeSaved.value = false
+  localeErrorCode.value = null
+
+  if (!campus || !currentProfile || !nextLocale || nextLocale === currentLocale) {
+    selectedProfileLocale.value = currentLocale
+    return
+  }
+
+  localeBusy.value = true
+
+  try {
+    const service = new UserProfileApiService(createAuthenticatedHttpClient(campus))
+    await service.updateLocale(currentProfile.id, nextLocale)
+    await authStore.applyCurrentProfileLocale(nextLocale)
+    localeStore.setUserLocale(nextLocale)
+    selectedProfileLocale.value = nextLocale
+    localeSaved.value = true
+  } catch (error) {
+    selectedProfileLocale.value = currentLocale
+    localeErrorCode.value =
+      error instanceof UserProfileUpdateError ? error.code : "server"
+  } finally {
+    localeBusy.value = false
+  }
+}
+
 async function refreshBiometricState(): Promise<void> {
   const campusId = selectedCampus.value?.id
 
@@ -143,6 +224,10 @@ async function logout(): Promise<void> {
 
 onMounted(() => {
   void refreshBiometricState()
+
+  if (selectedCampus.value && !authStore.isOfflineSession) {
+    void localeStore.refreshCampusConfiguration(selectedCampus.value)
+  }
 })
 </script>
 
@@ -177,10 +262,50 @@ onMounted(() => {
           <dd class="mt-1 break-all text-sm text-slate-900">{{ profile.email }}</dd>
         </div>
         <div class="py-3">
-          <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">
-            {{ t("profile.locale") }}
+          <dt>
+            <label
+              for="profile-locale"
+              class="text-xs font-medium uppercase tracking-wide text-slate-500"
+            >
+              {{ t("profile.locale") }}
+            </label>
           </dt>
-          <dd class="mt-1 text-sm text-slate-900">{{ profile.locale }}</dd>
+          <dd class="mt-2">
+            <div class="relative">
+              <select
+                id="profile-locale"
+                v-model="selectedProfileLocale"
+                name="profileLocale"
+                class="min-h-touch w-full appearance-none rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 text-sm text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                :disabled="localeBusy || authStore.isOfflineSession || languageOptions.length === 0"
+                :aria-describedby="localeStatusMessage ? 'profile-locale-status' : undefined"
+                @change="updateProfileLocale"
+              >
+                <option
+                  v-for="option in languageOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+              <i
+                :class="localeBusy ? 'pi pi-spin pi-spinner' : 'pi pi-chevron-down'"
+                class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                aria-hidden="true"
+              />
+            </div>
+            <p
+              v-if="localeStatusMessage"
+              id="profile-locale-status"
+              class="mt-2 text-xs"
+              :class="localeErrorCode ? 'text-red-700' : 'text-slate-500'"
+              role="status"
+              aria-live="polite"
+            >
+              {{ localeStatusMessage }}
+            </p>
+          </dd>
         </div>
         <div class="py-3">
           <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">
