@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   findBestAvailableLocale,
+  getLanguageDisplayName,
   normalizeChamiloLocale,
   resolveLocale,
   toBcp47Locale,
@@ -13,6 +14,14 @@ const catalog: LanguageCatalog = {
   parentByLocale: {
     es_123: "es",
   },
+  displayNameByLocale: {
+    en_US: "English",
+    es: "Español",
+    es_MX: "Español (México)",
+    fr_FR: "Français",
+    fr_BE: "Français (Belgique)",
+    es_123: "Español local",
+  },
 }
 
 describe("Chamilo locale resolution", () => {
@@ -21,6 +30,19 @@ describe("Chamilo locale resolution", () => {
     expect(normalizeChamiloLocale("FR_be")).toBe("fr_BE")
     expect(normalizeChamiloLocale("es_123")).toBe("es_123")
     expect(toBcp47Locale("es_123")).toBe("es")
+  })
+
+  it("shows human language names instead of raw Chamilo locale codes", () => {
+    expect(getLanguageDisplayName("fr_FR", catalog)).toBe("Français")
+    expect(getLanguageDisplayName("en_US", catalog)).toBe("English")
+    expect(getLanguageDisplayName("es_123", catalog)).toBe("Español local")
+  })
+
+  it("derives a readable native language name when the campus does not provide one", () => {
+    const emptyCatalog: LanguageCatalog = { availableLocales: [], parentByLocale: {} }
+
+    expect(getLanguageDisplayName("fr_FR", emptyCatalog)).toBe("Français")
+    expect(getLanguageDisplayName("en_EN", emptyCatalog)).toBe("English")
   })
 
   it("matches device locales using Chamilo exact, short and prefix rules", () => {

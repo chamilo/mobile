@@ -47,7 +47,10 @@ function isCatalog(value: unknown): value is LanguageCatalog {
     Array.isArray(value.availableLocales) &&
     value.availableLocales.every((locale) => typeof locale === "string") &&
     isRecord(value.parentByLocale) &&
-    Object.values(value.parentByLocale).every((locale) => typeof locale === "string")
+    Object.values(value.parentByLocale).every((locale) => typeof locale === "string") &&
+    (value.displayNameByLocale === undefined ||
+      (isRecord(value.displayNameByLocale) &&
+        Object.values(value.displayNameByLocale).every((name) => typeof name === "string")))
   )
 }
 

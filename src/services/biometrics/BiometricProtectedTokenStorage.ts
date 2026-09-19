@@ -1,4 +1,6 @@
+import { isTokenExpired } from "@/domain/auth/jwt"
 import type { StoredToken, TokenStorage } from "@/services/auth/TokenStorage"
+import { StoredTokenExpiredError } from "@/services/auth/TokenStorage"
 import type { RememberMeTokenStorage } from "@/services/auth/RememberMeTokenStorage"
 import {
   biometricSessionLock,
@@ -16,6 +18,19 @@ export class BiometricProtectedTokenStorage implements TokenStorage {
 
     if (sessionToken) return sessionToken
 
+    // Read only non-secret expiration metadata before the biometric prompt. The
+    // native secure-storage bridge parses the existing stored token envelope and
+    // returns no JWT to JavaScript until the session has been unlocked.
+    const expiration = await this.source.loadPersistentExpiration(campusId)
+
+    if (!expiration.exists) {
+      return null
+    }
+
+    if (isTokenExpired(expiration.expiresAt)) {
+      throw new StoredTokenExpiredError()
+    }
+
     const unlockResult = await this.sessionLock.unlockIfEnabled(campusId)
 
     if (unlockResult !== "not_required" && unlockResult !== "unlocked") {
@@ -26,6 +41,10 @@ export class BiometricProtectedTokenStorage implements TokenStorage {
 
     if (!persistentToken) {
       return null
+    }
+
+    if (isTokenExpired(persistentToken.expiresAt)) {
+      throw new StoredTokenExpiredError()
     }
 
     await this.source.saveSessionToken(campusId, persistentToken)

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type {
   ChamiloSecureStoragePlugin,
+  SecureStorageExpirationResult,
   SecureStorageGetOptions,
   SecureStorageGetResult,
   SecureStorageSetOptions,
@@ -11,10 +12,38 @@ import { TokenStorageError } from "@/services/auth/TokenStorage"
 
 class MemorySecureStoragePlugin implements ChamiloSecureStoragePlugin {
   readonly values = new Map<string, string>()
+  getCalls = 0
+  getExpirationCalls = 0
 
   async get(options: SecureStorageGetOptions): Promise<SecureStorageGetResult> {
+    this.getCalls += 1
     return {
       value: this.values.get(options.key) ?? null,
+    }
+  }
+
+  async getExpiration(options: SecureStorageGetOptions): Promise<SecureStorageExpirationResult> {
+    this.getExpirationCalls += 1
+    const serialized = this.values.get(options.key)
+
+    if (!serialized) {
+      return { exists: false, expiresAt: null }
+    }
+
+    const parsed = JSON.parse(serialized) as { token?: unknown; expiresAt?: unknown }
+    const expiresAt = parsed.expiresAt
+
+    if (
+      typeof parsed.token !== "string" ||
+      parsed.token.length === 0 ||
+      !(expiresAt === null || (typeof expiresAt === "number" && Number.isFinite(expiresAt)))
+    ) {
+      throw new Error("Secure storage value is invalid.")
+    }
+
+    return {
+      exists: true,
+      expiresAt,
     }
   }
 
@@ -51,6 +80,34 @@ describe("SecureNativeTokenStorage", () => {
       token: "token-b",
       expiresAt: 20,
     })
+  })
+
+  it("reads expiration metadata without requesting the JWT value", async () => {
+    const plugin = new MemorySecureStoragePlugin()
+    const storage = new SecureNativeTokenStorage(plugin)
+    await storage.save("campus-a", {
+      token: "sensitive-token",
+      expiresAt: 2_000_000_000_000,
+    })
+
+    await expect(storage.loadExpiration("campus-a")).resolves.toEqual({
+      exists: true,
+      expiresAt: 2_000_000_000_000,
+    })
+    expect(plugin.getExpirationCalls).toBe(1)
+    expect(plugin.getCalls).toBe(0)
+  })
+
+  it("reports missing expiration metadata without requesting the JWT value", async () => {
+    const plugin = new MemorySecureStoragePlugin()
+    const storage = new SecureNativeTokenStorage(plugin)
+
+    await expect(storage.loadExpiration("campus-a")).resolves.toEqual({
+      exists: false,
+      expiresAt: null,
+    })
+    expect(plugin.getExpirationCalls).toBe(1)
+    expect(plugin.getCalls).toBe(0)
   })
 
   it("uses the required campus token namespace", async () => {

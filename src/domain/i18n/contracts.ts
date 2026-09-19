@@ -76,6 +76,7 @@ function normalizeLanguageEntry(
   value: unknown,
   availableLocales: Set<string>,
   parentByLocale: Record<string, string>,
+  displayNameByLocale: Record<string, string>,
   parentLocale: string | null,
 ): void {
   if (!isRecord(value)) return
@@ -83,12 +84,16 @@ function normalizeLanguageEntry(
   const locale = normalizeChamiloLocale(text(value.isocode))
   if (!locale) return
 
-  if (value.available !== false) availableLocales.add(locale)
+  if (value.available !== false) {
+    availableLocales.add(locale)
+    const displayName = text(value.originalName) || text(value.englishName)
+    if (displayName) displayNameByLocale[locale] = displayName
+  }
   if (parentLocale) parentByLocale[locale] = parentLocale
 
   if (Array.isArray(value.subLanguages)) {
     for (const child of value.subLanguages) {
-      normalizeLanguageEntry(child, availableLocales, parentByLocale, locale)
+      normalizeLanguageEntry(child, availableLocales, parentByLocale, displayNameByLocale, locale)
     }
   }
 }
@@ -100,13 +105,15 @@ export function normalizeLanguageCatalog(value: unknown): LanguageCatalog {
 
   const availableLocales = new Set<string>()
   const parentByLocale: Record<string, string> = {}
+  const displayNameByLocale: Record<string, string> = {}
 
   for (const item of value["hydra:member"]) {
-    normalizeLanguageEntry(item, availableLocales, parentByLocale, null)
+    normalizeLanguageEntry(item, availableLocales, parentByLocale, displayNameByLocale, null)
   }
 
   return {
     availableLocales: [...availableLocales].sort((left, right) => left.localeCompare(right)),
     parentByLocale,
+    displayNameByLocale,
   }
 }

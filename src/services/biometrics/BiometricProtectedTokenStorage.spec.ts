@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { InMemoryTokenStorage } from "@/services/auth/InMemoryTokenStorage"
 import { RememberMeTokenStorage } from "@/services/auth/RememberMeTokenStorage"
 import type { StoredToken } from "@/services/auth/TokenStorage"
+import { StoredTokenExpiredError } from "@/services/auth/TokenStorage"
 import { BiometricProtectedTokenStorage } from "@/services/biometrics/BiometricProtectedTokenStorage"
 import type {
   BiometricSessionLock,
@@ -11,7 +12,7 @@ import type {
 
 const token: StoredToken = {
   token: "jwt-token",
-  expiresAt: 123456,
+  expiresAt: Date.now() + 3_600_000,
 }
 
 class FakeSessionLock {
@@ -60,6 +61,19 @@ describe("BiometricProtectedTokenStorage", () => {
     lock.unlockCalls = 0
 
     await expect(storage.load("campus-a")).resolves.toEqual(token)
+    expect(lock.unlockCalls).toBe(0)
+  })
+
+  it("does not request biometrics when the remembered session is already expired", async () => {
+    const { persistent, lock, storage } = createStorage()
+    const expiredToken: StoredToken = {
+      token: "expired-jwt-token",
+      expiresAt: Date.now() - 1_000,
+    }
+    await persistent.save("campus-a", expiredToken)
+    lock.unlockResult = "unlocked"
+
+    await expect(storage.load("campus-a")).rejects.toBeInstanceOf(StoredTokenExpiredError)
     expect(lock.unlockCalls).toBe(0)
   })
 

@@ -3,7 +3,12 @@ import {
   chamiloSecureStoragePlugin,
   type ChamiloSecureStoragePlugin,
 } from "@/services/auth/ChamiloSecureStoragePlugin"
-import type { StoredToken, TokenStorage } from "@/services/auth/TokenStorage"
+import type {
+  StoredToken,
+  StoredTokenExpiration,
+  TokenExpirationReader,
+  TokenStorage,
+} from "@/services/auth/TokenStorage"
 import { TokenStorageError } from "@/services/auth/TokenStorage"
 
 function isStoredToken(value: unknown): value is StoredToken {
@@ -34,7 +39,7 @@ function parseStoredToken(serialized: string): StoredToken {
   }
 }
 
-export class SecureNativeTokenStorage implements TokenStorage {
+export class SecureNativeTokenStorage implements TokenStorage, TokenExpirationReader {
   constructor(private readonly plugin: ChamiloSecureStoragePlugin = chamiloSecureStoragePlugin) {}
 
   async load(campusId: string): Promise<StoredToken | null> {
@@ -60,6 +65,31 @@ export class SecureNativeTokenStorage implements TokenStorage {
       }
     } catch (error) {
       throw new TokenStorageError("read", "The secure token could not be read.", error)
+    }
+  }
+
+  async loadExpiration(campusId: string): Promise<StoredTokenExpiration> {
+    const key = buildCampusNamespace(campusId, "token")
+
+    try {
+      const result = await this.plugin.getExpiration({ key })
+
+      if (
+        typeof result.exists !== "boolean" ||
+        !(
+          result.expiresAt === null ||
+          (typeof result.expiresAt === "number" && Number.isFinite(result.expiresAt))
+        )
+      ) {
+        throw new Error("Secure storage returned invalid expiration metadata.")
+      }
+
+      return {
+        exists: result.exists,
+        expiresAt: result.expiresAt,
+      }
+    } catch (error) {
+      throw new TokenStorageError("read", "The secure token expiration could not be read.", error)
     }
   }
 

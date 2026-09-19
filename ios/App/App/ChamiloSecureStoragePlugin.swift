@@ -91,6 +91,7 @@ public class ChamiloSecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "ChamiloSecureStorage"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "get", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getExpiration", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "set", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise)
     ]
@@ -112,6 +113,52 @@ public class ChamiloSecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
             } else {
                 call.resolve(["value": NSNull()])
             }
+        } catch {
+            call.reject("Secure storage read failed.")
+        }
+    }
+
+    @objc func getExpiration(_ call: CAPPluginCall) {
+        guard let key = validKey(call) else {
+            return
+        }
+
+        do {
+            guard let value = try store.read(key: key) else {
+                call.resolve([
+                    "exists": false,
+                    "expiresAt": NSNull()
+                ])
+                return
+            }
+
+            guard
+                let data = value.data(using: .utf8),
+                let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let token = object["token"] as? String,
+                !token.isEmpty,
+                object.keys.contains("expiresAt")
+            else {
+                call.reject("Secure storage value is invalid.")
+                return
+            }
+
+            let rawExpiration = object["expiresAt"]
+            let expiresAt: Any
+
+            if rawExpiration == nil || rawExpiration is NSNull {
+                expiresAt = NSNull()
+            } else if let number = rawExpiration as? NSNumber {
+                expiresAt = number.doubleValue
+            } else {
+                call.reject("Secure storage value is invalid.")
+                return
+            }
+
+            call.resolve([
+                "exists": true,
+                "expiresAt": expiresAt
+            ])
         } catch {
             call.reject("Secure storage read failed.")
         }

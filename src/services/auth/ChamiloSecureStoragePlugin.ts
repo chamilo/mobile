@@ -12,8 +12,14 @@ export interface SecureStorageGetResult {
   value: string | null
 }
 
+export interface SecureStorageExpirationResult {
+  exists: boolean
+  expiresAt: number | null
+}
+
 export interface ChamiloSecureStoragePlugin {
   get(options: SecureStorageGetOptions): Promise<SecureStorageGetResult>
+  getExpiration(options: SecureStorageGetOptions): Promise<SecureStorageExpirationResult>
   set(options: SecureStorageSetOptions): Promise<void>
   remove(options: SecureStorageGetOptions): Promise<void>
 }

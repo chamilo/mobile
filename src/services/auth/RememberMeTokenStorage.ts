@@ -1,5 +1,10 @@
 import { InMemoryTokenStorage } from "@/services/auth/InMemoryTokenStorage"
-import type { StoredToken, TokenStorage } from "@/services/auth/TokenStorage"
+import type {
+  StoredToken,
+  StoredTokenExpiration,
+  TokenStorage,
+} from "@/services/auth/TokenStorage"
+import { supportsTokenExpirationReader } from "@/services/auth/TokenStorage"
 
 export class RememberMeTokenStorage implements TokenStorage {
   private readonly rememberMeByCampus = new Map<string, boolean>()
@@ -23,6 +28,18 @@ export class RememberMeTokenStorage implements TokenStorage {
 
   loadPersistentToken(campusId: string): Promise<StoredToken | null> {
     return this.persistentStorage.load(campusId)
+  }
+
+  async loadPersistentExpiration(campusId: string): Promise<StoredTokenExpiration> {
+    if (supportsTokenExpirationReader(this.persistentStorage)) {
+      return this.persistentStorage.loadExpiration(campusId)
+    }
+
+    const token = await this.loadPersistentToken(campusId)
+
+    return token
+      ? { exists: true, expiresAt: token.expiresAt }
+      : { exists: false, expiresAt: null }
   }
 
   saveSessionToken(campusId: string, token: StoredToken): Promise<void> {

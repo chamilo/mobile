@@ -18,6 +18,10 @@ describe("iOS secure storage integration", () => {
     expect(plugin).toContain("kSecAttrService")
     expect(plugin).toContain("kSecAttrAccount")
     expect(plugin).toContain("kSecAttrAccessibleWhenUnlockedThisDeviceOnly")
+    expect(plugin).toContain('CAPPluginMethod(name: "getExpiration"')
+    expect(plugin).toContain('@objc func getExpiration(_ call: CAPPluginCall)')
+    expect(plugin).toContain('"expiresAt": expiresAt')
+    expect(plugin).not.toContain('"token": token')
     expect(plugin).not.toContain("UserDefaults")
 
     expect(bridgeController).toContain(

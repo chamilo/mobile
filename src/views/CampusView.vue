@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, nextTick, onMounted, ref } from "vue"
 import { storeToRefs } from "pinia"
 import { useI18n } from "vue-i18n"
 
@@ -17,6 +17,7 @@ const { profiles, selectedCampusId, errorCode } = storeToRefs(campusStore)
 const editingCampus = ref<CampusProfile | null>(null)
 const pendingRemovalId = ref<string | null>(null)
 const busy = ref(false)
+const campusFormContainer = ref<HTMLElement | null>(null)
 
 const storeErrorMessage = computed(() =>
   errorCode.value ? t(`campus.storeErrors.${errorCode.value}`) : null,
@@ -51,10 +52,11 @@ async function addOrUpdateCampus(input: CampusProfileInput): Promise<void> {
   }
 }
 
-function editCampus(campus: CampusProfile): void {
+async function editCampus(campus: CampusProfile): Promise<void> {
   editingCampus.value = campus
   pendingRemovalId.value = null
-  window.scrollTo({ top: 0, behavior: "smooth" })
+  await nextTick()
+  campusFormContainer.value?.scrollIntoView({ behavior: "smooth", block: "start" })
 }
 
 async function selectCampus(id: string): Promise<void> {
@@ -113,13 +115,6 @@ onMounted(() => {
       </button>
     </div>
 
-    <CampusForm
-      :campus="editingCampus"
-      :busy="busy"
-      @submit="addOrUpdateCampus"
-      @cancel="editingCampus = null"
-    />
-
     <section aria-labelledby="saved-campuses-title">
       <div class="flex items-center justify-between gap-3">
         <h2 id="saved-campuses-title" class="text-lg font-semibold text-slate-900">
@@ -163,5 +158,14 @@ onMounted(() => {
       {{ t("actions.continue") }}
       <i class="pi pi-arrow-right" aria-hidden="true" />
     </RouterLink>
+
+    <div ref="campusFormContainer">
+      <CampusForm
+        :campus="editingCampus"
+        :busy="busy"
+        @submit="addOrUpdateCampus"
+        @cancel="editingCampus = null"
+      />
+    </div>
   </div>
 </template>

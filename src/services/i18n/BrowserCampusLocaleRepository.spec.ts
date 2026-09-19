@@ -11,6 +11,7 @@ const data: CampusLocaleCacheData = {
   languageCatalog: {
     availableLocales: ["en_US", "es", "es_12"],
     parentByLocale: { es_12: "es" },
+    displayNameByLocale: { en_US: "English", es: "Español", es_12: "Español local" },
   },
   courses: {
     "42": { showCourseInUserLanguage: true },
