@@ -505,6 +505,10 @@ export default {
     backToCourse: "Retour au cours",
     eyebrow: "Enquêtes",
     title: "Enquêtes",
+    actions: {
+      answer: "Répondre à l’enquête",
+      preview: "Prévisualiser l’enquête",
+    },
     loading: "Chargement des enquêtes...",
     errorTitle: "Impossible de charger les enquêtes",
     emptyTitle: "Aucune enquête",

@@ -468,6 +468,10 @@ export default {
     backToCourse: "Volver al curso",
     eyebrow: "Encuestas",
     title: "Encuestas",
+    actions: {
+      answer: "Responder encuesta",
+      preview: "Vista previa de la encuesta",
+    },
     loading: "Cargando encuestas...",
     errorTitle: "No se pudieron cargar las encuestas",
     emptyTitle: "No hay encuestas",

@@ -13,6 +13,7 @@ import {
   parseCourseRouteContext,
 } from "@/domain/courses/routeContext"
 import { translatedPlainText } from "@/domain/content/translatedHtml"
+import { getSurveyOpenCapabilities } from "@/domain/surveys/opening"
 import type { SurveyAvailabilityStatus, SurveySummary } from "@/domain/surveys/types"
 import { useLocaleStore } from "@/stores/locale"
 import { useSurveysStore } from "@/stores/surveys"
@@ -79,13 +80,31 @@ function unavailableLabel(survey: SurveySummary): string {
   )
 }
 
-function detailRoute(survey: SurveySummary) {
-  if (!context.value || !survey.openMode) return { name: "courses" }
+function openCapabilities(survey: SurveySummary) {
+  return getSurveyOpenCapabilities(survey)
+}
+
+function answerRoute(survey: SurveySummary) {
+  const capabilities = openCapabilities(survey)
+  if (!context.value || !capabilities.canAnswer) return { name: "courses" }
 
   return buildSurveyDetailRoute(
     context.value,
     survey.id,
-    survey.openMode,
+    "answer",
+    localizedContent(survey.title),
+    survey.invitationLpItemId,
+    capabilities.answerInvitationCode,
+  )
+}
+
+function previewRoute(survey: SurveySummary) {
+  if (!context.value || !openCapabilities(survey).canPreview) return { name: "courses" }
+
+  return buildSurveyDetailRoute(
+    context.value,
+    survey.id,
+    "preview",
     localizedContent(survey.title),
     survey.invitationLpItemId,
     survey.invitationCode,
@@ -125,10 +144,6 @@ onMounted(load)
       </p>
     </section>
 
-    <div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900" role="status">
-      {{ t("surveys.readOnlyNotice") }}
-    </div>
-
     <LoadingState
       v-if="store.list.status === 'loading' || store.list.status === 'idle'"
       :label="t('surveys.loading')"
@@ -144,104 +159,102 @@ onMounted(load)
 
     <template v-else-if="store.list.data">
       <div v-if="store.list.data.items.length" class="space-y-3">
-        <template v-for="survey in store.list.data.items" :key="survey.id">
-          <RouterLink
-            v-if="survey.openMode"
-            :to="detailRoute(survey)"
-            class="hover:border-chamilo-300 block min-h-touch rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
-                <h2 class="break-words font-semibold text-slate-900">
-                  {{ localizedContent(survey.title) }}
-                </h2>
-                <p
-                  v-if="survey.subtitle"
-                  class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600"
-                >
-                  {{ localizedContent(survey.subtitle) }}
-                </p>
-              </div>
-              <i class="pi pi-chevron-right mt-1 text-slate-400" aria-hidden="true" />
+        <article
+          v-for="survey in store.list.data.items"
+          :key="survey.id"
+          class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <h2 class="break-words font-semibold text-slate-900">
+                {{ localizedContent(survey.title) }}
+              </h2>
+              <p
+                v-if="survey.subtitle"
+                class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600"
+              >
+                {{ localizedContent(survey.subtitle) }}
+              </p>
             </div>
+          </div>
 
-            <div class="mt-3 flex flex-wrap gap-2 text-xs">
-              <span
-                class="rounded-full px-2.5 py-1 font-semibold"
-                :class="availabilityClass(survey.availabilityStatus)"
-              >
-                {{ availabilityLabel(survey.availabilityStatus) }}
-              </span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
-                {{ survey.surveyTypeLabel }}
-              </span>
-              <span
-                v-if="survey.mandatory"
-                class="rounded-full bg-amber-100 px-2.5 py-1 font-semibold text-amber-900"
-              >
-                {{ t("surveys.badges.mandatory") }}
-              </span>
-              <span
-                v-if="survey.invitationAnswered"
-                class="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-900"
-              >
-                {{ t("surveys.badges.answered") }}
-              </span>
-              <span
-                v-else-if="survey.canAnswer"
-                class="rounded-full bg-sky-100 px-2.5 py-1 font-semibold text-sky-900"
-              >
-                {{ t("surveys.badges.pending") }}
-              </span>
-              <span
-                v-if="survey.invitationLpItemId > 0"
-                class="rounded-full bg-violet-100 px-2.5 py-1 font-semibold text-violet-900"
-              >
-                {{ t("surveys.badges.learningPath") }}
-              </span>
-              <span
-                v-if="survey.questionCount !== null"
-                class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700"
-              >
-                {{ t("surveys.questionCount", { count: survey.questionCount }) }}
-              </span>
-            </div>
-
-            <p v-if="survey.availableUntil" class="mt-3 text-xs text-slate-500">
-              {{
-                t("surveys.availableUntil", {
-                  date: formatDate(survey.availableUntil),
-                })
-              }}
-            </p>
-          </RouterLink>
-
-          <article v-else class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 class="break-words font-semibold text-slate-900">
-              {{ localizedContent(survey.title) }}
-            </h2>
-            <p
-              v-if="survey.subtitle"
-              class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600"
+          <div class="mt-3 flex flex-wrap gap-2 text-xs">
+            <span
+              class="rounded-full px-2.5 py-1 font-semibold"
+              :class="availabilityClass(survey.availabilityStatus)"
             >
-              {{ localizedContent(survey.subtitle) }}
-            </p>
-            <div class="mt-3 flex flex-wrap gap-2 text-xs">
-              <span
-                class="rounded-full px-2.5 py-1 font-semibold"
-                :class="availabilityClass(survey.availabilityStatus)"
-              >
-                {{ availabilityLabel(survey.availabilityStatus) }}
-              </span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
-                {{ survey.surveyTypeLabel }}
-              </span>
-            </div>
-            <p class="mt-3 text-sm text-amber-800">
-              {{ unavailableLabel(survey) }}
-            </p>
-          </article>
-        </template>
+              {{ availabilityLabel(survey.availabilityStatus) }}
+            </span>
+            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
+              {{ survey.surveyTypeLabel }}
+            </span>
+            <span
+              v-if="survey.mandatory"
+              class="rounded-full bg-amber-100 px-2.5 py-1 font-semibold text-amber-900"
+            >
+              {{ t("surveys.badges.mandatory") }}
+            </span>
+            <span
+              v-if="survey.invitationAnswered"
+              class="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-900"
+            >
+              {{ t("surveys.badges.answered") }}
+            </span>
+            <span
+              v-else-if="survey.canAnswer"
+              class="rounded-full bg-sky-100 px-2.5 py-1 font-semibold text-sky-900"
+            >
+              {{ t("surveys.badges.pending") }}
+            </span>
+            <span
+              v-if="survey.invitationLpItemId > 0"
+              class="rounded-full bg-violet-100 px-2.5 py-1 font-semibold text-violet-900"
+            >
+              {{ t("surveys.badges.learningPath") }}
+            </span>
+            <span
+              v-if="survey.questionCount !== null"
+              class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700"
+            >
+              {{ t("surveys.questionCount", { count: survey.questionCount }) }}
+            </span>
+          </div>
+
+          <p v-if="survey.availableUntil" class="mt-3 text-xs text-slate-500">
+            {{
+              t("surveys.availableUntil", {
+                date: formatDate(survey.availableUntil),
+              })
+            }}
+          </p>
+
+          <div
+            v-if="openCapabilities(survey).canAnswer || openCapabilities(survey).canPreview"
+            class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4"
+          >
+            <RouterLink
+              v-if="openCapabilities(survey).canAnswer"
+              :to="answerRoute(survey)"
+              class="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-xl bg-chamilo-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-chamilo-800 focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
+            >
+              <i class="pi pi-pencil" aria-hidden="true" />
+              {{ t("surveys.actions.answer") }}
+            </RouterLink>
+
+            <RouterLink
+              v-if="openCapabilities(survey).canPreview"
+              :to="previewRoute(survey)"
+              class="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-chamilo-600 focus:ring-offset-2"
+            >
+              <i class="pi pi-search" aria-hidden="true" />
+              {{ t("surveys.actions.preview") }}
+            </RouterLink>
+          </div>
+
+          <p v-else class="mt-3 text-sm text-amber-800">
+            {{ unavailableLabel(survey) }}
+          </p>
+        </article>
       </div>
 
       <EmptyState
