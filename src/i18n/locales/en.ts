@@ -1149,6 +1149,10 @@ export default {
     open: "Open survey",
     eyebrow: "Feedback",
     title: "Surveys",
+    actions: {
+      answer: "Answer survey",
+      preview: "Preview survey",
+    },
     description: "Review surveys available for the current course context.",
     readOnlyNotice:
       "Previously submitted answers remain available offline. Open surveys can be completed offline after the course has been prepared.",
